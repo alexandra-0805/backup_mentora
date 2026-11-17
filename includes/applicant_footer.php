@@ -1,0 +1,1 @@
+</main><footer class="admin-footer">© <?= date('Y') ?> Mentora PH. All rights reserved. <span>All times in Philippine Time (PHT) · Your information is kept private.</span></footer></div></body></html>

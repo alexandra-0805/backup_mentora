@@ -1,0 +1,9 @@
+<?php
+$pathway='employee';$pageTitle='Employee pathway';$activePage='overview.php';require __DIR__.'/../../includes/applicant_layout.php';
+$training=$pdo->prepare('SELECT * FROM training_records WHERE user_id=?');$training->execute([$currentUser['id']]);$record=$training->fetch();
+?>
+<div class="admin-heading"><div><h1>Employee pathway</h1><p>Track your hiring progress, upcoming milestones, and next steps in one place.</p></div><span class="badge info">Active pathway</span></div>
+<div class="applicant-banner"><strong>Welcome to your Mentora workspace.</strong>Your application, evaluation, training, and department details are kept together here.</div>
+<section class="pathway-card"><h2>Hiring progress</h2><p>Application · <?= htmlspecialchars($currentUser['created_at'] ?? date('Y-m-d')) ?></p><div class="timeline"><?php foreach(['Application','Evaluation','Interview & offer','Training','Department'] as $index=>$step): ?><div class="timeline-step <?= $index>2?'pending':'' ?>"><span class="timeline-dot"><?= $index<3?'✓':$index+1 ?></span><strong><?= $step ?></strong><small><?= $index<3?'Complete':'Next step' ?></small></div><?php endforeach; ?></div></section>
+<div class="admin-grid"><section class="pathway-card"><h3>Pathway summary</h3><ul class="status-list"><li><span>Application verified</span><span class="badge">Complete</span></li><li><span>Evaluation review</span><span class="badge">Complete</span></li><li><span>Profile ready</span><span class="badge">Complete</span></li><li><span>Training in progress</span><span class="badge info"><?= $record ? $record['modules_completed'].' modules' : 'Get started' ?></span></li></ul></section><section class="pathway-card"><h3>Next steps</h3><ul class="checklist"><li>Complete your employee training</li><li>Review your assigned department</li><li>Prepare your daily work report</li></ul></section></div>
+<?php require __DIR__.'/../../includes/applicant_footer.php'; ?>

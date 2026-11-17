@@ -1,0 +1,328 @@
+.applicant-body {
+    background: #f2f8f7
+}
+
+.applicant-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 180px;
+    background: #1a615f;
+    color: #e0f1ee;
+    padding: 18px 12px;
+    display: flex;
+    flex-direction: column
+}
+
+.applicant-sidebar .admin-brand {
+    margin-bottom: 28px
+}
+
+.applicant-sidebar .sidebar-bottom {
+    margin-top: auto
+}
+
+.applicant-body .admin-main {
+    margin-left: 180px
+}
+
+.applicant-body .admin-content {
+    max-width: 1400px
+}
+
+.applicant-body .admin-panel {
+    box-shadow: 0 1px 2px rgba(16, 67, 65, .03)
+}
+
+.applicant-banner {
+    background: #e2f2ef;
+    border-radius: 6px;
+    padding: 14px 18px;
+    color: #245e5b;
+    margin-bottom: 16px
+}
+
+.applicant-banner strong {
+    display: block;
+    margin-bottom: 3px
+}
+
+.pathway-card {
+    background: #fff;
+    border: 1px solid #d9e7e5;
+    border-radius: 7px;
+    padding: 20px;
+    margin-bottom: 16px
+}
+
+.pathway-card h2 {
+    color: #225b59;
+    font-size: 16px;
+    margin: 0 0 5px
+}
+
+.pathway-card h3 {
+    color: #2e5756;
+    font-size: 13px;
+    margin: 0 0 10px
+}
+
+.pathway-card p,
+.pathway-card li {
+    font-size: 11px;
+    color: #758b89
+}
+
+.timeline {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    margin-top: 18px
+}
+
+.timeline-step {
+    position: relative;
+    text-align: center;
+    padding: 0 7px
+}
+
+.timeline-step:before {
+    content: "";
+    position: absolute;
+    top: 11px;
+    left: -50%;
+    right: 50%;
+    height: 2px;
+    background: #d7e8e5
+}
+
+.timeline-step:first-child:before {
+    display: none
+}
+
+.timeline-dot {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    background: #3a8984;
+    color: #fff;
+    font-size: 10px
+}
+
+.timeline-step.pending .timeline-dot {
+    background: #e8f0ef;
+    color: #62817e
+}
+
+.timeline-step strong,
+.timeline-step small {
+    display: block;
+    font-size: 10px;
+    margin-top: 6px
+}
+
+.timeline-step small {
+    color: #849694
+}
+
+.status-list {
+    list-style: none;
+    padding: 0;
+    margin: 0
+}
+
+.status-list li {
+    border-top: 1px solid #e6eeee;
+    padding: 13px 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px
+}
+
+.kpi-large {
+    font-size: 28px !important;
+    color: #1b5b59 !important
+}
+
+.applicant-form textarea {
+    width: 100%;
+    border: 1px solid #dbe8e6;
+    border-radius: 5px;
+    padding: 9px;
+    font: inherit
+}
+
+.checklist li {
+    margin: 9px 0;
+    list-style: none
+}
+
+.checklist li:before {
+    content: "✓";
+    color: #2f8580;
+    margin-right: 8px
+}
+
+.checklist li.pending:before {
+    content: "○";
+    color: #98aaa8
+}
+
+.notice {
+    font-size: 11px
+}
+
+@media(max-width:700px) {
+
+    .applicant-sidebar {
+        position: static;
+        width: auto
+    }
+
+    .applicant-body .admin-main {
+        margin: 0
+    }
+
+    .timeline {
+        grid-template-columns: 1fr
+    }
+
+    .timeline-step {
+        text-align: left;
+        padding: 8px 0 8px 35px
+    }
+
+    .timeline-step:before {
+        left: 11px;
+        top: -2px;
+        bottom: 50%;
+        width: 2px;
+        height: auto
+    }
+
+    .timeline-step:first-child:before {
+        display: none
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: 0;
+        top: 5px
+    }
+
+    .admin-topbar {
+        padding: 0 12px
+    }
+
+    .admin-topbar span:first-child {
+        max-width: 60%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis
+    }
+
+}
+
+/* Applicant-specific iOS surfaces. */
+.applicant-banner {
+    background: rgba(229, 246, 243, 0.86);
+    color: #17615b;
+}
+
+.pathway-card {
+    padding: 26px;
+}
+
+.pathway-card h2,
+.pathway-card h3 {
+    color: #1d1d1f;
+}
+
+.pathway-card p,
+.pathway-card li {
+    color: #6e6e73;
+}
+
+.timeline-dot {
+    background: #007aff;
+    box-shadow: 0 0 0 5px rgba(0, 122, 255, 0.1);
+}
+
+.timeline-step.pending .timeline-dot {
+    background: #dfeaf7;
+    box-shadow: none;
+}
+
+.status-list li {
+    border-top-color: rgba(60, 60, 67, 0.13);
+}
+
+.checklist li:before {
+    color: #007aff;
+}
+
+@media (max-width: 760px) {
+    .applicant-body .admin-content {
+        padding: 22px 14px;
+    }
+
+    .applicant-body .admin-heading {
+        margin-bottom: 18px;
+    }
+
+    .applicant-body .admin-heading h1 {
+        font-size: 28px;
+    }
+
+    .applicant-banner {
+        padding: 13px 15px;
+    }
+
+    .pathway-card {
+        padding: 20px 17px;
+    }
+
+    .pathway-card .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pathway-card .field.full {
+        grid-column: auto;
+    }
+
+    .status-list li {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .status-list li > :last-child {
+        text-align: right;
+    }
+}
+
+/* Keep applicant navigation consistent with the admin and agent workspaces. */
+.applicant-sidebar {
+    background: linear-gradient(180deg, #123f3d 0%, #0c5d58 100%);
+    box-shadow: 4px 0 24px rgba(20, 67, 65, 0.12);
+    padding: 18px 14px;
+    width: 232px;
+}
+
+.applicant-body .admin-main {
+    margin-left: 232px;
+}
+
+@media (max-width: 760px) {
+    .applicant-sidebar {
+        padding: 14px 12px;
+        width: auto;
+    }
+
+    .applicant-body .admin-main {
+        margin-left: 0;
+    }
+}
