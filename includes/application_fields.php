@@ -1,7 +1,7 @@
 <?php
 /**
- * Application questions shared by the one-page sign-up (auth/signup.php) and the
- * workspace "Form" page (includes/application_form.php), so both ask and validate the same things.
+ * Qualifications form questions, asked on the workspace "Form" page (includes/application_form.php)
+ * after an applicant creates their account on auth/signup.php.
  *
  * Pathways use the database values: 'employee_va' or 'internship'.
  */
@@ -68,7 +68,7 @@ function mentora_application_errors(array $values, string $pathway): array
     }
 
     $limits = ['mobile' => [40, 'Mobile number'], 'location' => [190, 'City / province'], 'desired_role' => [190, 'Desired role'],
-        'school' => [190, 'School / university'], 'course' => [190, 'Course / program'], 'skills' => [5000, 'Skills and background']];
+        'school' => [190, 'School / university'], 'course' => [190, 'Course / program'], 'skills' => [5000, 'Skills and experience']];
     foreach ($limits as $field => [$max, $label]) {
         if (mb_strlen($values[$field]) > $max) {
             $errors[] = "{$label} must be {$max} characters or fewer.";
@@ -144,59 +144,50 @@ function mentora_notify_new_application(string $name, string $email, string $pat
 }
 
 /**
- * Print the application questions.
- *
- * $switchable = true (sign-up page): both pathways' questions are printed; the ones for the
- * pathway that is not selected start hidden and disabled, and the page's script swaps them when
- * the pathway radio changes. $switchable = false (workspace form): only $pathway's questions.
+ * Print the qualifications questions for $pathway ('employee_va' or 'internship').
+ * Used by the workspace "Form" page (includes/application_form.php).
  */
-function mentora_render_application_fields(array $values, string $pathway, bool $switchable = false): void
+function mentora_render_application_fields(array $values, string $pathway): void
 {
     $h = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-    $group = static function (string $forPathway) use ($pathway, $switchable): string {
-        $off = $forPathway !== $pathway;
-        return ($switchable ? ' data-pathway="' . $forPathway . '"' : '') . ($off ? ' hidden' : '');
-    };
-    $disabled = static fn(string $forPathway): string => $forPathway !== $pathway ? ' disabled' : '';
-    $show = static fn(string $forPathway): bool => $switchable || $forPathway === $pathway;
+    $isIntern = $pathway === 'internship';
     ?>
     <div class="form-grid">
         <div class="field">
             <label for="mobile">Mobile number</label>
-            <input id="mobile" name="mobile" maxlength="40" autocomplete="tel" value="<?= $h($values['mobile']) ?>">
+            <input id="mobile" type="tel" name="mobile" maxlength="40" autocomplete="tel" placeholder="e.g. 0917 123 4567" value="<?= $h($values['mobile']) ?>">
         </div>
         <div class="field">
             <label for="location">City / province</label>
-            <input id="location" name="location" maxlength="190" placeholder="Where are you based?" value="<?= $h($values['location']) ?>">
+            <input id="location" name="location" maxlength="190" autocomplete="address-level2" placeholder="e.g. Quezon City, Metro Manila" value="<?= $h($values['location']) ?>">
         </div>
 
-        <?php if ($show('employee_va')): ?>
-            <div class="field full"<?= $group('employee_va') ?>>
-                <label for="desired_role">Desired employee VA role *</label>
-                <input id="desired_role" name="desired_role" required maxlength="190" placeholder="e.g. Customer support" value="<?= $h($values['desired_role']) ?>"<?= $disabled('employee_va') ?>>
-            </div>
-        <?php endif; ?>
-
-        <?php if ($show('internship')): ?>
-            <div class="field full"<?= $group('internship') ?>>
+        <?php if ($isIntern): ?>
+            <div class="field full">
                 <label for="school">School / university *</label>
-                <input id="school" name="school" required maxlength="190" value="<?= $h($values['school']) ?>"<?= $disabled('internship') ?>>
+                <input id="school" name="school" required maxlength="190" placeholder="Name of your school or university" value="<?= $h($values['school']) ?>">
             </div>
-            <div class="field"<?= $group('internship') ?>>
+            <div class="field">
                 <label for="course">Course / program *</label>
-                <input id="course" name="course" required maxlength="190" value="<?= $h($values['course']) ?>"<?= $disabled('internship') ?>>
+                <input id="course" name="course" required maxlength="190" placeholder="e.g. BS Information Systems" value="<?= $h($values['course']) ?>">
             </div>
-            <div class="field"<?= $group('internship') ?>>
+            <div class="field">
                 <label for="required_hours">Required internship hours *</label>
-                <input id="required_hours" type="number" name="required_hours" required min="1" max="5000" value="<?= $h($values['required_hours']) ?>"<?= $disabled('internship') ?>>
+                <input id="required_hours" type="number" name="required_hours" required min="1" max="5000" value="<?= $h($values['required_hours']) ?>">
+                <small>The total hours your school requires (OJT).</small>
             </div>
-            <div class="field"<?= $group('internship') ?>>
+            <div class="field">
                 <label for="interest">Area of interest *</label>
-                <select id="interest" name="interest"<?= $disabled('internship') ?>>
+                <select id="interest" name="interest">
                     <?php foreach (MENTORA_INTEREST_OPTIONS as $option): ?>
                         <option <?= $values['interest'] === $option ? 'selected' : '' ?>><?= $h($option) ?></option>
                     <?php endforeach; ?>
                 </select>
+            </div>
+        <?php else: ?>
+            <div class="field full">
+                <label for="desired_role">Role you’re applying for *</label>
+                <input id="desired_role" name="desired_role" required maxlength="190" placeholder="e.g. Customer support VA, Executive assistant" value="<?= $h($values['desired_role']) ?>">
             </div>
         <?php endif; ?>
 
@@ -205,8 +196,10 @@ function mentora_render_application_fields(array $values, string $pathway, bool 
             <input id="start_date" type="date" name="start_date" value="<?= $h($values['start_date']) ?>">
         </div>
         <div class="field full">
-            <label for="skills">Skills and background</label>
-            <textarea id="skills" name="skills" rows="4" maxlength="5000" placeholder="Tell us about your skills, tools, education, experience, or what you hope to learn."><?= $h($values['skills']) ?></textarea>
+            <label for="skills">Skills and experience</label>
+            <textarea id="skills" name="skills" rows="5" maxlength="5000" placeholder="<?= $isIntern
+                ? 'Tools you can use, school projects, organisations, and what you hope to learn during your internship.'
+                : 'Your work experience, tools and software you use, languages, and the kind of clients you have supported.' ?>"><?= $h($values['skills']) ?></textarea>
         </div>
     </div>
     <?php

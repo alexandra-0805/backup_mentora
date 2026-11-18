@@ -1,9 +1,8 @@
 <?php
 /**
- * Workspace "Form" page: view and update your application.
- * New applicants fill in the same questions on the one-page sign-up (auth/signup.php);
- * this page also lets an applicant without an application yet (e.g. an account added by
- * hand in phpMyAdmin) complete it before using their workspace.
+ * Workspace "Form" page: the qualifications form (step 2 after creating an account on
+ * auth/signup.php). New applicants land here right after sign-up, and sign-in sends any
+ * applicant without a submitted form here first. After submitting, they can come back to update it.
  *
  * Included by applicant/intern/form.php and applicant/employee/form.php with $pathway set
  * to 'intern' or 'employee'.
@@ -65,25 +64,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = $isIntern ? 'Internship application form' : 'Employee VA application form';
+$pageTitle = $isIntern ? 'Internship qualifications form' : 'Employee VA qualifications form';
 $activePage = 'form.php';
 require __DIR__ . '/applicant_layout.php';
 ?>
 <div class="admin-heading">
     <div>
-        <h1><?= $isIntern ? 'Your internship application' : 'Your employee VA application' ?></h1>
+        <h1><?= $isIntern ? 'Internship qualifications' : 'Employee VA qualifications' ?></h1>
         <p><?= $isIntern
-            ? 'Your school requirements, placement interests and availability for supervised work experience.'
-            : 'Your strengths, availability and the kind of work you want to do.' ?></p>
+            ? 'Tell us about your school, your required hours and what you want to learn, so we can match you with the right team and mentor.'
+            : 'Tell us about the role you want, your experience and your skills, so we can match you with the right client team.' ?></p>
     </div>
-    <span class="badge info"><?= $application ? 'Submitted · ' . $e(ucfirst((string) $application['status'])) : 'Not submitted yet' ?></span>
+    <span class="badge info"><?= $application ? 'Submitted · ' . $e(ucfirst((string) $application['status'])) : 'Step 2 of 2' ?></span>
 </div>
 
 <div class="applicant-banner">
     <?php if ($application): ?>
-        <strong>Your application has been received.</strong>You can update your details below at any time.
+        <strong>Your qualifications form has been received.</strong>You can update your details below at any time.
     <?php else: ?>
-        <strong>One more step, <?= $e(explode(' ', $formUser['name'])[0]) ?>.</strong>Complete your application to start using your <?= $isIntern ? 'internship' : 'employee' ?> workspace. Fields marked with * are required.
+        <strong>Almost done, <?= $e(explode(' ', $formUser['name'])[0]) ?>.</strong>Your account is set up. Fill in this form so the Mentora team can review your qualifications. Fields marked with * are required.
     <?php endif; ?>
 </div>
 
@@ -93,7 +92,7 @@ require __DIR__ . '/applicant_layout.php';
 
 <form class="pathway-card applicant-form" method="post">
     <?= mentora_csrf_field() ?>
-    <h3>Application details</h3>
+    <h3>Your qualifications</h3>
     <?php mentora_render_application_fields($answers, $formPathway); ?>
     <label><input type="checkbox" name="confirm" required> I confirm the information provided is accurate.</label>
     <div class="form-actions">

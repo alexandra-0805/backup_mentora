@@ -1,0 +1,2 @@
+# Local secrets (Google OAuth client secret)
+config/google.local.php

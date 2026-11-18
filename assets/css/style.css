@@ -428,7 +428,6 @@ body {
 
 .auth-links {
     text-align: center;
-    border-top: 1px solid var(--line);
     margin-top: 24px;
     padding-top: 20px;
     color: var(--muted);
@@ -449,6 +448,229 @@ body {
 .auth-links a:hover {
     color: var(--deep);
     text-decoration: underline;
+}
+
+/* Field checks (assets/js/forms.js + server messages): red when wrong, green when right. */
+.field-error,
+.field .field-error,
+.account-card .field .field-error {
+    color: #b42318;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.field-error:empty {
+    display: none;
+}
+
+.check + .field-error {
+    display: block;
+    margin: -12px 0 16px 24px;
+}
+
+.check + .field-error:empty {
+    display: none;
+}
+
+body:not(.landing-page) .field input[aria-invalid="true"],
+body:not(.landing-page) .field input[aria-invalid="true"]:focus,
+.check input[aria-invalid="true"] {
+    border-color: #d92d20;
+    box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.12);
+    outline-color: rgba(217, 45, 32, 0.4);
+}
+
+body:not(.landing-page) .field input.is-valid {
+    border-color: var(--mentora-green);
+}
+
+/* Password checklist: grey until each rule is met, then green with a tick. */
+.password-rules {
+    display: grid;
+    gap: 4px 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+}
+
+.password-rules li {
+    align-items: center;
+    color: #6e6e73;
+    display: flex;
+    font-size: 12px;
+    gap: 6px;
+    line-height: 1.35;
+    transition: color 160ms ease;
+}
+
+.password-rules li::before {
+    align-items: center;
+    border: 1.5px solid rgba(60, 60, 67, 0.35);
+    border-radius: 50%;
+    content: "";
+    display: inline-flex;
+    flex: 0 0 14px;
+    font-size: 9px;
+    font-weight: 800;
+    height: 14px;
+    justify-content: center;
+    transition: background 160ms ease, border-color 160ms ease;
+    width: 14px;
+}
+
+.password-rules li.is-met {
+    color: var(--mentora-green);
+}
+
+.password-rules li.is-met::before {
+    background: var(--mentora-green);
+    border-color: var(--mentora-green);
+    color: #fff;
+    content: "✓";
+}
+
+@media (max-width: 520px) {
+    .password-rules {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Show / hide password button (added by the script in includes/footer.php). */
+.password-field {
+    position: relative;
+    width: 100%;
+}
+
+.password-field input {
+    padding-right: 50px;
+    width: 100%;
+}
+
+.password-toggle {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: #6e6e73;
+    cursor: pointer;
+    display: flex;
+    height: 36px;
+    justify-content: center;
+    padding: 0;
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: background 180ms ease, color 180ms ease;
+    width: 36px;
+}
+
+.password-toggle svg {
+    fill: none;
+    height: 20px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    width: 20px;
+}
+
+.password-toggle .icon-hide,
+.password-toggle.is-visible .icon-show {
+    display: none;
+}
+
+.password-toggle.is-visible .icon-hide {
+    display: block;
+}
+
+.password-toggle:hover,
+.password-toggle.is-visible {
+    background: var(--mentora-pale);
+    color: var(--mentora-teal);
+}
+
+.password-toggle:focus-visible {
+    outline: 3px solid var(--mentora-mint);
+    outline-offset: 1px;
+}
+
+/* "Continue with Google" button and the "or" divider (sign-up and sign-in). */
+.google-auth {
+    margin: 18px 0 0;
+}
+
+.google-auth small {
+    color: #6e6e73;
+    display: block;
+    font-size: 11px;
+    line-height: 1.5;
+    margin-top: 8px;
+    text-align: center;
+}
+
+.google-button {
+    align-items: center;
+    background: #fff;
+    border: 1px solid rgba(60, 60, 67, 0.22);
+    border-radius: 999px;
+    color: #1d1d1f;
+    cursor: pointer;
+    display: flex;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    gap: 12px;
+    justify-content: center;
+    min-height: 46px;
+    padding: 12px 20px;
+    transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    width: 100%;
+}
+
+.google-button svg {
+    flex: 0 0 auto;
+    height: 18px;
+    width: 18px;
+}
+
+.google-button:hover {
+    background: var(--mentora-pale);
+    border-color: rgba(11, 98, 93, 0.45);
+    box-shadow: 0 8px 18px rgba(6, 61, 59, 0.1);
+}
+
+.google-button:focus-visible {
+    outline: 3px solid var(--mentora-mint);
+    outline-offset: 2px;
+}
+
+.auth-divider {
+    align-items: center;
+    color: #6e6e73;
+    display: flex;
+    font-size: 12px;
+    gap: 14px;
+    margin: 22px 0 6px;
+}
+
+.account-card .auth-divider + fieldset {
+    border-top: 0;
+    padding-top: 12px;
+}
+
+.account-card .google-auth {
+    margin-top: 8px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    background: rgba(60, 60, 67, 0.15);
+    content: "";
+    flex: 1;
+    height: 1px;
 }
 
 .alert {
@@ -1236,10 +1458,24 @@ body:not(.landing-page) .pathway-choice label:has(input:checked) {
     display: grid;
     gap: 10px;
     grid-template-columns: repeat(3, 1fr);
-    margin: 28px 0 34px;
+    list-style: none;
+    margin: 28px 0 12px;
+    padding: 0;
 }
 
-.account-steps span {
+.account-required {
+    color: #6e6e73;
+    font-size: 12px;
+    margin: 20px 0 26px;
+}
+
+.account-hint {
+    color: #6e6e73;
+    font-size: 13px;
+    margin: 0 0 12px;
+}
+
+.account-steps li {
     align-items: center;
     background: #f5f5f7;
     border: 1px solid rgba(60, 60, 67, 0.1);
@@ -1297,8 +1533,43 @@ body:not(.landing-page) .pathway-choice label:has(input:checked) {
     display: none !important;
 }
 
+.account-card .pathway-choice {
+    margin-bottom: 22px;
+}
+
 .account-card .pathway-choice label {
+    align-items: flex-start;
     border-radius: 14px;
+    display: flex;
+    gap: 2px;
+    padding: 14px 16px;
+}
+
+.account-card .pathway-choice input {
+    flex: 0 0 auto;
+    margin-top: 3px;
+}
+
+.account-card .pathway-choice strong {
+    color: var(--mentora-deep);
+    display: block;
+    font-size: 14px;
+}
+
+.account-card .pathway-choice small {
+    color: #6e6e73;
+    display: block;
+    font-size: 12px;
+    line-height: 1.45;
+    margin-top: 3px;
+}
+
+.account-card .field small {
+    color: #6e6e73;
+}
+
+.account-card fieldset > .form-grid + .form-grid {
+    margin-top: 14px;
 }
 
 .account-card .check {
@@ -2987,11 +3258,11 @@ body:not(.landing-page) .pathway-choice label:hover {
 }
 
 /* Sign-up step chips. */
-.account-steps span {
+.account-steps li {
     transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 
-.account-steps span:hover {
+.account-steps li:hover {
     background: var(--mentora-pale);
     border-color: rgba(11, 98, 93, 0.25);
     color: var(--mentora-deep);
@@ -3386,7 +3657,7 @@ body:not(.landing-page) .field textarea:hover {
 
 /* About page. */
 .about-page .about-hero {
-    min-height: 0;
+    min-height: 699px;
     padding: 150px 24px 96px;
 }
 

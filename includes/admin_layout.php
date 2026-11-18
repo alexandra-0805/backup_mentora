@@ -55,7 +55,7 @@ $adminNav = [
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $e($pageTitle) ?></title>
     <link rel="icon" type="image/png" href="../assets/images/mentora-logo.png?v=1">
-    <link rel="stylesheet" href="../assets/css/style.css?v=28">
+    <link rel="stylesheet" href="../assets/css/style.css?v=36">
     <link rel="stylesheet" href="../assets/css/admin.css?v=5">
 </head>
 

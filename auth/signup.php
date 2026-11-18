@@ -1,78 +1,82 @@
 <?php
+
 /**
- * One-page sign-up: account + application form together.
- * Landing page -> this page -> intern workspace (Internship) or employee workspace (Employee VA).
+ * Sign-up: creates the account only (name, email, pathway, password).
+ * Landing page -> this page -> qualifications form for the chosen pathway
+ * (applicant/intern/form.php or applicant/employee/form.php) -> intern or employee workspace.
  */
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
-require_once __DIR__ . '/../includes/application_fields.php';
+require_once __DIR__ . '/../includes/google_auth.php';
 
 $signedIn = mentora_current_user();
 $isStaff = $signedIn !== null && in_array($signedIn['role'], ['admin', 'agent'], true);
 
-// Applicants who already have an account continue where they left off.
+// Applicants who already have an account continue where they left off (form or workspace).
 // Admins and agents may stay: they use this page to add people, without being signed out.
 if ($signedIn !== null && !$isStaff) {
     mentora_redirect(mentora_after_sign_in_path($pdo, $signedIn));
 }
 
 $errors = [];
+mentora_session_start();
+if (!empty($_SESSION['flash_error']) && is_string($_SESSION['flash_error'])) {
+    $errors[] = $_SESSION['flash_error'];   // e.g. from Continue with Google
+}
+unset($_SESSION['flash_error']);
 $created = null;
-$newUserId = 0;
 $account = [
     'first_name' => '',
     'last_name' => '',
     'email' => '',
     'pathway' => (($_GET['pathway'] ?? '') === 'internship') ? 'internship' : 'employee_va',
 ];
-$answers = mentora_application_values();
+
+$fieldErrors = [];   // field name => message, shown under that field
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($account as $key => $_) {
-        $account[$key] = trim(mentora_post_string($key));
+        // Trim and collapse repeated spaces, e.g. "Juan   Dela  Cruz" -> "Juan Dela Cruz".
+        $account[$key] = preg_replace('/\s+/u', ' ', trim(mentora_post_string($key)));
     }
-    $answers = mentora_application_from_post($answers);
+    $account['email'] = strtolower($account['email']);
     $password = mentora_post_string('password');
     $confirmPassword = mentora_post_string('confirm_password');
 
     if (!mentora_csrf_valid($_POST['csrf_token'] ?? null)) {
         $errors[] = 'Your session expired. Please submit the form again.';
     }
-    if ($account['first_name'] === '' || $account['last_name'] === '') {
-        $errors[] = 'Please enter your full name.';
-    } elseif (mb_strlen($account['first_name']) > 80 || mb_strlen($account['last_name']) > 80) {
-        $errors[] = 'First and last name must be 80 characters or fewer.';
-    }
-    if (!filter_var($account['email'], FILTER_VALIDATE_EMAIL) || mb_strlen($account['email']) > 190) {
-        $errors[] = 'Please enter a valid email address.';
-    }
     if (!in_array($account['pathway'], ['employee_va', 'internship'], true)) {
         $account['pathway'] = 'employee_va';
-        $errors[] = 'Please choose Employee VA or Internship.';
-    } else {
-        array_push($errors, ...mentora_application_errors($answers, $account['pathway']));
+        $fieldErrors['pathway'] = 'Please choose Employee VA or Intern.';
     }
-    if ($passwordError = mentora_password_error($password)) {
-        $errors[] = $passwordError;
-    }
-    if ($password !== $confirmPassword) {
-        $errors[] = 'Passwords do not match.';
+    $fieldErrors['first_name'] = mentora_name_error($account['first_name'], 'first name');
+    $fieldErrors['last_name'] = mentora_name_error($account['last_name'], 'last name');
+    $fieldErrors['email'] = mentora_email_error($account['email']);
+    $fieldErrors['password'] = mentora_password_error($password);
+    if ($confirmPassword === '') {
+        $fieldErrors['confirm_password'] = 'Please enter your password again.';
+    } elseif ($password !== $confirmPassword) {
+        $fieldErrors['confirm_password'] = 'Passwords do not match.';
     }
     if (!isset($_POST['agree'])) {
-        $errors[] = 'Please confirm that your information is accurate and accept the Data Privacy Notice.';
+        $fieldErrors['agree'] = 'Please accept the Data Privacy Notice to create an account.';
     }
+    $fieldErrors = array_filter($fieldErrors);
 
-    if (!$errors) {
+    if (!$errors && !$fieldErrors) {
         $check = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $check->execute([$account['email']]);
         if ($check->fetch()) {
-            $errors[] = 'An account with that email already exists. Please sign in instead.';
+            $fieldErrors['email'] = 'An account with this email already exists. Please sign in instead.';
         }
+    }
+    if ($fieldErrors) {
+        $errors[] = 'Please fix the highlighted fields.';
     }
 
     if (!$errors) {
         try {
-            $pdo->beginTransaction();
             $pdo->prepare(
                 'INSERT INTO users (first_name, last_name, email, pathway, password_hash)
                  VALUES (?, ?, ?, ?, ?)'
@@ -84,146 +88,139 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 password_hash($password, PASSWORD_DEFAULT),
             ]);
             $newUserId = (int) $pdo->lastInsertId();
-            mentora_save_application($pdo, $newUserId, mentora_application_row($answers, $account['pathway']));
-            $pdo->commit();
         } catch (PDOException $exception) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
             error_log('Mentora sign-up failed: ' . $exception->getMessage());
-            $errors[] = 'We could not submit your application right now. Please try again.';
+            $errors[] = 'We could not create your account right now. Please try again.';
         }
     }
 
     if (!$errors) {
-        $fullName = $account['first_name'] . ' ' . $account['last_name'];
-        mentora_notify_new_application($fullName, $account['email'], $account['pathway']);
-
         if ($isStaff) {
             // Staff adding someone: keep the staff member signed in and clear the form.
+            // The new applicant fills in their qualifications form the first time they sign in.
             $created = $account;
             $account = ['first_name' => '', 'last_name' => '', 'email' => '', 'pathway' => $created['pathway']];
-            $answers = mentora_application_values();
         } else {
-            // New applicant: sign them in and open their pathway's workspace.
+            // New applicant: sign them in and take them to their pathway's qualifications form.
             $row = $pdo->prepare('SELECT id, user_code, first_name, last_name, email, pathway, password_hash, role FROM users WHERE id = ?');
             $row->execute([$newUserId]);
             mentora_sign_in($row->fetch());
-            $_SESSION['flash_notice'] = 'Application submitted. Welcome to your '
-                . ($account['pathway'] === 'internship' ? 'internship' : 'employee') . ' workspace — we’ll review your details and keep you updated here.';
-            mentora_redirect(mentora_home_path($_SESSION['user']));
+            $_SESSION['flash_notice'] = 'Your account is ready. Next, tell us about your qualifications so we can review your application.';
+            mentora_redirect(mentora_form_path($_SESSION['user']));
         }
     }
 }
 
-$pageTitle = 'Apply to Mentora';
+$pageTitle = 'Create your Mentora account';
 $bodyClass = 'account-page';
 $headerStyle = 'signin-page';
 $h = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+// aria-invalid + the server's message under a field (the live checks in assets/js/forms.js reuse the same slot).
+$invalid = static fn(string $field): string => isset($fieldErrors[$field]) ? ' aria-invalid="true"' : '';
+$fieldError = static fn(string $field): string => '<small class="field-error" id="' . $field . '-error" role="alert">'
+    . (isset($fieldErrors[$field]) ? $h($fieldErrors[$field]) : '') . '</small>';
 require __DIR__ . '/../includes/header.php';
 ?>
 <main class="auth-shell account-shell">
     <section class="auth-card wide account-card">
-        <p class="eyebrow">One page · three simple steps</p>
-        <h1>Apply to Mentora.</h1>
-        <p class="intro">
-            Create your account and complete your application in one go. When you submit,
-            you’ll go straight to your internship or employee workspace.
-        </p>
-
-        <div class="account-steps" aria-label="Application steps">
-            <span><b>1</b>Your details</span>
-            <span><b>2</b>Your pathway</span>
-            <span><b>3</b>Secure account</span>
-        </div>
-
+        <h1><?= $isStaff ? 'Create an applicant account.' : 'Create your account.' ?></h1>
         <?php if ($created): ?>
             <div class="alert success">
-                Account and application created for <?= $h($created['first_name'] . ' ' . $created['last_name']) ?> (<?= $h($created['email']) ?>).
+                Account created for <?= $h($created['first_name'] . ' ' . $created['last_name']) ?> (<?= $h($created['email']) ?>)
+                as <?= $created['pathway'] === 'internship' ? 'an intern' : 'an employee VA' ?>.
             </div>
         <?php endif; ?>
         <?php if ($errors): ?>
             <div class="alert"><?= $h(implode(' ', $errors)) ?></div>
         <?php endif; ?>
 
-        <form method="post" id="apply-form">
+        <form method="post" id="signup-form" data-validate>
             <?= mentora_csrf_field() ?>
             <fieldset>
-                <legend>1. Tell us about yourself</legend>
-                <div class="form-grid">
-                    <div class="field">
-                        <label for="first_name">First name *</label>
-                        <input id="first_name" name="first_name" required maxlength="80" autocomplete="given-name" value="<?= $h($account['first_name']) ?>">
-                    </div>
-                    <div class="field">
-                        <label for="last_name">Last name *</label>
-                        <input id="last_name" name="last_name" required maxlength="80" autocomplete="family-name" value="<?= $h($account['last_name']) ?>">
-                    </div>
-                    <div class="field full">
-                        <label for="email">Email address *</label>
-                        <input id="email" type="email" name="email" required maxlength="190" autocomplete="email" value="<?= $h($account['email']) ?>">
-                    </div>
-                </div>
-            </fieldset>
-
-            <fieldset>
-                <legend>2. Choose your pathway</legend>
                 <div class="pathway-choice">
                     <label>
                         <input type="radio" name="pathway" value="employee_va" <?= $account['pathway'] === 'employee_va' ? 'checked' : '' ?>>
-                        Employee VA
+                        <span><strong>Employee VA</strong></span>
                     </label>
                     <label>
                         <input type="radio" name="pathway" value="internship" <?= $account['pathway'] === 'internship' ? 'checked' : '' ?>>
-                        Internship
+                        <span><strong>Intern</strong></span>
                     </label>
                 </div>
-                <?php mentora_render_application_fields($answers, $account['pathway'], true); ?>
+                <?= isset($fieldErrors['pathway']) ? $fieldError('pathway') : '' ?>
             </fieldset>
 
             <fieldset>
-                <legend>3. Secure your account</legend>
                 <div class="form-grid">
                     <div class="field">
-                        <label for="password">Password *</label>
-                        <input id="password" type="password" name="password" required minlength="8" autocomplete="new-password">
-                        <small>At least 8 characters, including a number and symbol.</small>
+                        <label for="first_name">First name *</label>
+                        <input id="first_name" name="first_name" required minlength="2" maxlength="80" autocomplete="given-name" placeholder="First Name"
+                               data-check="name" data-label="first name" aria-describedby="first_name-error"<?= $invalid('first_name') ?> value="<?= $h($account['first_name']) ?>">
+                        <?= $fieldError('first_name') ?>
                     </div>
                     <div class="field">
-                        <label for="confirm_password">Confirm password *</label>
-                        <input id="confirm_password" type="password" name="confirm_password" required minlength="8" autocomplete="new-password">
+                        <label for="last_name">Last name *</label>
+                        <input id="last_name" name="last_name" required minlength="2" maxlength="80" autocomplete="family-name" placeholder="Last Name"
+                               data-check="name" data-label="last name" aria-describedby="last_name-error"<?= $invalid('last_name') ?> value="<?= $h($account['last_name']) ?>">
+                        <?= $fieldError('last_name') ?>
+                    </div>
+                    <div class="field full">
+                        <label for="email">Email address *</label>
+                        <input id="email" type="email" name="email" required maxlength="190" autocomplete="email" placeholder="name@gmail.com"
+                               data-check="email" aria-describedby="email-error"<?= $invalid('email') ?> value="<?= $h($account['email']) ?>">
+                        <?= $fieldError('email') ?>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <input id="password" type="password" name="password" required minlength="8" maxlength="64" autocomplete="new-password"
+                               data-check="password" aria-describedby="password-rules password-error"<?= $invalid('password') ?>>
+                        <ul class="password-rules" id="password-rules" aria-label="Password requirements">
+                            <?php foreach (array_keys(mentora_password_checks('')) as $n => $rule): ?>
+                                <li data-rule="<?= $n ?>"><?= $h(ucfirst($rule)) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?= $fieldError('password') ?>
+                    </div>
+                    <div class="field">
+                        <label for="confirm_password">Confirm password</label>
+                        <input id="confirm_password" type="password" name="confirm_password" required maxlength="64" autocomplete="new-password"
+                               data-check="match" data-match="password" aria-describedby="confirm_password-error"<?= $invalid('confirm_password') ?>>
+                        <?= $fieldError('confirm_password') ?>
                     </div>
                 </div>
             </fieldset>
 
             <label class="check">
-                <input type="checkbox" name="agree" required>
-                I confirm the information is accurate and acknowledge the Data Privacy Notice.
+                <input type="checkbox" name="agree" required data-check="agree" aria-describedby="agree-error"<?= $invalid('agree') ?>>
+                I agree to Mentora collecting and using my information to create my account and process my application,
+                as described in the Data Privacy Notice.
             </label>
+            <?= $fieldError('agree') ?>
             <div class="form-actions">
                 <button class="button button-primary" type="submit">
-                    <?= $isStaff ? 'Create account' : 'Submit &amp; open my workspace' ?> <span>→</span>
+                    <?= $isStaff ? 'Create applicant account' : 'Create account &amp; continue' ?>
                 </button>
             </div>
         </form>
-        <div class="auth-links">Already have an account? <a href="signin.php">Sign in ↗</a></div>
+
+        <?php if (!$isStaff): ?>
+            <div class="auth-divider"><span>or</span></div>
+            <div class="google-auth">
+                <?php // Outside the main form, so it has its own; the chosen pathway is copied into it (see forms.js). ?>
+                <form method="post" action="google.php" id="google-signup">
+                    <?= mentora_csrf_field() ?>
+                    <input type="hidden" name="pathway" value="<?= $h($account['pathway']) ?>" data-pathway-from="signup-form">
+                    <?php mentora_google_button('signup'); ?>
+                </form>
+            </div>
+            <div class="auth-links">Already have an account? <a href="signin.php">Sign in</a></div>
+        <?php endif; ?>
     </section>
+
 </main>
-<script>
-    // Show only the questions for the selected pathway. Hidden questions are disabled,
-    // so they are neither required nor submitted.
-    (() => {
-        const form = document.getElementById('apply-form');
-        const sync = () => {
-            const selected = form.querySelector('input[name="pathway"]:checked')?.value;
-            form.querySelectorAll('[data-pathway]').forEach((group) => {
-                const active = group.dataset.pathway === selected;
-                group.hidden = !active;
-                group.querySelectorAll('input, select, textarea').forEach((input) => { input.disabled = !active; });
-            });
-        };
-        form.querySelectorAll('input[name="pathway"]').forEach((input) => input.addEventListener('change', sync));
-        sync();
-    })();
-</script>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

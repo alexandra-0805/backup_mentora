@@ -48,6 +48,6 @@ require __DIR__ . '/../includes/header.php';
         <div class="form-actions"><button class="button button-primary" type="submit">Send verification code <span>→</span></button></div>
     </form>
     <div class="notice"><strong>A secure way back to your workspace.</strong><br>If an account exists for this email, you’ll receive a password reset code.</div>
-    <div class="auth-links">Remember your password? <a href="signin.php">Back to sign in ↗</a><br><br>Need help? support@mentora.ph</div>
+    <div class="auth-links">Remember your password? <a href="signin.php">Back to sign in</a><br><br>Need help? support@mentora.ph</div>
 </section></main>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

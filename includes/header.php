@@ -14,7 +14,7 @@ $headerStyle = $headerStyle ?? $bodyClass;
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="icon" type="image/png" href="<?= $root ?>assets/images/mentora-logo.png?v=1">
-    <link rel="stylesheet" href="<?= $root ?>assets/css/style.css?v=28">
+    <link rel="stylesheet" href="<?= $root ?>assets/css/style.css?v=36">
 </head>
 
 <body class="<?= htmlspecialchars($bodyClass, ENT_QUOTES, 'UTF-8') ?>">

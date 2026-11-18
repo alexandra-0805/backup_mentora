@@ -241,10 +241,62 @@ function mentora_reset_code_hash(int $userId, string $code): string
 /**
  * Password policy shared by sign-up and password reset.
  */
+/**
+ * Password rules for new passwords (sign-up and reset). The live checklist in
+ * assets/js/forms.js uses the same rules, so keep the two in step.
+ * Returns [rule label => passed?].
+ */
+function mentora_password_checks(string $password): array
+{
+    $length = mb_strlen($password);
+
+    return [
+        '8 to 64 characters' => $length >= 8 && $length <= 64,
+        'an uppercase letter (A–Z)' => (bool) preg_match('/[A-Z]/', $password),
+        'a lowercase letter (a–z)' => (bool) preg_match('/[a-z]/', $password),
+        'a number (0–9)' => (bool) preg_match('/\d/', $password),
+        'a symbol (e.g. ! @ # $ %)' => (bool) preg_match('/[^A-Za-z0-9\s]/', $password),
+        'no spaces' => $password !== '' && !preg_match('/\s/', $password),
+    ];
+}
+
 function mentora_password_error(string $password): ?string
 {
-    if (strlen($password) < 8 || !preg_match('/\d/', $password) || !preg_match('/[^a-zA-Z\d]/', $password)) {
-        return 'Password must be at least 8 characters and include a number and symbol.';
+    $missing = array_keys(array_filter(mentora_password_checks($password), static fn(bool $ok): bool => !$ok));
+
+    return $missing ? 'Your password needs ' . implode(', ', $missing) . '.' : null;
+}
+
+/**
+ * Validation for a person's first or last name. Letters (any language), spaces,
+ * hyphens, apostrophes and periods only, starting with a letter.
+ */
+function mentora_name_error(string $name, string $label): ?string
+{
+    if ($name === '') {
+        return "Please enter your {$label}.";
+    }
+    if (mb_strlen($name) < 2 || mb_strlen($name) > 80) {
+        return ucfirst($label) . ' must be 2 to 80 characters.';
+    }
+    if (!preg_match("/^\\p{L}[\\p{L}\\p{M} .'’-]*$/u", $name)) {
+        return ucfirst($label) . ' can only contain letters, spaces, hyphens (-), apostrophes (\') and periods.';
+    }
+
+    return null;
+}
+
+/**
+ * Validation for an email address: valid format and a real-looking domain (name.tld).
+ */
+function mentora_email_error(string $email): ?string
+{
+    if ($email === '') {
+        return 'Please enter your email address.';
+    }
+    if (mb_strlen($email) > 190 || !filter_var($email, FILTER_VALIDATE_EMAIL)
+        || !preg_match('/@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/', $email)) {
+        return 'Please enter a valid email address, e.g. name@gmail.com.';
     }
 
     return null;
