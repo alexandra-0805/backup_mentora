@@ -170,6 +170,7 @@ CREATE TABLE `training_records` (
 
 CREATE TABLE `users` (
   `id` int(10) UNSIGNED NOT NULL,
+  `user_code` varchar(20) DEFAULT NULL,
   `first_name` varchar(80) NOT NULL,
   `last_name` varchar(80) NOT NULL,
   `email` varchar(190) NOT NULL,
@@ -248,7 +249,8 @@ ALTER TABLE `training_records`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD UNIQUE KEY `email` (`email`),
+  ADD UNIQUE KEY `uq_users_user_code` (`user_code`);
 
 --
 -- AUTO_INCREMENT for dumped tables

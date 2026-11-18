@@ -6,7 +6,16 @@
     --mist: #f4f8f7;
     --line: #d5e4e2;
     --muted: #6d8584;
-    --white: #fff
+    --white: #fff;
+
+    /* Mentora brand palette, used on every page (landing, sign-in/up, admin, agent, applicant).
+       Taken from the landing hero and workspace sidebar. Use these instead of blue/indigo. */
+    --mentora-deep: #063d3b;   /* darkest teal: hero start, strong text */
+    --mentora-teal: #0b625d;   /* primary: buttons, links, icons, focus */
+    --mentora-green: #147b71;  /* secondary: tags, accents, gradient end */
+    --mentora-mint: #8fefda;   /* highlight: icons on dark/teal fills, accent bar end */
+    --mentora-pale: #e4f2f0;   /* tint: soft backgrounds, badges */
+    --mentora-gradient: linear-gradient(135deg, #063d3b 0%, #0b625d 55%, #147b71 100%);
 }
 
 * {
@@ -201,8 +210,8 @@ body {
 
 .tag {
     float: right;
-    background: #f1eef8;
-    color: #766991;
+    background: var(--mentora-pale);
+    color: var(--mentora-teal);
     border-radius: 4px;
     padding: 3px 8px;
     font-size: 10px
@@ -716,7 +725,7 @@ body {
 }
 
 .landing-page :where(a, summary):focus-visible {
-    outline: 3px solid rgba(0, 122, 255, 0.42);
+    outline: 3px solid rgba(11, 98, 93, 0.42);
     outline-offset: 4px;
 }
 
@@ -763,7 +772,7 @@ body {
 }
 
 .landing-page .mini-card:hover {
-    border-color: rgba(0, 122, 255, 0.28);
+    border-color: rgba(11, 98, 93, 0.28);
     box-shadow: 0 18px 38px rgba(60, 60, 67, 0.12);
 }
 
@@ -776,7 +785,7 @@ body {
 }
 
 .landing-page .preparation-list div:hover {
-    border-bottom-color: rgba(0, 122, 255, 0.4);
+    border-bottom-color: rgba(11, 98, 93, 0.4);
     transform: translateX(4px);
 }
 
@@ -1076,12 +1085,12 @@ body:not(.landing-page) .button {
 }
 
 body:not(.landing-page) .button:hover {
-    box-shadow: 0 8px 18px rgba(0, 122, 255, 0.18);
+    box-shadow: 0 8px 18px rgba(11, 98, 93, 0.18);
     transform: translateY(-1px);
 }
 
 body:not(.landing-page) .button-primary {
-    background: #007aff;
+    background: var(--mentora-teal);
 }
 
 body:not(.landing-page) .auth-shell .form-actions .button-primary {
@@ -1133,8 +1142,8 @@ body:not(.landing-page) .field textarea {
 body:not(.landing-page) .field input:focus,
 body:not(.landing-page) .field select:focus,
 body:not(.landing-page) .field textarea:focus {
-    border-color: #007aff;
-    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.14);
+    border-color: var(--mentora-teal);
+    box-shadow: 0 0 0 4px rgba(11, 98, 93, 0.14);
     outline: 0;
 }
 
@@ -1144,8 +1153,8 @@ body:not(.landing-page) .pathway-choice label {
 }
 
 body:not(.landing-page) .pathway-choice label:has(input:checked) {
-    background: rgba(0, 122, 255, 0.08);
-    border-color: rgba(0, 122, 255, 0.5);
+    background: rgba(11, 98, 93, 0.08);
+    border-color: rgba(11, 98, 93, 0.5);
 }
 
 .landing-notice {
@@ -1244,7 +1253,7 @@ body:not(.landing-page) .pathway-choice label:has(input:checked) {
 
 .account-steps b {
     align-items: center;
-    background: #007aff;
+    background: var(--mentora-teal);
     border-radius: 50%;
     color: #fff;
     display: inline-flex;
@@ -1382,10 +1391,10 @@ iframe {
 .header-icon-link,
 .header-avatar-link {
     align-items: center;
-    background: rgba(0, 122, 255, 0.08);
-    border: 1px solid rgba(0, 122, 255, 0.12);
+    background: rgba(11, 98, 93, 0.08);
+    border: 1px solid rgba(11, 98, 93, 0.12);
     border-radius: 50%;
-    color: #007aff;
+    color: var(--mentora-teal);
     display: inline-flex;
     font-size: 15px;
     height: 34px;
@@ -1397,8 +1406,8 @@ iframe {
 
 .header-icon-link:hover,
 .header-avatar-link:hover {
-    background: rgba(0, 122, 255, 0.16);
-    box-shadow: 0 5px 14px rgba(0, 122, 255, 0.16);
+    background: rgba(11, 98, 93, 0.16);
+    box-shadow: 0 5px 14px rgba(11, 98, 93, 0.16);
     transform: translateY(-1px);
 }
 
@@ -1450,9 +1459,9 @@ iframe {
 
 .utility-empty-icon {
     align-items: center;
-    background: rgba(0, 122, 255, 0.1);
+    background: rgba(11, 98, 93, 0.1);
     border-radius: 50%;
-    color: #007aff;
+    color: var(--mentora-teal);
     display: flex;
     font-size: 24px;
     height: 54px;
@@ -1492,14 +1501,14 @@ iframe {
 }
 
 .utility-item.unread {
-    background: rgba(0, 122, 255, 0.05);
+    background: rgba(11, 98, 93, 0.05);
 }
 
 .utility-item-icon {
     align-items: center;
-    background: rgba(0, 122, 255, 0.1);
+    background: rgba(11, 98, 93, 0.1);
     border-radius: 10px;
-    color: #007aff;
+    color: var(--mentora-teal);
     display: inline-flex;
     flex: 0 0 34px;
     height: 34px;
@@ -1611,7 +1620,7 @@ iframe {
 
 .chat-tabs button.active,
 .chat-tabs button:hover {
-    background: #315d91;
+    background: var(--mentora-teal);
     color: #fff;
 }
 
@@ -1678,7 +1687,7 @@ iframe {
 
 .chat-avatar {
     align-items: center;
-    background: #3d6b97;
+    background: var(--mentora-green);
     border-radius: 50%;
     color: #fff;
     display: inline-flex;
@@ -1691,7 +1700,7 @@ iframe {
 }
 
 .chat-unread-dot {
-    background: #2e9bff;
+    background: var(--mentora-green);
     border-radius: 50%;
     flex: 0 0 8px;
     height: 8px;
@@ -1799,7 +1808,7 @@ iframe {
 }
 
 .chat-composer button {
-    background: #315d91;
+    background: var(--mentora-teal);
     border: 0;
     border-radius: 50%;
     color: #fff;
@@ -1890,7 +1899,7 @@ iframe {
 }
 
 .messages-inbox-item.unread {
-    background: rgba(0, 122, 255, 0.07);
+    background: rgba(11, 98, 93, 0.07);
 }
 
 .messages-inbox-avatar {
@@ -1940,7 +1949,7 @@ iframe {
 }
 
 .messages-inbox-dot {
-    background: #007aff;
+    background: var(--mentora-teal);
     border-radius: 50%;
     flex: 0 0 8px;
     height: 8px;
@@ -2051,8 +2060,8 @@ iframe {
 
 /* iOS-inspired landing page skin. */
 .landing-page {
-    --ios-blue: #007aff;
-    --ios-indigo: #5856d6;
+    --ios-blue: var(--mentora-teal);      /* was iOS blue */
+    --ios-indigo: var(--mentora-green); /* was iOS indigo */
     --ios-teal: #0a8270;
     --ios-surface: rgba(255, 255, 255, 0.78);
     --ios-border: rgba(60, 60, 67, 0.13);
@@ -2190,7 +2199,7 @@ iframe {
 }
 
 .landing-page .button:hover {
-    box-shadow: 0 8px 20px rgba(0, 122, 255, 0.2);
+    box-shadow: 0 8px 20px rgba(11, 98, 93, 0.2);
     transform: translateY(-1px);
 }
 
@@ -2323,7 +2332,7 @@ iframe {
 
 .landing-page .trust-icon,
 .landing-page .icon {
-    background: rgba(0, 122, 255, 0.1);
+    background: rgba(11, 98, 93, 0.1);
     border: 0;
     border-radius: 12px;
     color: var(--ios-blue);
@@ -2393,13 +2402,13 @@ iframe {
 }
 
 .landing-page .feature-card:hover {
-    border-color: rgba(0, 122, 255, 0.35);
+    border-color: rgba(11, 98, 93, 0.35);
     box-shadow: 0 18px 38px rgba(60, 60, 67, 0.13);
     transform: translateY(-5px);
 }
 
 .landing-page .tag {
-    background: rgba(88, 86, 214, 0.1);
+    background: rgba(20, 123, 113, 0.1);
     border-radius: 999px;
     color: var(--ios-indigo);
     padding: 5px 11px;
@@ -2434,6 +2443,133 @@ iframe {
     box-shadow: 0 8px 18px rgba(255, 255, 255, 0.24);
     color: #063d3b;
     transform: translateY(-1px);
+}
+
+/* Pathway cards are information only; one shared Apply link sits below them. */
+.landing-page #pathways .feature-card ul {
+    border-bottom: 0;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.landing-page .pathways-apply {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
+}
+
+/* Mentora theme colours (from the header / hero): deep teal #063d3b, teal #0b625d, green-teal #147b71, mint #8fefda. */
+.landing-page .pathways-apply .text-button {
+    border-color: #0b625d;
+    color: #0b625d;
+    font-size: 15px;
+    padding: 12px 28px;
+}
+
+.landing-page .pathways-apply .text-button:hover {
+    background: linear-gradient(135deg, #063d3b 0%, #0b625d 55%, #147b71 100%);
+    border-color: #0b625d;
+    box-shadow: 0 10px 22px rgba(11, 98, 93, 0.28);
+    color: #fff;
+}
+
+/* ---- Pathway section hover effects ---- */
+
+/* Card: lifts, glows teal, and a teal-to-mint accent bar sweeps in along the top. */
+.landing-page #pathways .feature-card {
+    overflow: hidden;
+    transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.landing-page #pathways .feature-card::before {
+    background: linear-gradient(90deg, #063d3b, #147b71 60%, #8fefda);
+    content: "";
+    height: 4px;
+    inset: 0 0 auto 0;
+    position: absolute;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 320ms ease;
+}
+
+.landing-page #pathways .feature-card:hover {
+    background: #fff;
+    border-color: rgba(11, 98, 93, 0.35);
+    box-shadow: 0 22px 44px rgba(11, 98, 93, 0.16);
+    transform: translateY(-6px);
+}
+
+.landing-page #pathways .feature-card:hover::before {
+    transform: scaleX(1);
+}
+
+/* Icon fills teal and tilts; title turns teal; tag fills green-teal. */
+.landing-page #pathways .feature-card .icon,
+.landing-page #pathways .feature-card .page-icon,
+.landing-page #pathways .feature-card .tag,
+.landing-page #pathways .feature-card h3 {
+    transition: background-color 220ms ease, color 220ms ease, transform 220ms ease;
+}
+
+.landing-page #pathways .feature-card:hover .icon {
+    background: linear-gradient(135deg, #063d3b, #147b71);
+    transform: scale(1.12) rotate(-6deg);
+}
+
+.landing-page #pathways .feature-card:hover .page-icon {
+    color: #8fefda;
+}
+
+.landing-page #pathways .feature-card:hover .tag {
+    background: #147b71;
+    color: #fff;
+}
+
+.landing-page #pathways .feature-card:hover h3 {
+    color: #0b625d;
+}
+
+/* Each requirement nudges right and darkens under the pointer. */
+.landing-page #pathways .feature-card li {
+    transition: color 180ms ease, transform 180ms ease;
+}
+
+.landing-page #pathways .feature-card li:hover {
+    color: #063d3b;
+    transform: translateX(4px);
+}
+
+/* Apply now: arrow slides forward, button presses in when clicked, clear keyboard focus. */
+.landing-page .pathways-apply .text-button span {
+    display: inline-block;
+    transition: transform 200ms ease;
+}
+
+.landing-page .pathways-apply .text-button:hover span {
+    transform: translateX(5px);
+}
+
+.landing-page .pathways-apply .text-button:active {
+    transform: translateY(0) scale(0.97);
+}
+
+.landing-page .pathways-apply .text-button:focus-visible {
+    outline: 3px solid rgba(20, 123, 113, 0.4);
+    outline-offset: 3px;
+}
+
+/* Keep the colour changes but drop the movement for people who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+    .landing-page #pathways .feature-card:hover,
+    .landing-page #pathways .feature-card:hover .icon,
+    .landing-page #pathways .feature-card li:hover,
+    .landing-page .pathways-apply .text-button:hover span {
+        transform: none;
+    }
+
+    .landing-page #pathways .feature-card::before {
+        transition: none;
+    }
 }
 
 .landing-page .cta .button-light {
@@ -2772,4 +2908,771 @@ body p {
 body p:hover {
     text-shadow: 0 6px 18px rgba(47, 133, 128, 0.24);
     transform: translateY(-3px);
+}
+
+/* ==========================================================================
+   Mentora hover system: landing + sign-in / sign-up pages
+   Same pattern everywhere: surface lifts with a soft teal glow, icon fills with the
+   Mentora gradient and turns mint, headings turn teal. Colours: --mentora-* in :root.
+   ========================================================================== */
+
+/* Icons in every landing section ("Learning that connects", "Bring your story", pathways). */
+.landing-page .icon,
+.landing-page .page-icon,
+.landing-page .preparation-list span {
+    transition: background 220ms ease, color 220ms ease, transform 220ms ease;
+}
+
+.landing-page .mini-card:hover .icon {
+    background: var(--mentora-gradient);
+    transform: scale(1.1) rotate(-6deg);
+}
+
+.landing-page .mini-card:hover .page-icon {
+    color: var(--mentora-mint);
+}
+
+.landing-page .mini-card:hover {
+    border-color: rgba(11, 98, 93, 0.35);
+    box-shadow: 0 18px 38px rgba(11, 98, 93, 0.16);
+}
+
+.landing-page .mini-card h3 {
+    transition: color 220ms ease;
+}
+
+.landing-page .mini-card:hover h3 {
+    color: var(--mentora-teal);
+}
+
+/* "Bring your story" checklist: icon pops and turns teal. */
+.landing-page .preparation-list div:hover span {
+    transform: scale(1.15);
+}
+
+.landing-page .preparation-list div:hover .page-icon,
+.landing-page .preparation-list div:hover strong {
+    color: var(--mentora-teal);
+}
+
+/* FAQ questions. */
+.landing-page .faq-list summary {
+    transition: color 180ms ease;
+}
+
+.landing-page .faq-list summary:hover {
+    color: var(--mentora-teal);
+}
+
+/* Sign-in / sign-up: primary button fills with the Mentora gradient instead of going hollow. */
+body:not(.landing-page) .auth-shell .form-actions .button-primary:hover {
+    background: var(--mentora-gradient);
+    border-color: var(--mentora-teal);
+    box-shadow: 0 10px 22px rgba(11, 98, 93, 0.26);
+    color: #fff;
+}
+
+body:not(.landing-page) .auth-shell .form-actions .button-primary:hover span {
+    color: var(--mentora-mint);
+}
+
+/* Pathway choice (Employee VA / Internship) on the one-page form. */
+body:not(.landing-page) .pathway-choice label {
+    cursor: pointer;
+}
+
+body:not(.landing-page) .pathway-choice label:hover {
+    background: rgba(11, 98, 93, 0.05);
+    border-color: rgba(11, 98, 93, 0.35);
+}
+
+/* Sign-up step chips. */
+.account-steps span {
+    transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.account-steps span:hover {
+    background: var(--mentora-pale);
+    border-color: rgba(11, 98, 93, 0.25);
+    color: var(--mentora-deep);
+}
+
+.account-steps b {
+    background: var(--mentora-gradient);
+}
+
+/* Inputs: teal hint before focusing. */
+body:not(.landing-page) .field input:hover,
+body:not(.landing-page) .field select:hover,
+body:not(.landing-page) .field textarea:hover {
+    border-color: rgba(11, 98, 93, 0.4);
+}
+
+/* Notification / message lists (topbar panels and the messages page). */
+.utility-item {
+    transition: background 180ms ease;
+}
+
+.utility-item:hover {
+    background: rgba(11, 98, 93, 0.05);
+}
+
+.utility-item-icon,
+.utility-empty-icon {
+    transition: background 180ms ease, color 180ms ease;
+}
+
+.utility-item:hover .utility-item-icon {
+    background: var(--mentora-gradient);
+    color: var(--mentora-mint);
+}
+
+/* Keep the colour feedback but drop the movement for people who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+    .landing-page .mini-card:hover .icon,
+    .landing-page .preparation-list div:hover span {
+        transform: none;
+    }
+}
+
+/* ==========================================================================
+   About us
+   ========================================================================== */
+
+/* Landing-page "About us" preview. Two columns on the Mentora gradient:
+   intro + values on the left, logo + Recruit -> Train -> Grow journey on the right.
+   The whole section is one link to about.php. */
+.landing-page .about-teaser {
+    background:
+        radial-gradient(circle at 88% 12%, rgba(143, 239, 218, 0.28), transparent 22rem),
+        var(--mentora-gradient);
+    cursor: pointer;
+    overflow: hidden;
+    padding: 96px 32px;
+    position: relative;
+}
+
+.landing-page .about-teaser::before {   /* soft ring, echoing the hero */
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    content: "";
+    height: 420px;
+    left: -160px;
+    position: absolute;
+    top: -180px;
+    width: 420px;
+}
+
+.landing-page .about-teaser-inner {
+    align-items: center;
+    display: grid;
+    gap: clamp(32px, 6vw, 88px);
+    grid-template-columns: 1.1fr 0.9fr;
+    margin: 0 auto;
+    max-width: 1180px;
+    position: relative;
+    z-index: 1;
+}
+
+.landing-page .about-teaser-inner > * {
+    min-width: 0;   /* let both columns shrink on narrow screens instead of overflowing */
+}
+
+.landing-page .about-teaser .eyebrow {
+    color: var(--mentora-mint);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    margin: 0 0 12px;
+    text-transform: uppercase;
+}
+
+.landing-page .about-teaser h2 {
+    color: #fff;
+    margin: 0 0 16px;
+}
+
+.landing-page .about-teaser-copy > p:not(.eyebrow) {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    line-height: 1.65;
+    margin: 0 0 24px;
+    max-width: 560px;
+}
+
+.landing-page .about-teaser-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    list-style: none;
+    margin: 0 0 30px;
+    padding: 0;
+}
+
+.landing-page .about-teaser-values li {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    color: #fff;
+    display: inline-flex;
+    font-size: 13px;
+    gap: 8px;
+    padding: 8px 14px;
+    transition: background 200ms ease, border-color 200ms ease;
+}
+
+.landing-page .about-teaser-values .page-icon {
+    color: var(--mentora-mint);
+    height: 16px;
+}
+
+.landing-page .about-teaser-link {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 999px;
+    color: #fff;
+    transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease, color 200ms ease;
+}
+
+.landing-page .about-teaser-link span {
+    transition: transform 200ms ease;
+}
+
+.landing-page .about-teaser .about-teaser-link:focus-visible {
+    outline: 3px solid var(--mentora-mint);
+    outline-offset: 3px;
+}
+
+/* Right column: glass card with the logo and the journey. */
+.landing-page .about-teaser-visual {
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 24px;
+    padding: 34px 28px 28px;
+    transition: box-shadow 260ms ease, transform 260ms ease;
+}
+
+.landing-page .about-teaser-logo {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.landing-page .about-teaser-logo img {
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 10px 26px rgba(6, 61, 59, 0.35);
+    height: 92px;
+    object-fit: contain;
+    padding: 10px;
+    width: 92px;
+}
+
+.landing-page .about-teaser-logo span {
+    color: #fff;
+    font: 24px/1 Georgia, "Times New Roman", serif;
+    letter-spacing: -0.03em;
+}
+
+.landing-page .about-teaser-journey {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(3, 1fr);
+    list-style: none;
+    margin: 28px 0 0;
+    padding: 0;
+}
+
+.landing-page .about-teaser-journey li {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 18px 12px;
+    position: relative;
+    text-align: center;
+    transition: box-shadow 220ms ease, transform 220ms ease;
+}
+
+.landing-page .about-teaser-journey li:not(:last-child)::after {   /* arrow between steps */
+    color: var(--mentora-mint);
+    content: "→";
+    font-size: 14px;
+    position: absolute;
+    right: -13px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.landing-page .about-teaser-journey .icon {
+    margin: 0 auto 10px;
+    transition: background 220ms ease, transform 220ms ease;
+}
+
+.landing-page .about-teaser-journey strong {
+    color: var(--mentora-deep);
+    display: block;
+    font-size: 14px;
+}
+
+.landing-page .about-teaser-journey small {
+    color: #4d6b69;
+    display: block;
+    font-size: 11px;
+    line-height: 1.4;
+    margin-top: 4px;
+}
+
+/* Separate hovers: each part reacts only while the pointer is on that part. */
+
+/* Logo card: lifts only when the pointer is on the card itself, not on the logo or a step inside it. */
+.landing-page .about-teaser-visual:hover:not(:has(li:hover, .about-teaser-logo:hover)) {
+    border-color: rgba(143, 239, 218, 0.45);
+    box-shadow: 0 26px 54px rgba(3, 30, 29, 0.32);
+    transform: translateY(-4px);
+}
+
+/* Logo: tilts slightly with a mint ring. */
+.landing-page .about-teaser-logo img,
+.landing-page .about-teaser-logo span {
+    transition: box-shadow 260ms ease, color 260ms ease, text-shadow 260ms ease, transform 260ms ease;
+}
+
+.landing-page .about-teaser-logo:hover img {
+    box-shadow: 0 0 0 6px rgba(143, 239, 218, 0.28), 0 14px 30px rgba(6, 61, 59, 0.4);
+    transform: scale(1.06) rotate(-4deg);
+}
+
+.landing-page .about-teaser-logo:hover span {
+    text-shadow: 0 0 16px rgba(143, 239, 218, 0.55);
+}
+
+/* Journey steps: only the step under the pointer lifts, and only its icon fills. */
+.landing-page .about-teaser-journey strong {
+    transition: color 220ms ease;
+}
+
+.landing-page .about-teaser-journey li:hover {
+    box-shadow: 0 12px 24px rgba(3, 30, 29, 0.25);
+    transform: translateY(-4px);
+}
+
+.landing-page .about-teaser-journey li:hover .icon {
+    background: var(--mentora-gradient);
+    transform: scale(1.12) rotate(-6deg);
+}
+
+.landing-page .about-teaser-journey li:hover .page-icon {
+    color: var(--mentora-mint);
+}
+
+.landing-page .about-teaser-journey li:hover strong {
+    color: var(--mentora-teal);
+}
+
+/* Button: turns white only when the pointer is on the button. */
+.landing-page .about-teaser-link:hover {
+    background: #fff;
+    border-color: #fff;
+    box-shadow: 0 8px 18px rgba(255, 255, 255, 0.24);
+    color: var(--mentora-deep);
+}
+
+.landing-page .about-teaser-link:hover span {
+    transform: translateX(4px);
+}
+
+@media (max-width: 900px) {
+    .landing-page .about-teaser-inner {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .landing-page .about-teaser {
+        padding: 64px 20px;
+    }
+
+    .landing-page .about-teaser-journey {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-page .about-teaser-journey li:not(:last-child)::after {
+        display: none;
+    }
+}
+
+/* Text hover effects (each piece of text reacts on its own). */
+.landing-page .about-teaser .eyebrow,
+.landing-page .about-teaser h2,
+.landing-page .about-teaser-copy > p:not(.eyebrow) {
+    transition: color 220ms ease, letter-spacing 220ms ease, text-shadow 220ms ease, transform 220ms ease;
+}
+
+/* "ABOUT US": letters spread out and glow mint. */
+.landing-page .about-teaser .eyebrow:hover {
+    color: #fff;
+    letter-spacing: 0.22em;
+    text-shadow: 0 0 14px rgba(143, 239, 218, 0.65);
+}
+
+/* Heading: lifts with a mint glow, and a mint underline sweeps in beneath it. */
+.landing-page .about-teaser h2::after {
+    background: linear-gradient(90deg, var(--mentora-mint), rgba(143, 239, 218, 0));
+    border-radius: 3px;
+    content: "";
+    display: block;
+    height: 3px;
+    margin-top: 12px;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 320ms ease;
+    width: 120px;
+}
+
+.landing-page .about-teaser h2:hover {
+    text-shadow: 0 8px 26px rgba(143, 239, 218, 0.35);
+    transform: translateY(-3px);
+}
+
+.landing-page .about-teaser h2:hover::after {
+    transform: scaleX(1);
+}
+
+/* Intro paragraph: brightens to white with a soft mint glow. */
+.landing-page .about-teaser-copy > p:not(.eyebrow):hover {
+    color: #fff;
+    text-shadow: 0 6px 18px rgba(143, 239, 218, 0.25);
+    transform: translateY(-3px);
+}
+
+/* Value pills: each one lifts, fills mint, and its icon pops. */
+.landing-page .about-teaser-values li {
+    transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.landing-page .about-teaser .about-teaser-values li:hover {
+    background: rgba(143, 239, 218, 0.2);
+    border-color: var(--mentora-mint);
+    box-shadow: 0 8px 18px rgba(3, 30, 29, 0.25);
+    transform: translateY(-3px);
+}
+
+.landing-page .about-teaser-values .page-icon {
+    transition: transform 220ms ease;
+}
+
+.landing-page .about-teaser-values li:hover .page-icon {
+    transform: scale(1.2) rotate(-8deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .landing-page .about-teaser-visual:hover:not(:has(li:hover, .about-teaser-logo:hover)),
+    .landing-page .about-teaser-logo:hover img,
+    .landing-page .about-teaser-journey li:hover,
+    .landing-page .about-teaser-journey li:hover .icon,
+    .landing-page .about-teaser h2:hover,
+    .landing-page .about-teaser-copy > p:not(.eyebrow):hover,
+    .landing-page .about-teaser .about-teaser-values li:hover,
+    .landing-page .about-teaser-values li:hover .page-icon {
+        transform: none;
+    }
+
+    .landing-page .about-teaser h2::after {
+        transition: none;
+    }
+}
+
+/* About page. */
+.about-page .about-hero {
+    min-height: 0;
+    padding: 150px 24px 96px;
+}
+
+.about-page .about-card p {
+    line-height: 1.6;
+}
+
+.about-page .about-card:hover {
+    border-color: rgba(11, 98, 93, 0.35);
+    box-shadow: 0 22px 44px rgba(11, 98, 93, 0.14);
+}
+
+.about-page .about-card .icon {
+    transition: background 220ms ease, transform 220ms ease;
+}
+
+.about-page .about-card:hover .icon {
+    background: var(--mentora-gradient);
+    transform: scale(1.12) rotate(-6deg);
+}
+
+.about-page .about-card:hover .page-icon {
+    color: var(--mentora-mint);
+}
+
+.about-page .about-card:hover .tag {
+    background: var(--mentora-green);
+    color: #fff;
+}
+
+.about-page .about-card:hover h3 {
+    color: var(--mentora-teal);
+}
+
+.about-page .cta a:not(.button) {
+    color: var(--mentora-mint);
+    font-weight: 700;
+}
+
+.about-page .cta a:not(.button):hover {
+    color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .about-page .about-card:hover .icon {
+        transform: none;
+    }
+}
+
+/* ---- About page: photo carousel ("Moments from our community") ---- */
+/* Section sits on the Mentora green gradient, like the landing "About us" preview. */
+.about-page .about-gallery {
+    background:
+        radial-gradient(circle at 88% 12%, rgba(143, 239, 218, 0.24), transparent 22rem),
+        var(--mentora-gradient);
+}
+
+.about-page .about-gallery .section-heading {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1080px;
+}
+
+.about-page .about-gallery h2 {
+    color: #fff;
+}
+
+.about-page .about-gallery .section-intro {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.about-page .carousel {
+    margin: 0 auto;
+    max-width: 1080px;
+    position: relative;
+}
+
+.about-page .carousel-viewport {
+    background: var(--mentora-deep);
+    border-radius: 24px;
+    box-shadow: 0 26px 56px rgba(3, 30, 29, 0.4);
+    overflow: hidden;
+    touch-action: pan-y;   /* vertical page scroll still works; horizontal swipes change photo */
+}
+
+.about-page .carousel-track {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    transition: transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.about-page .carousel-slide {
+    aspect-ratio: 16 / 10;
+    flex: 0 0 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.about-page .carousel-slide img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 700ms ease;
+    user-select: none;
+    width: 100%;
+    -webkit-user-drag: none;
+}
+
+/* Photo zooms in slightly while you point at it. */
+.about-page .carousel-slide:hover img {
+    transform: scale(1.04);
+}
+
+.about-page .carousel-caption {
+    background: linear-gradient(180deg, rgba(6, 61, 59, 0) 0%, rgba(6, 61, 59, 0.9) 100%);
+    bottom: 0;
+    color: #fff;
+    left: 0;
+    padding: 70px 34px 28px;
+    position: absolute;
+    right: 0;
+}
+
+.about-page .carousel-caption strong {
+    display: block;
+    font: 26px/1.15 Georgia, "Times New Roman", serif;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+}
+
+.about-page .carousel-caption span {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+}
+
+/* Arrow buttons. */
+.about-page .carousel-btn {
+    align-items: center;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    background: rgba(6, 61, 59, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    height: 48px;
+    justify-content: center;
+    padding: 0;
+    position: absolute;
+    top: calc(50% - 24px);
+    transition: background 200ms ease, box-shadow 200ms ease, color 200ms ease, transform 200ms ease;
+    width: 48px;
+    z-index: 2;
+}
+
+.about-page .carousel-prev {
+    left: 18px;
+}
+
+.about-page .carousel-next {
+    right: 18px;
+}
+
+.about-page .carousel-btn svg {
+    fill: none;
+    height: 20px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.2;
+    width: 20px;
+}
+
+.about-page .carousel-btn:hover {
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(3, 30, 29, 0.35);
+    color: var(--mentora-deep);
+    transform: scale(1.08);
+}
+
+/* Dots. */
+.about-page .carousel-controls {
+    display: flex;
+    justify-content: center;
+    margin-top: 22px;
+}
+
+.about-page .carousel-dots {
+    display: flex;
+    gap: 8px;
+}
+
+.about-page .carousel-dot {
+    background: rgba(255, 255, 255, 0.35);
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    height: 10px;
+    overflow: hidden;
+    padding: 0;
+    position: relative;
+    transition: background 220ms ease, width 220ms ease;
+    width: 10px;
+}
+
+.about-page .carousel-dot:hover {
+    background: rgba(255, 255, 255, 0.7);
+}
+
+/* Active dot is a pill that fills with mint while the slideshow counts down. */
+.about-page .carousel-dot[aria-current="true"] {
+    background: rgba(255, 255, 255, 0.25);
+    width: 36px;
+}
+
+.about-page .carousel-dot::after {
+    background: var(--mentora-mint);
+    border-radius: inherit;
+    content: "";
+    inset: 0 auto 0 0;
+    position: absolute;
+    width: 0;
+}
+
+.about-page .carousel-dot[aria-current="true"]::after {
+    width: 100%;   /* paused: shown full */
+}
+
+.about-page .carousel.is-running .carousel-dot[aria-current="true"]::after {
+    animation: carousel-progress var(--carousel-delay, 5s) linear forwards;
+}
+
+@keyframes carousel-progress {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+.about-page .carousel-btn:focus-visible,
+.about-page .carousel-dot:focus-visible {
+    outline: 3px solid var(--mentora-mint);
+    outline-offset: 3px;
+}
+
+@media (max-width: 700px) {
+    .about-page .carousel-slide {
+        aspect-ratio: 4 / 3;
+    }
+
+    .about-page .carousel-caption {
+        padding: 50px 18px 16px;
+    }
+
+    .about-page .carousel-caption strong {
+        font-size: 19px;
+    }
+
+    .about-page .carousel-caption span {
+        font-size: 12px;
+    }
+
+    .about-page .carousel-btn {
+        height: 38px;
+        top: calc(50% - 19px);
+        width: 38px;
+    }
+
+    .about-page .carousel-prev {
+        left: 10px;
+    }
+
+    .about-page .carousel-next {
+        right: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .about-page .carousel-track,
+    .about-page .carousel-slide img {
+        transition: none;
+    }
+
+    .about-page .carousel-slide:hover img,
+    .about-page .carousel-btn:hover {
+        transform: none;
+    }
 }

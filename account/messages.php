@@ -1,8 +1,8 @@
 <?php
-session_start();
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/auth_check.php';
 
-$userId = (int) ($_SESSION['user']['id'] ?? 0);
+$userId = mentora_require_login()['id'];
 $messageActionToken = $_SESSION['message_action_token'] ?? bin2hex(random_bytes(32));
 $_SESSION['message_action_token'] = $messageActionToken;
 $messageError = '';

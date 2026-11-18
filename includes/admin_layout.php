@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 date_default_timezone_set('Asia/Manila');
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
-
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/auth_check.php';
+
+mentora_require_login(['admin']);
+
 require __DIR__ . '/header_counts.php';
 
 // Fallback HTML escaper in case it isn't defined by the includes above
@@ -23,6 +23,7 @@ $adminUser = (isset($_SESSION['user']) && is_array($_SESSION['user']))
     ? $_SESSION['user']
     : ['name' => 'HR Administrator'];
 $adminName = trim((string)($adminUser['name'] ?? '')) ?: 'HR Administrator';
+$adminCode = (string)($adminUser['user_code'] ?? '');
 
 $crumbTitle = trim(explode('|', $pageTitle)[0]);
 
@@ -54,8 +55,8 @@ $adminNav = [
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $e($pageTitle) ?></title>
     <link rel="icon" type="image/png" href="../assets/images/mentora-logo.png?v=1">
-    <link rel="stylesheet" href="../assets/css/style.css?v=14">
-    <link rel="stylesheet" href="../assets/css/admin.css?v=4">
+    <link rel="stylesheet" href="../assets/css/style.css?v=28">
+    <link rel="stylesheet" href="../assets/css/admin.css?v=5">
 </head>
 
 <body class="admin-body">
@@ -82,7 +83,7 @@ $adminNav = [
                 <span><?= $e($initials) ?></span>
                 <div>
                     <strong><?= $e($adminName) ?></strong>
-                    <small>HR administrator</small>
+                    <small>HR administrator<?= $adminCode !== '' ? ' · ' . $e($adminCode) : '' ?></small>
                 </div>
             </a>
         </div>

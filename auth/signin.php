@@ -1,20 +1,42 @@
 <?php
-session_start();
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/auth_check.php';
+
+// Already signed in and just opening this page: go straight to the right workspace.
+// A submitted form is always processed, so you can switch to another account without signing out first.
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && ($signedIn = mentora_current_user())) {
+    mentora_redirect(mentora_after_sign_in_path($pdo, $signedIn));
+}
+
 $error = '';
+$email = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim((string) ($_POST['email'] ?? ''));
-    $password = (string) ($_POST['password'] ?? '');
-    $query = $pdo->prepare('SELECT id, first_name, last_name, email, password_hash, role FROM users WHERE email = ?');
-    $query->execute([$email]);
-    $user = $query->fetch();
-    if (!$user || !password_verify($password, $user['password_hash'])) {
-        $error = 'The email or password you entered is incorrect.';
+    $email = trim(mentora_post_string('email'));
+    $password = mentora_post_string('password');
+
+    if (!mentora_csrf_valid($_POST['csrf_token'] ?? null)) {
+        $error = 'Your session expired. Please try signing in again.';
     } else {
-        session_regenerate_id(true);
-        $_SESSION['user'] = ['id' => $user['id'], 'name' => $user['first_name'] . ' ' . $user['last_name'], 'email' => $user['email'], 'role' => $user['role']];
-        header('Location: ../index.php');
-        exit;
+        $query = $pdo->prepare('SELECT id, user_code, first_name, last_name, email, pathway, password_hash, role FROM users WHERE email = ?');
+        $query->execute([$email]);
+        $user = $query->fetch();
+
+        // Verify against a dummy hash when the email is unknown so response time doesn't reveal which emails exist.
+        $hash = $user ? $user['password_hash'] : '$2y$10$hvFgy6881nk50qVsp1kxXO6tADTPBwRbpAHIRfc0ZnPPK9ugVm8Ry';
+        $passwordOk = password_verify($password, $hash);
+
+        if (!$user || !$passwordOk) {
+            $error = 'The email or password you entered is incorrect.';
+        } else {
+            if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {
+                $user['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
+                $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+                    ->execute([$user['password_hash'], $user['id']]);
+            }
+
+            mentora_sign_in($user);
+            mentora_redirect(mentora_after_sign_in_path($pdo, $_SESSION['user']));
+        }
     }
 }
 $pageTitle = 'Sign in';
@@ -28,8 +50,9 @@ require __DIR__ . '/../includes/header.php';
         <?php if (isset($_GET['registered'])): ?><div class="alert success">Your account is ready. Sign in to continue.</div><?php endif; ?>
         <?php if ($error): ?><div class="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
         <form method="post">
-            <div class="field"><label for="email">Email address</label><input id="email" type="email" name="email" required placeholder="you@example.com"></div>
-            <div class="field"><label for="password">Password</label><input id="password" type="password" name="password" required placeholder="Enter your password"></div>
+            <?= mentora_csrf_field() ?>
+            <div class="field"><label for="email">Email address</label><input id="email" type="email" name="email" required autocomplete="username" placeholder="you@example.com" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"></div>
+            <div class="field"><label for="password">Password</label><input id="password" type="password" name="password" required autocomplete="current-password" placeholder="Enter your password"></div>
             <div class="form-actions"><button class="button button-primary" type="submit">Sign in <span>→</span></button></div>
         </form>
         <div class="notice"><strong>One sign-in. The right workspace for you.</strong><br>Your account opens your application, team, or HR workspace with private, role-based access.</div>

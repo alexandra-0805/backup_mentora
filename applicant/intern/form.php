@@ -1,16 +1,4 @@
 <?php
-header('Location: ../../auth/signup.php?pathway=internship');
-exit;
-/*
-require_once __DIR__ . '/../../config/db.php';
-$errors=[];$saved=false;
-if($_SERVER['REQUEST_METHOD']==='POST'){
-    $first=trim((string)($_POST['first_name']??''));$last=trim((string)($_POST['last_name']??''));$email=trim((string)($_POST['email']??''));
-    if($first===''||$last==='')$errors[]='Please enter your name.';
-    if(!filter_var($email,FILTER_VALIDATE_EMAIL))$errors[]='Please enter a valid email address.';
-    if(!$errors){$check=$pdo->prepare('SELECT id FROM users WHERE email=?');$check->execute([$email]);if($check->fetch())$errors[]='An account already exists for that email.';}
-    if(!$errors){$insert=$pdo->prepare('INSERT INTO users(first_name,last_name,email,pathway,password_hash) VALUES(?,?,?,?,?)');$insert->execute([$first,$last,$email,'internship',password_hash(bin2hex(random_bytes(8)),PASSWORD_DEFAULT)]);$saved=true;}
-}
-$pathway='intern';$pageTitle='Apply for an internship';$activePage='';require __DIR__.'/../../includes/applicant_layout.php';
-?>
-<div class="admin-heading"><div><h1>Apply for an internship</h1><p>Share your school requirements, placement interests and availability for supervised work experience.</p></div><span class="badge info">New application</span></div><div class="applicant-banner"><strong>Start your internship application.</strong>Prepare your résumé and school documents when they are required.</div><?php if($saved): ?><div class="notice success">Application received. You can sign in to follow your progress.</div><?php elseif($errors): ?><div class="alert"><?= htmlspecialchars(implode(' ',$errors)) ?></div><?php endif; ?><form class="pathway-card applicant-form" method="post"><h3>Personal & contact details</h3><div class="form-grid"><div class="field"><label>First name *</label><input name="first_name" required></div><div class="field"><label>Last name *</label><input name="last_name" required></div><div class="field"><label>Email address *</label><input type="email" name="email" required></div><div class="field"><label>Mobile number *</label><input name="mobile" required></div><div class="field full"><label>School / university *</label><input name="school" required placeholder="Enter your school"></div><div class="field"><label>Course / program *</label><input name="course" required></div><div class="field"><label>Required internship hours *</label><input type="number" name="required_hours" value="480"></div><div class="field"><label>Preferred start date *</label><input type="date" name="start_date" required></div><div class="field"><label>Area of interest *</label><select name="interest"><option>Customer Success</option><option>Operations</option><option>Sales</option></select></div><div class="field full"><label>Skills & learning goals</label><textarea rows="4" name="skills" placeholder="Tell us about the skills you bring and what you hope to learn."></textarea></div></div><label><input type="checkbox" required> I confirm the information provided is accurate.</label><div class="form-actions"><button class="admin-btn primary" type="submit">Submit internship application</button></div></form><?php require __DIR__.'/../../includes/applicant_footer.php'; */
+// Internship application form (step 2 of sign-up). See includes/application_form.php.
+$pathway = 'intern';
+require __DIR__ . '/../../includes/application_form.php';

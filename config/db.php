@@ -55,6 +55,18 @@ try {
     if (!in_array('department_id', $userColumns, true)) {
         $pdo->exec('ALTER TABLE users ADD COLUMN department_id INT UNSIGNED NULL AFTER role');
     }
+    if (!in_array('user_code', $userColumns, true)) {
+        $pdo->exec('ALTER TABLE users ADD COLUMN user_code VARCHAR(20) NULL AFTER id, ADD UNIQUE KEY uq_users_user_code (user_code)');
+    }
+    // Give every user without a code one: role prefix + their id, e.g. ADM-0001, AGT-0002, INT-0003, EMP-0004.
+    // Covers app sign-ups and rows added by hand (e.g. in phpMyAdmin). The id part keeps codes unique.
+    $pdo->exec(
+        "UPDATE users
+         SET user_code = CONCAT(
+             CASE WHEN role = 'admin' THEN 'ADM' WHEN role = 'agent' THEN 'AGT' WHEN pathway = 'internship' THEN 'INT' ELSE 'EMP' END,
+             '-', IF(id < 10000, LPAD(id, 4, '0'), id))
+         WHERE user_code IS NULL"
+    );
     $pdo->exec(
         'INSERT IGNORE INTO departments (name, description) VALUES
             ("HR & Admin", "People operations, employee records and compliance"),

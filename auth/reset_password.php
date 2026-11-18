@@ -1,26 +1,31 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/auth_check.php';
 
 $error = '';
 $updated = false;
-$email = trim((string) ($_POST['email'] ?? $_GET['email'] ?? ''));
+$email = $_SERVER['REQUEST_METHOD'] === 'POST'
+    ? trim(mentora_post_string('email'))
+    : trim(is_string($_GET['email'] ?? null) ? $_GET['email'] : '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $code = trim((string) ($_POST['code'] ?? ''));
-    $password = (string) ($_POST['password'] ?? '');
-    $confirmation = (string) ($_POST['password_confirmation'] ?? '');
+    $code = trim(mentora_post_string('code'));
+    $password = mentora_post_string('password');
+    $confirmation = mentora_post_string('password_confirmation');
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    if (!mentora_csrf_valid($_POST['csrf_token'] ?? null)) {
+        $error = 'Your session expired. Please try again.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Please enter a valid email address.';
     } elseif (!preg_match('/^\d{6}$/', $code)) {
         $error = 'Please enter the 6-digit verification code.';
-    } elseif (strlen($password) < 8) {
-        $error = 'Your new password must be at least 8 characters.';
+    } elseif ($passwordError = mentora_password_error($password)) {
+        $error = $passwordError;
     } elseif ($password !== $confirmation) {
         $error = 'The passwords do not match.';
     } else {
         $query = $pdo->prepare(
-            'SELECT password_resets.id, password_resets.token_hash
+            'SELECT password_resets.id, password_resets.user_id, password_resets.token_hash
              FROM password_resets
              INNER JOIN users ON users.id = password_resets.user_id
              WHERE users.email = ? AND password_resets.used_at IS NULL AND password_resets.expires_at > NOW()
@@ -30,20 +35,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $query->execute([$email]);
         $reset = $query->fetch();
 
-        if (!$reset || !hash_equals($reset['token_hash'], hash('sha256', $code))) {
+        if (!$reset) {
             $error = 'That verification code is invalid or has expired.';
+        } elseif (!hash_equals($reset['token_hash'], mentora_reset_code_hash((int) $reset['user_id'], $code))) {
+            // A 6-digit code can be brute-forced, so a wrong guess cancels it.
+            $pdo->prepare('UPDATE password_resets SET used_at = NOW() WHERE id = ?')->execute([$reset['id']]);
+            $error = 'That verification code is incorrect. For your security it has been cancelled — please request a new code.';
         } else {
-            $userQuery = $pdo->prepare('SELECT id FROM users WHERE email = ?');
-            $userQuery->execute([$email]);
-            $user = $userQuery->fetch();
-
-            if (!$user) {
-                $error = 'We could not complete the password reset. Please request a new code.';
-            } else {
-                $update = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
-                $update->execute([password_hash($password, PASSWORD_DEFAULT), $user['id']]);
-                $pdo->prepare('UPDATE password_resets SET used_at = NOW() WHERE id = ?')->execute([$reset['id']]);
+            try {
+                $pdo->beginTransaction();
+                $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+                    ->execute([password_hash($password, PASSWORD_DEFAULT), $reset['user_id']]);
+                $pdo->prepare('UPDATE password_resets SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL')
+                    ->execute([$reset['user_id']]);
+                $pdo->commit();
                 $updated = true;
+            } catch (PDOException $exception) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                error_log('Mentora password reset failed: ' . $exception->getMessage());
+                $error = 'We could not change your password right now. Please try again.';
             }
         }
     }
@@ -61,9 +73,10 @@ require __DIR__ . '/../includes/header.php';
     <?php else: ?>
         <?php if ($error): ?><div class="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
         <form method="post">
+            <?= mentora_csrf_field() ?>
             <div class="field"><label for="email">Email address</label><input id="email" type="email" name="email" required placeholder="you@example.com" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"></div>
             <div class="field"><label for="code">Verification code</label><input id="code" type="text" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required placeholder="Enter 6-digit code"></div>
-            <div class="field"><label for="password">New password</label><input id="password" type="password" name="password" minlength="8" required placeholder="At least 8 characters"></div>
+            <div class="field"><label for="password">New password</label><input id="password" type="password" name="password" minlength="8" required autocomplete="new-password" placeholder="8+ characters, a number and a symbol"></div>
             <div class="field"><label for="password_confirmation">Confirm new password</label><input id="password_confirmation" type="password" name="password_confirmation" minlength="8" required placeholder="Enter your new password again"></div>
             <div class="form-actions"><button class="button button-primary" type="submit">Change password <span>→</span></button></div>
         </form>

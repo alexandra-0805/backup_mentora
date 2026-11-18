@@ -1,146 +1,134 @@
 <?php
+/**
+ * One-page sign-up: account + application form together.
+ * Landing page -> this page -> intern workspace (Internship) or employee workspace (Employee VA).
+ */
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/auth_check.php';
+require_once __DIR__ . '/../includes/application_fields.php';
+
+$signedIn = mentora_current_user();
+$isStaff = $signedIn !== null && in_array($signedIn['role'], ['admin', 'agent'], true);
+
+// Applicants who already have an account continue where they left off.
+// Admins and agents may stay: they use this page to add people, without being signed out.
+if ($signedIn !== null && !$isStaff) {
+    mentora_redirect(mentora_after_sign_in_path($pdo, $signedIn));
+}
 
 $errors = [];
-$values = [
+$created = null;
+$newUserId = 0;
+$account = [
     'first_name' => '',
     'last_name' => '',
     'email' => '',
-    'pathway' => $_GET['pathway'] ?? 'employee_va',
-    'mobile' => '',
-    'location' => '',
-    'school' => '',
-    'course' => '',
-    'required_hours' => '480',
-    'desired_role' => '',
-    'start_date' => '',
-    'interest' => 'Customer Success',
-    'skills' => '',
+    'pathway' => (($_GET['pathway'] ?? '') === 'internship') ? 'internship' : 'employee_va',
 ];
+$answers = mentora_application_values();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    foreach ($values as $key => $_) {
-        $values[$key] = trim((string) ($_POST[$key] ?? ''));
+    foreach ($account as $key => $_) {
+        $account[$key] = trim(mentora_post_string($key));
     }
+    $answers = mentora_application_from_post($answers);
+    $password = mentora_post_string('password');
+    $confirmPassword = mentora_post_string('confirm_password');
 
-    $password = (string) ($_POST['password'] ?? '');
-    $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
-
-    if ($values['first_name'] === '' || $values['last_name'] === '') {
+    if (!mentora_csrf_valid($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Your session expired. Please submit the form again.';
+    }
+    if ($account['first_name'] === '' || $account['last_name'] === '') {
         $errors[] = 'Please enter your full name.';
+    } elseif (mb_strlen($account['first_name']) > 80 || mb_strlen($account['last_name']) > 80) {
+        $errors[] = 'First and last name must be 80 characters or fewer.';
     }
-    if (!filter_var($values['email'], FILTER_VALIDATE_EMAIL)) {
+    if (!filter_var($account['email'], FILTER_VALIDATE_EMAIL) || mb_strlen($account['email']) > 190) {
         $errors[] = 'Please enter a valid email address.';
     }
-    if (!in_array($values['pathway'], ['employee_va', 'internship'], true)) {
-        $errors[] = 'Please choose a valid pathway.';
+    if (!in_array($account['pathway'], ['employee_va', 'internship'], true)) {
+        $account['pathway'] = 'employee_va';
+        $errors[] = 'Please choose Employee VA or Internship.';
+    } else {
+        array_push($errors, ...mentora_application_errors($answers, $account['pathway']));
     }
-    if ($values['pathway'] === 'employee_va' && $values['desired_role'] === '') {
-        $errors[] = 'Please enter your desired employee VA role.';
-    }
-    if ($values['pathway'] === 'internship'
-        && ($values['school'] === '' || $values['course'] === '')) {
-        $errors[] = 'Please enter your school and course.';
-    }
-    if (strlen($password) < 8
-        || !preg_match('/\d/', $password)
-        || !preg_match('/[^a-zA-Z\d]/', $password)) {
-        $errors[] = 'Password must be at least 8 characters and include a number and symbol.';
+    if ($passwordError = mentora_password_error($password)) {
+        $errors[] = $passwordError;
     }
     if ($password !== $confirmPassword) {
         $errors[] = 'Passwords do not match.';
     }
     if (!isset($_POST['agree'])) {
-        $errors[] = 'Please confirm that your information is accurate and accept the privacy notice.';
+        $errors[] = 'Please confirm that your information is accurate and accept the Data Privacy Notice.';
     }
 
     if (!$errors) {
         $check = $pdo->prepare('SELECT id FROM users WHERE email = ?');
-        $check->execute([$values['email']]);
+        $check->execute([$account['email']]);
         if ($check->fetch()) {
-            $errors[] = 'An account with that email already exists.';
+            $errors[] = 'An account with that email already exists. Please sign in instead.';
         }
     }
 
     if (!$errors) {
         try {
             $pdo->beginTransaction();
-            $insertUser = $pdo->prepare(
+            $pdo->prepare(
                 'INSERT INTO users (first_name, last_name, email, pathway, password_hash)
                  VALUES (?, ?, ?, ?, ?)'
-            );
-            $insertUser->execute([
-                $values['first_name'],
-                $values['last_name'],
-                $values['email'],
-                $values['pathway'],
+            )->execute([
+                $account['first_name'],
+                $account['last_name'],
+                $account['email'],
+                $account['pathway'],
                 password_hash($password, PASSWORD_DEFAULT),
             ]);
-            $userId = (int) $pdo->lastInsertId();
-
-            $insertApplication = $pdo->prepare(
-                'INSERT INTO applications
-                    (user_id, mobile, location, school, course, required_hours,
-                     desired_role, start_date, interest, skills)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, NULLIF(?, ""), NULLIF(?, ""), ?)'
-            );
-            $insertApplication->execute([
-                $userId,
-                $values['mobile'] ?: null,
-                $values['location'] ?: null,
-                $values['school'] ?: null,
-                $values['course'] ?: null,
-                $values['required_hours'] !== '' ? (int) $values['required_hours'] : null,
-                $values['desired_role'] ?: null,
-                $values['start_date'],
-                $values['interest'],
-                $values['skills'] ?: null,
-            ]);
+            $newUserId = (int) $pdo->lastInsertId();
+            mentora_save_application($pdo, $newUserId, mentora_application_row($answers, $account['pathway']));
             $pdo->commit();
-
-            $approvalEmail = getenv('MENTORA_APPROVAL_EMAIL') ?: '';
-            if (filter_var($approvalEmail, FILTER_VALIDATE_EMAIL)) {
-                $subject = 'Mentora application pending approval: '
-                    . $values['first_name'] . ' ' . $values['last_name'];
-                $message = implode("\n", [
-                    'A new Mentora application is pending approval.',
-                    '',
-                    'Applicant: ' . $values['first_name'] . ' ' . $values['last_name'],
-                    'Email: ' . $values['email'],
-                    'Pathway: ' . $values['pathway'],
-                    'Review it in the Mentora admin workspace.',
-                ]);
-                $headers = 'From: no-reply@mentora.ph';
-                if (!mail($approvalEmail, $subject, $message, $headers)) {
-                    error_log('Mentora approval email could not be sent.');
-                }
-            } else {
-                error_log('Mentora approval email is not configured. Set MENTORA_APPROVAL_EMAIL.');
-            }
-
-            header('Location: ../index.php?submitted=1');
-            exit;
         } catch (PDOException $exception) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            error_log('Mentora application creation failed: ' . $exception->getMessage());
+            error_log('Mentora sign-up failed: ' . $exception->getMessage());
             $errors[] = 'We could not submit your application right now. Please try again.';
+        }
+    }
+
+    if (!$errors) {
+        $fullName = $account['first_name'] . ' ' . $account['last_name'];
+        mentora_notify_new_application($fullName, $account['email'], $account['pathway']);
+
+        if ($isStaff) {
+            // Staff adding someone: keep the staff member signed in and clear the form.
+            $created = $account;
+            $account = ['first_name' => '', 'last_name' => '', 'email' => '', 'pathway' => $created['pathway']];
+            $answers = mentora_application_values();
+        } else {
+            // New applicant: sign them in and open their pathway's workspace.
+            $row = $pdo->prepare('SELECT id, user_code, first_name, last_name, email, pathway, password_hash, role FROM users WHERE id = ?');
+            $row->execute([$newUserId]);
+            mentora_sign_in($row->fetch());
+            $_SESSION['flash_notice'] = 'Application submitted. Welcome to your '
+                . ($account['pathway'] === 'internship' ? 'internship' : 'employee') . ' workspace — we’ll review your details and keep you updated here.';
+            mentora_redirect(mentora_home_path($_SESSION['user']));
         }
     }
 }
 
-$pageTitle = 'Sign up';
+$pageTitle = 'Apply to Mentora';
 $bodyClass = 'account-page';
 $headerStyle = 'signin-page';
+$h = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 require __DIR__ . '/../includes/header.php';
 ?>
 <main class="auth-shell account-shell">
     <section class="auth-card wide account-card">
         <p class="eyebrow">One page · three simple steps</p>
-        <h1>Create your Mentora account.</h1>
+        <h1>Apply to Mentora.</h1>
         <p class="intro">
-            Complete your account and application together. We’ll review your details before approval.
+            Create your account and complete your application in one go. When you submit,
+            you’ll go straight to your internship or employee workspace.
         </p>
 
         <div class="account-steps" aria-label="Application steps">
@@ -149,33 +137,31 @@ require __DIR__ . '/../includes/header.php';
             <span><b>3</b>Secure account</span>
         </div>
 
+        <?php if ($created): ?>
+            <div class="alert success">
+                Account and application created for <?= $h($created['first_name'] . ' ' . $created['last_name']) ?> (<?= $h($created['email']) ?>).
+            </div>
+        <?php endif; ?>
         <?php if ($errors): ?>
-            <div class="alert"><?= htmlspecialchars(implode(' ', $errors), ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="alert"><?= $h(implode(' ', $errors)) ?></div>
         <?php endif; ?>
 
-        <form method="post">
+        <form method="post" id="apply-form">
+            <?= mentora_csrf_field() ?>
             <fieldset>
                 <legend>1. Tell us about yourself</legend>
                 <div class="form-grid">
                     <div class="field">
                         <label for="first_name">First name *</label>
-                        <input id="first_name" name="first_name" required value="<?= htmlspecialchars($values['first_name']) ?>">
+                        <input id="first_name" name="first_name" required maxlength="80" autocomplete="given-name" value="<?= $h($account['first_name']) ?>">
                     </div>
                     <div class="field">
                         <label for="last_name">Last name *</label>
-                        <input id="last_name" name="last_name" required value="<?= htmlspecialchars($values['last_name']) ?>">
-                    </div>
-                    <div class="field">
-                        <label for="email">Email address *</label>
-                        <input id="email" type="email" name="email" required value="<?= htmlspecialchars($values['email']) ?>">
-                    </div>
-                    <div class="field">
-                        <label for="mobile">Mobile number</label>
-                        <input id="mobile" name="mobile" value="<?= htmlspecialchars($values['mobile']) ?>">
+                        <input id="last_name" name="last_name" required maxlength="80" autocomplete="family-name" value="<?= $h($account['last_name']) ?>">
                     </div>
                     <div class="field full">
-                        <label for="location">City / province</label>
-                        <input id="location" name="location" value="<?= htmlspecialchars($values['location']) ?>" placeholder="Where are you based?">
+                        <label for="email">Email address *</label>
+                        <input id="email" type="email" name="email" required maxlength="190" autocomplete="email" value="<?= $h($account['email']) ?>">
                     </div>
                 </div>
             </fieldset>
@@ -184,48 +170,15 @@ require __DIR__ . '/../includes/header.php';
                 <legend>2. Choose your pathway</legend>
                 <div class="pathway-choice">
                     <label>
-                        <input type="radio" name="pathway" value="employee_va" <?= $values['pathway'] === 'employee_va' ? 'checked' : '' ?>>
+                        <input type="radio" name="pathway" value="employee_va" <?= $account['pathway'] === 'employee_va' ? 'checked' : '' ?>>
                         Employee VA
                     </label>
                     <label>
-                        <input type="radio" name="pathway" value="internship" <?= $values['pathway'] === 'internship' ? 'checked' : '' ?>>
+                        <input type="radio" name="pathway" value="internship" <?= $account['pathway'] === 'internship' ? 'checked' : '' ?>>
                         Internship
                     </label>
                 </div>
-                <div class="form-grid account-pathway-fields">
-                    <div class="field employee-field">
-                        <label for="desired_role">Desired employee VA role</label>
-                        <input id="desired_role" name="desired_role" value="<?= htmlspecialchars($values['desired_role']) ?>" placeholder="e.g. Customer support">
-                    </div>
-                    <div class="field intern-field">
-                        <label for="school">School / university</label>
-                        <input id="school" name="school" value="<?= htmlspecialchars($values['school']) ?>">
-                    </div>
-                    <div class="field intern-field">
-                        <label for="course">Course / program</label>
-                        <input id="course" name="course" value="<?= htmlspecialchars($values['course']) ?>">
-                    </div>
-                    <div class="field intern-field">
-                        <label for="required_hours">Required internship hours</label>
-                        <input id="required_hours" type="number" min="1" name="required_hours" value="<?= htmlspecialchars($values['required_hours']) ?>">
-                    </div>
-                    <div class="field">
-                        <label for="start_date">Preferred start date</label>
-                        <input id="start_date" type="date" name="start_date" value="<?= htmlspecialchars($values['start_date']) ?>">
-                    </div>
-                    <div class="field intern-field">
-                        <label for="interest">Area of interest</label>
-                        <select id="interest" name="interest">
-                            <?php foreach (['Customer Success', 'Operations', 'Sales'] as $interest): ?>
-                                <option <?= $values['interest'] === $interest ? 'selected' : '' ?>><?= $interest ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="field full">
-                        <label for="skills">Skills and background</label>
-                        <textarea id="skills" name="skills" rows="4" placeholder="Tell us about your skills, tools, education, or experience."><?= htmlspecialchars($values['skills']) ?></textarea>
-                    </div>
-                </div>
+                <?php mentora_render_application_fields($answers, $account['pathway'], true); ?>
             </fieldset>
 
             <fieldset>
@@ -233,12 +186,12 @@ require __DIR__ . '/../includes/header.php';
                 <div class="form-grid">
                     <div class="field">
                         <label for="password">Password *</label>
-                        <input id="password" type="password" name="password" required>
+                        <input id="password" type="password" name="password" required minlength="8" autocomplete="new-password">
                         <small>At least 8 characters, including a number and symbol.</small>
                     </div>
                     <div class="field">
                         <label for="confirm_password">Confirm password *</label>
-                        <input id="confirm_password" type="password" name="confirm_password" required>
+                        <input id="confirm_password" type="password" name="confirm_password" required minlength="8" autocomplete="new-password">
                     </div>
                 </div>
             </fieldset>
@@ -248,24 +201,29 @@ require __DIR__ . '/../includes/header.php';
                 I confirm the information is accurate and acknowledge the Data Privacy Notice.
             </label>
             <div class="form-actions">
-                <button class="button button-primary" type="submit">Submit for approval <span>→</span></button>
+                <button class="button button-primary" type="submit">
+                    <?= $isStaff ? 'Create account' : 'Submit &amp; open my workspace' ?> <span>→</span>
+                </button>
             </div>
         </form>
         <div class="auth-links">Already have an account? <a href="signin.php">Sign in ↗</a></div>
     </section>
 </main>
 <script>
-    const pathwayInputs = document.querySelectorAll('input[name="pathway"]');
-    const updatePathwayFields = () => {
-        const selected = document.querySelector('input[name="pathway"]:checked')?.value;
-        document.querySelectorAll('.employee-field').forEach((field) => {
-            field.hidden = selected !== 'employee_va';
-        });
-        document.querySelectorAll('.intern-field').forEach((field) => {
-            field.hidden = selected !== 'internship';
-        });
-    };
-    pathwayInputs.forEach((input) => input.addEventListener('change', updatePathwayFields));
-    updatePathwayFields();
+    // Show only the questions for the selected pathway. Hidden questions are disabled,
+    // so they are neither required nor submitted.
+    (() => {
+        const form = document.getElementById('apply-form');
+        const sync = () => {
+            const selected = form.querySelector('input[name="pathway"]:checked')?.value;
+            form.querySelectorAll('[data-pathway]').forEach((group) => {
+                const active = group.dataset.pathway === selected;
+                group.hidden = !active;
+                group.querySelectorAll('input, select, textarea').forEach((input) => { input.disabled = !active; });
+            });
+        };
+        form.querySelectorAll('input[name="pathway"]').forEach((input) => input.addEventListener('change', sync));
+        sync();
+    })();
 </script>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 date_default_timezone_set('Asia/Manila');
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
-
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/auth_check.php';
+
+// Original open flow: agent pages are viewable without signing in (demo profile shown to guests).
+// This only starts the session and refreshes the signed-in user, if any; it does not restrict access.
+mentora_current_user();
+
 require __DIR__ . '/header_counts.php';
 
 /* Fallback HTML escaper */
@@ -25,6 +27,7 @@ $agentUser = (isset($_SESSION['user']) && is_array($_SESSION['user']))
     : ['name' => 'Camille Flores'];
 
 $agentName = trim((string)($agentUser['name'] ?? '')) ?: 'Camille Flores';
+$agentCode = (string)($agentUser['user_code'] ?? '');
 
 /* Breadcrumb title */
 $crumbTitle = trim(explode('|', $pageTitle)[0]);
@@ -47,13 +50,15 @@ $now = new DateTimeImmutable(
 );
 
 $agentNav = [
-    'dashboard.php'          => 'Dashboard',
-    'intern_directory.php'   => 'Interns',
-    'training_tracker.php'   => 'Training tracker',
-    'evaluation_list.php'    => 'Evaluation',
-    'reporting_overview.php' => 'Reporting',
-    'documents.php'          => 'Documents',
-    'settings.php'           => 'Settings',
+    'dashboard.php'             => 'Dashboard',
+    'intern_directory.php'      => 'Intern directory',
+    'edit_intern.php'           => 'Edit intern',
+    'training_tracker.php'      => 'Training tracker',
+    'individual_evaluation.php' => 'Individual evaluation',
+    'evaluation_list.php'       => 'Evaluation list',
+    'reporting_overview.php'    => 'Reporting overview',
+    'documents.php'             => 'Documents',
+    'settings.php'              => 'Settings',
 ];
 
 ?>
@@ -74,11 +79,11 @@ $agentNav = [
 
     <link
         rel="stylesheet"
-        href="../assets/css/style.css?v=14">
+        href="../assets/css/style.css?v=28">
 
     <link
         rel="stylesheet"
-        href="../assets/css/admin.css?v=4">
+        href="../assets/css/admin.css?v=5">
 </head>
 
 <body class="admin-body">
@@ -150,7 +155,7 @@ $agentNav = [
                     </strong>
 
                     <small>
-                        Agent · Customer Success
+                        Agent · Customer Success<?= $agentCode !== '' ? ' · ' . $e($agentCode) : '' ?>
                     </small>
 
                 </div>

@@ -3,7 +3,7 @@ $pageTitle = 'Employee list';
 $activePage = 'employee_list.php';
 require __DIR__ . '/../includes/admin_layout.php';
 
-$users = $pdo->query("SELECT first_name, last_name, email, created_at FROM users WHERE pathway = 'employee_va' ORDER BY created_at DESC")->fetchAll();
+$users = $pdo->query("SELECT user_code, first_name, last_name, email, created_at FROM users WHERE pathway = 'employee_va' ORDER BY created_at DESC")->fetchAll();
 $total = count($users);
 $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 ?>
@@ -38,6 +38,7 @@ $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
     <table class="admin-table">
         <thead>
             <tr>
+                <th>User ID</th>
                 <th>Person</th>
                 <th>Email</th>
                 <th>Pathway</th>
@@ -49,6 +50,7 @@ $h = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
         <tbody>
             <?php foreach ($users as $u): ?>
                 <tr>
+                    <td><?= $h($u['user_code']) ?></td>
                     <td><?= $h($u['first_name'] . ' ' . $u['last_name']) ?></td>
                     <td><?= $h($u['email']) ?></td>
                     <td>Employee VA</td>

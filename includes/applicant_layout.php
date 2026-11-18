@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 date_default_timezone_set('Asia/Manila');
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
-
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/auth_check.php';
+
+// Original open flow: intern and employee pages are viewable without signing in, and either
+// pathway can be browsed (demo profile shown to guests). This only starts the session and
+// refreshes the signed-in user, if any; it does not restrict access.
+mentora_current_user();
+
 require __DIR__ . '/header_counts.php';
 
 /* Fallback HTML escaper */
@@ -38,7 +41,7 @@ $email = is_array($user) ? ($user['email'] ?? '') : '';
 ========================================================= */
 
 $query = $pdo->prepare(
-    'SELECT id, first_name, last_name, email, pathway, department_id, created_at
+    'SELECT id, user_code, first_name, last_name, email, pathway, department_id, created_at
      FROM users
      WHERE email = ?
      LIMIT 1'
@@ -63,20 +66,22 @@ $currentUser = $query->fetch() ?: [
 
 $nav = $pathway === 'intern'
     ? [
+        'form.php'        => ['Form'],
         'overview.php'    => ['Overview'],
         'evaluation.php'  => ['Evaluation'],
         'profile.php'     => ['Profile'],
         'training.php'    => ['Training'],
-        'team-agent.php'  => ['Team & agent'],
-        'reporting.php'   => ['Task reporting'],
+        'team-agent.php'  => ['Assigned team & agent'],
+        'reporting.php'   => ['Reporting'],
         'settings.php'    => ['Settings']
     ]
     : [
+        'form.php'        => ['Form'],
         'overview.php'    => ['Overview'],
         'evaluation.php'  => ['Evaluation'],
         'profile.php'     => ['Profile'],
         'training.php'    => ['Training'],
-        'department.php'  => ['Department'],
+        'department.php'  => ['Assigned department'],
         'reporting.php'   => ['Reporting'],
         'settings.php'    => ['Settings']
     ];
@@ -146,15 +151,15 @@ $now = new DateTimeImmutable(
 
     <link
         rel="stylesheet"
-        href="../../assets/css/style.css?v=14">
+        href="../../assets/css/style.css?v=28">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/admin.css?v=4">
+        href="../../assets/css/admin.css?v=5">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/applicant.css">
+        href="../../assets/css/applicant.css?v=2">
 
 </head>
 
@@ -172,7 +177,7 @@ $now = new DateTimeImmutable(
 
         <a
             class="admin-brand"
-            href="<?= $e($base) ?>/overview.php"
+            href="overview.php"
             aria-label="Mentora workspace home">
 
             <img
@@ -246,7 +251,7 @@ $now = new DateTimeImmutable(
                         <?= $pathway === 'intern'
                             ? 'Internship pathway'
                             : 'Employee pathway'
-                        ?>
+                        ?><?= !empty($currentUser['user_code']) ? ' · ' . $e($currentUser['user_code']) : '' ?>
 
                     </small>
 
@@ -283,7 +288,7 @@ $now = new DateTimeImmutable(
 
                     <li>
 
-                        <a href="<?= $e($base) ?>/overview.php">
+                        <a href="overview.php">
                             <?= $e($crumbRole) ?>
                         </a>
 
@@ -344,3 +349,7 @@ $now = new DateTimeImmutable(
             class="admin-content"
             id="main-content"
             tabindex="-1">
+
+<?php if (!empty($_SESSION['flash_notice']) && is_string($_SESSION['flash_notice'])): ?>
+            <div class="applicant-banner" role="status"><strong><?= $e($_SESSION['flash_notice']) ?></strong></div>
+<?php unset($_SESSION['flash_notice']); endif; ?>

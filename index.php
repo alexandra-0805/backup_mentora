@@ -5,24 +5,9 @@ require_once __DIR__ . '/config/db.php';
 $pageTitle = 'Mentora';
 $bodyClass = 'landing-page';
 
-$icon = static function (string $name): string {
-    $paths = [
-        'sprout' => '<path d="M12 21v-8m0 0c-4.5 0-7-2.5-7-7 4.5 0 7 2.5 7 7Zm0 0c0-4.5 2.5-7 7-7 0 4.5-2.5 7-7 7Z"/>',
-        'heart' => '<path d="M20.8 8.6c0 5.2-8.8 10.1-8.8 10.1S3.2 13.8 3.2 8.6A4.6 4.6 0 0 1 12 6.2a4.6 4.6 0 0 1 8.8 2.4Z"/>',
-        'lock' => '<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v2"/>',
-        'briefcase' => '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m-13 5h18m-10 0v2h4v-2"/>',
-        'graduation' => '<path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 11v5c2.8 2.5 7.2 2.5 10 0v-5M21 9v6"/>',
-        'book' => '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"/><path d="M4 19h16"/>',
-        'message-heart' => '<path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3-.5L4 20l1.5-4A7.3 7.3 0 0 1 4.5 12 7.5 7.5 0 0 1 12 4.5a7.5 7.5 0 0 1 8 7Z"/><path d="M9 11.5c0-1.6 2-2.2 3-.8 1-1.4 3-.8 3 .8 0 1.6-3 3.2-3 3.2S9 13.1 9 11.5Z"/>',
-        'check-circle' => '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>',
-        'document' => '<path d="M6 3h8l4 4v14H6V3Z"/><path d="M14 3v5h4m-9 4h6m-6 4h6"/>',
-        'calendar' => '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4m8-4v4M4 10h16"/>',
-        'contact' => '<circle cx="12" cy="8" r="3"/><path d="M5 20a7 7 0 0 1 14 0"/>',
-        'shield-check' => '<path d="M12 3 19 6v5c0 4.5-3 7.5-7 10-4-2.5-7-5.5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/>',
-    ];
-
-    return '<svg class="page-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $paths[$name] . '</svg>';
-};
+// Icons are shared with the About us page (includes/icons.php).
+require_once __DIR__ . '/includes/icons.php';
+$icon = 'mentora_icon';
 
 require __DIR__ . '/includes/header.php';
 ?>
@@ -76,9 +61,6 @@ require __DIR__ . '/includes/header.php';
                     <li>40 hours per week with virtual support</li>
                     <li>Comfortable collaborating in English</li>
                 </ul>
-                <a class="text-button"                 href="auth/signup.php?pathway=employee_va">
-                    Apply as an employee VA <span aria-hidden="true">→</span>
-                </a>
             </article>
             <article class="feature-card">
                 <div class="card-topline">
@@ -95,10 +77,12 @@ require __DIR__ . '/includes/header.php';
                     <li>School-accredited internship</li>
                     <li>Can commit at least 20 hours per week</li>
                 </ul>
-                <a class="text-button secondary"                 href="auth/signup.php?pathway=internship">
-                    Apply for an internship <span aria-hidden="true">→</span>
-                </a>
             </article>
+        </div>
+        <div class="pathways-apply">
+            <a class="text-button" href="auth/signup.php">
+                Apply now <span aria-hidden="true">→</span>
+            </a>
         </div>
     </section>
 
@@ -143,13 +127,36 @@ require __DIR__ . '/includes/header.php';
         </div>
     </section>
 
-    <section class="section workspace-section" aria-labelledby="workspace-title">
-        <div class="workspace-copy">
-            <h2 id="workspace-title">One sign-in. The right workspace for you.</h2>
-            <p>Your account opens your application, team, or HR workspace with private, role-based access.</p>
-        </div>
-        <div>
-            <a class="button button-primary" href="auth/signin.php">Sign in to your workspace <span aria-hidden="true">→</span></a>
+    <!-- About us preview: the whole section links to about.php. -->
+    <section class="section about-teaser" aria-labelledby="about-teaser-title">
+        <div class="about-teaser-inner">
+            <div class="about-teaser-copy">
+                <p class="eyebrow">About us</p>
+                <h2 id="about-teaser-title">Get to know Mentora.</h2>
+                <p>
+                    Mentora is one workspace for the whole journey: recruitment, onboarding,
+                    training, and development. We built it so applicants, mentors, and people
+                    teams can grow together.
+                </p>
+                <ul class="about-teaser-values">
+                    <li><?= $icon('sprout') ?>Growth first</li>
+                    <li><?= $icon('message-heart') ?>Guidance, not guesswork</li>
+                    <li><?= $icon('shield-check') ?>Privacy &amp; trust</li>
+                </ul>
+                <a class="button about-teaser-link" href="about.php">Learn more about us <span aria-hidden="true">→</span></a>
+            </div>
+
+            <div class="about-teaser-visual" aria-hidden="true">
+                <div class="about-teaser-logo">
+                    <img src="assets/images/mentora-logo.png" alt="">
+                    <span>Mentora</span>
+                </div>
+                <ol class="about-teaser-journey">
+                    <li><span class="icon"><?= $icon('document') ?></span><strong>Recruit</strong><small>One simple application</small></li>
+                    <li><span class="icon"><?= $icon('book') ?></span><strong>Train</strong><small>Guided learning plans</small></li>
+                    <li><span class="icon"><?= $icon('sprout') ?></span><strong>Grow</strong><small>Mentoring &amp; evaluation</small></li>
+                </ol>
+            </div>
         </div>
     </section>
 
@@ -319,6 +326,23 @@ require __DIR__ . '/includes/header.php';
         backToTop.addEventListener('click', () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
+
+        // About us preview: clicking anywhere on the section opens the About us page.
+        // (Done in script rather than with an invisible overlay, so the text can have its own hover effects.)
+        const aboutTeaser = document.querySelector('.about-teaser');
+        const aboutLink = aboutTeaser?.querySelector('.about-teaser-link');
+        if (aboutTeaser && aboutLink) {
+            aboutTeaser.addEventListener('click', (event) => {
+                if (event.target.closest('a') || String(window.getSelection()).trim() !== '') {
+                    return; // real link clicks and text selection behave normally
+                }
+                if (event.ctrlKey || event.metaKey) {
+                    window.open(aboutLink.href, '_blank');
+                } else {
+                    window.location.href = aboutLink.href;
+                }
+            });
+        }
     })();
 </script>
 

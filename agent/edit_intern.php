@@ -1,5 +1,5 @@
 <?php
-$pageTitle='Edit intern';$activePage='intern_directory.php';require __DIR__.'/../includes/agent_layout.php';
+$pageTitle='Edit intern';$activePage='edit_intern.php';require __DIR__.'/../includes/agent_layout.php';
 $email=trim((string)($_GET['email']??''));$query=$pdo->prepare("SELECT * FROM users WHERE email=? AND pathway='internship'");$query->execute([$email]);$intern=$query->fetch();
 if (!$intern) { $intern=$pdo->query("SELECT * FROM users WHERE pathway='internship' ORDER BY created_at DESC LIMIT 1")->fetch(); }
 ?>

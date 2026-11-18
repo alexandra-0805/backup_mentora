@@ -9,7 +9,7 @@
 /* ---------- Base / theme tokens ---------- */
 .admin-body,
 .applicant-body {
-    --workspace-blue: #007aff;
+    --workspace-blue: var(--mentora-teal); /* was iOS blue */
     --workspace-bg: #f5f5f7;
     --workspace-surface: rgba(255, 255, 255, 0.86);
     --workspace-line: rgba(60, 60, 67, 0.13);
@@ -520,7 +520,7 @@
 
 .notice,
 .applicant-banner {
-    border: 1px solid rgba(0, 122, 255, 0.1);
+    border: 1px solid rgba(11, 98, 93, 0.1);
     border-radius: 14px;
 }
 
@@ -539,8 +539,8 @@
 }
 
 .badge.info {
-    background: #eee9f8;
-    color: #776399;
+    background: var(--mentora-pale);
+    color: var(--mentora-teal);
 }
 
 /* ---------- Tables ---------- */
@@ -661,7 +661,7 @@
 }
 
 .notification-panel-header a {
-    color: #007aff;
+    color: var(--mentora-teal);
     font-size: 11px;
     font-weight: 700;
     text-decoration: none;
@@ -680,7 +680,7 @@
 .notification-mark-done {
     background: transparent;
     border: 0;
-    color: #007aff;
+    color: var(--mentora-teal);
     cursor: pointer;
     font: inherit;
     font-size: 11px;
@@ -739,7 +739,7 @@
 }
 
 .notification-item.unread .notification-item-dot {
-    background: #007aff;
+    background: var(--mentora-teal);
 }
 
 .notification-item strong {
@@ -841,7 +841,7 @@
 
 .message-toast-avatar {
     align-items: center;
-    background: #007aff;
+    background: var(--mentora-teal);
     border-radius: 50%;
     color: #fff;
     display: inline-flex;
@@ -886,7 +886,7 @@
 }
 
 .message-toast-all {
-    color: #007aff;
+    color: var(--mentora-teal);
     display: block;
     font-size: 12px;
     font-weight: 700;
@@ -896,7 +896,7 @@
 }
 
 .message-toast-all:hover {
-    background: rgba(0, 122, 255, 0.06);
+    background: rgba(11, 98, 93, 0.06);
 }
 
 /* ==========================================================================
@@ -1108,5 +1108,175 @@
         position: fixed;
         right: 16px;
         top: 70px;
+    }
+}
+
+/* ==========================================================================
+   Mentora hover system: admin, agent and applicant workspaces
+   Same pattern as the landing page: soft teal glow, Mentora gradient fills,
+   mint highlights. Colours come from --mentora-* in style.css :root.
+   ========================================================================== */
+
+/* Sidebar: mint accent bar slides in on the left of the hovered item. */
+.admin-nav a {
+    box-shadow: inset 0 0 0 transparent;
+    transition: background 180ms ease, box-shadow 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.admin-nav a:not(.active):hover {
+    box-shadow: inset 3px 0 0 var(--mentora-mint);
+    color: #fff;
+}
+
+/* Buttons. */
+.admin-btn {
+    transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.admin-btn:hover {
+    border-color: rgba(11, 98, 93, 0.35);
+    box-shadow: 0 6px 16px rgba(11, 98, 93, 0.14);
+    color: var(--mentora-teal);
+}
+
+.admin-btn.primary:hover {
+    background: var(--mentora-gradient);
+    border-color: var(--mentora-teal);
+    box-shadow: 0 10px 22px rgba(11, 98, 93, 0.26);
+    color: #fff;
+}
+
+.admin-btn:focus-visible {
+    outline: 2px solid var(--mentora-teal);
+    outline-offset: 2px;
+}
+
+/* Metric cards: lift with a teal glow and a teal-to-mint bar along the top. */
+.metric-card {
+    overflow: hidden;
+    position: relative;
+    transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.metric-card::before {
+    background: linear-gradient(90deg, var(--mentora-deep), var(--mentora-green) 60%, var(--mentora-mint));
+    content: "";
+    height: 3px;
+    inset: 0 0 auto 0;
+    position: absolute;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 320ms ease;
+}
+
+.metric-card:hover {
+    border-color: rgba(11, 98, 93, 0.3);
+    box-shadow: 0 16px 34px rgba(11, 98, 93, 0.13);
+}
+
+.metric-card:hover::before {
+    transform: scaleX(1);
+}
+
+.metric-card strong {
+    transition: color 220ms ease;
+}
+
+.metric-card:hover strong {
+    color: var(--mentora-teal);
+}
+
+/* Panels and cards: teal outline and glow (no lift, so tables and forms stay steady). */
+.admin-panel,
+.pathway-card {
+    transition: border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.admin-panel:hover,
+.pathway-card:hover {
+    border-color: rgba(11, 98, 93, 0.25);
+    box-shadow: 0 14px 32px rgba(11, 98, 93, 0.09);
+}
+
+.admin-panel h2,
+.pathway-card h2,
+.pathway-card h3 {
+    transition: color 220ms ease;
+}
+
+.admin-panel:hover h2,
+.pathway-card:hover h2,
+.pathway-card:hover h3 {
+    color: var(--mentora-teal);
+}
+
+/* Table rows. */
+.admin-table tbody td {
+    transition: background 160ms ease;
+}
+
+.admin-table tbody tr:hover td {
+    background: rgba(20, 123, 113, 0.06);
+}
+
+/* Badges, progress bars, applicant timeline and lists. */
+.badge {
+    transition: background 180ms ease, color 180ms ease;
+}
+
+.badge:hover {
+    background: var(--mentora-green);
+    color: #fff;
+}
+
+.bar i {
+    background: linear-gradient(90deg, var(--mentora-teal), var(--mentora-green));
+}
+
+.timeline-dot {
+    transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.timeline-step:hover .timeline-dot {
+    box-shadow: 0 0 0 6px rgba(20, 123, 113, 0.18);
+    transform: scale(1.12);
+}
+
+.checklist li,
+.status-list li {
+    transition: color 180ms ease, transform 180ms ease;
+}
+
+.checklist li:hover {
+    color: var(--mentora-deep);
+    transform: translateX(3px);
+}
+
+.status-list li:hover {
+    color: var(--mentora-deep);
+}
+
+/* Breadcrumb and in-page text links. */
+.crumbs a:hover,
+.admin-content a:not([class]):hover {
+    color: var(--mentora-teal);
+}
+
+/* Notification / message panel links. */
+.message-toast-all:hover,
+.notification-panel-header a:hover,
+.notification-mark-done:hover {
+    color: var(--mentora-teal);
+}
+
+/* Keep the colour feedback but drop the movement for people who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+    .timeline-step:hover .timeline-dot,
+    .checklist li:hover {
+        transform: none;
+    }
+
+    .metric-card::before {
+        transition: none;
     }
 }

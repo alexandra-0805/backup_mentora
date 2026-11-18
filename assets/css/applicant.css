@@ -248,12 +248,12 @@
 }
 
 .timeline-dot {
-    background: #007aff;
-    box-shadow: 0 0 0 5px rgba(0, 122, 255, 0.1);
+    background: var(--mentora-teal);
+    box-shadow: 0 0 0 5px rgba(11, 98, 93, 0.1);
 }
 
 .timeline-step.pending .timeline-dot {
-    background: #dfeaf7;
+    background: var(--mentora-pale);
     box-shadow: none;
 }
 
@@ -262,7 +262,7 @@
 }
 
 .checklist li:before {
-    color: #007aff;
+    color: var(--mentora-teal);
 }
 
 @media (max-width: 760px) {
