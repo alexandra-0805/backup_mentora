@@ -3947,3 +3947,106 @@ body:not(.landing-page) .field textarea:hover {
         transform: none;
     }
 }
+
+/* ==========================================================================
+   Responsive refinements (tablet and mobile only; desktop is unchanged)
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+    /* Keep the CTA heading from running into its button. */
+    .cta {
+        gap: 32px;
+    }
+
+    .cta .button {
+        flex-shrink: 0;
+    }
+}
+
+/* Messages (tablet): give the conversation thread room; the details panel moves below. */
+@media (min-width: 601px) and (max-width: 1024px) {
+    .chat-workspace {
+        grid-template-columns: 260px minmax(0, 1fr);
+    }
+
+    .chat-info {
+        border-left: 0;
+        border-top: 1px solid #383a3c;
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 700px) {
+    /* Stacked hero buttons stay centred under the heading. */
+    .landing-page .actions {
+        align-items: center;
+    }
+
+    /* About hero uses the same mobile height as the landing hero. */
+    .about-page .about-hero {
+        min-height: 560px;
+        padding: 120px 20px 72px;
+    }
+
+    /* Footer: centred column (logo above the copyright, links centred below). */
+    .footer {
+        text-align: center;
+    }
+
+    .footer > div:first-child,
+    .footer > div:last-child {
+        flex-direction: column;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .landing-page .footer {
+        padding-bottom: 28px;
+        padding-top: 28px;
+    }
+}
+
+@media (max-width: 600px) {
+    .chat-message-text,
+    .messages-inbox-detail-body {
+        overflow-wrap: anywhere;
+    }
+}
+
+/* Small phones: shrink the floating header so the logo, Sign in and Apply now fit on one row. */
+@media (max-width: 480px) {
+    .landing-page .topbar {
+        gap: 8px;
+        margin-left: 12px;
+        margin-right: 12px;
+        padding: 0 12px;
+    }
+
+    .landing-page .brand {
+        gap: 6px;
+        padding: 3px 10px 3px 3px;
+    }
+
+    .landing-page .brand img {
+        height: 40px;
+        width: 40px;
+    }
+
+    .landing-page .brand span {
+        font-size: 14px;
+    }
+
+    .landing-page .topbar nav {
+        gap: 4px;
+    }
+
+    .landing-page .topbar nav a {
+        padding: 8px 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .landing-page .topbar nav a {
+        padding: 7px 8px;
+    }
+}

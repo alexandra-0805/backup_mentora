@@ -1280,3 +1280,239 @@
         transition: none;
     }
 }
+
+/* ==========================================================================
+   Responsive refinements (tablet and mobile only; desktop is unchanged)
+   ========================================================================== */
+
+/* Tablet: stack the two-column panels and let wide tables scroll instead of being cut off. */
+@media (max-width: 1024px) {
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-grid > * {
+        min-width: 0;
+    }
+
+    .admin-panel .metric-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .data-panel,
+    .admin-panel:has(> .admin-table),
+    .pathway-card:has(> .admin-table) {
+        overflow-x: auto;
+    }
+}
+
+/* Mobile: wrap toolbars, shorten long breadcrumbs, and keep row values inside their cards. */
+@media (max-width: 760px) {
+    .table-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .table-toolbar input {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    .table-toolbar select {
+        flex: 1 1 140px;
+        min-width: 0;
+    }
+
+    .crumbs li:last-child {
+        min-width: 0;
+    }
+
+    .crumbs [aria-current="page"] {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .notice-row,
+    .list-row {
+        gap: 12px;
+    }
+
+    .notice-row > *,
+    .list-row > * {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .notice-row > .badge,
+    .list-row > .badge {
+        flex-shrink: 0;
+    }
+
+    /* Workspace footer: centred, with the secondary line underneath. */
+    .admin-footer {
+        border-top: 1px solid var(--workspace-line);
+        line-height: 1.6;
+        padding: 18px 16px 22px;
+        text-align: center;
+    }
+}
+
+/* ---------- Mobile sidebar menu (hamburger) ---------- */
+/* Button lives in includes/sidebar_toggle.php; it only appears once the sidebar becomes a top bar. */
+.sidebar-toggle {
+    display: none;
+}
+
+@media (max-width: 760px) {
+    .sidebar-toggle {
+        align-items: center;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        flex-direction: column;
+        gap: 4px;
+        height: 42px;
+        justify-content: center;
+        padding: 0;
+        position: absolute;
+        right: 12px;
+        top: 22px;
+        transition: background 180ms ease, border-color 180ms ease;
+        width: 42px;
+    }
+
+    .sidebar-toggle:hover {
+        background: rgba(255, 255, 255, 0.18);
+        border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .sidebar-toggle:focus-visible {
+        outline: 2px solid rgba(255, 255, 255, 0.9);
+        outline-offset: 2px;
+    }
+
+    .sidebar-toggle span {
+        background: #fff;
+        border-radius: 2px;
+        display: block;
+        height: 2px;
+        transition: opacity 200ms ease, transform 200ms ease;
+        width: 18px;
+    }
+
+    /* Lines turn into an X while the menu is open. */
+    .is-open > .sidebar-toggle span:nth-child(1) {
+        transform: translateY(6px) rotate(45deg);
+    }
+
+    .is-open > .sidebar-toggle span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .is-open > .sidebar-toggle span:nth-child(3) {
+        transform: translateY(-6px) rotate(-45deg);
+    }
+
+    /* Closed: only the logo row and the menu button. */
+    aside.admin-sidebar .admin-brand,
+    aside.applicant-sidebar .admin-brand {
+        margin-bottom: 0;
+    }
+
+    .admin-sidebar:not(.is-open) .admin-nav,
+    .admin-sidebar:not(.is-open) .sidebar-bottom,
+    .applicant-sidebar:not(.is-open) .admin-nav,
+    .applicant-sidebar:not(.is-open) .sidebar-bottom {
+        display: none;
+    }
+
+    /* Open: the sidebar floats over the page as a rounded drawer (same look as the desktop sidebar). */
+    aside.is-open.admin-sidebar,
+    aside.is-open.applicant-sidebar {
+        animation: sidebar-drawer-in 220ms ease;
+        border-radius: 20px;
+        box-shadow: 0 24px 60px rgba(3, 30, 29, 0.45);
+        inset: 10px auto 10px 10px;
+        overflow-y: auto;
+        padding: 18px 14px;
+        position: fixed;
+        width: min(300px, calc(100vw - 20px));
+        z-index: 60;
+    }
+
+    /* Keep the page where it was while the bar is lifted out into the drawer. */
+    body.sidebar-menu-open {
+        overflow: hidden;
+    }
+
+    body.sidebar-menu-open .admin-main {
+        margin-top: var(--sidebar-bar-height, 0px);
+    }
+
+    /* Dimmed backdrop behind the drawer; tapping it closes the menu. */
+    body.sidebar-menu-open::after {
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+        background: rgba(6, 30, 29, 0.45);
+        content: "";
+        inset: 0;
+        position: fixed;
+        z-index: 55;
+    }
+
+    aside.is-open .admin-brand {
+        margin-bottom: 12px;
+    }
+
+    /* Sign out + profile chip sit at the bottom of the drawer, as on the desktop sidebar. */
+    aside.is-open .sidebar-bottom {
+        margin-top: auto;
+    }
+
+    .is-open .admin-nav {
+        display: block;
+        overflow-x: visible;
+        padding: 0;
+    }
+
+    .is-open .admin-nav a {
+        white-space: normal;
+    }
+
+    .is-open .admin-nav .nav-label,
+    .applicant-sidebar.is-open > .nav-label {
+        display: block;
+    }
+}
+
+@keyframes sidebar-drawer-in {
+    from {
+        opacity: 0;
+        transform: translateX(-24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar-toggle span {
+        transition: none;
+    }
+
+    aside.is-open.admin-sidebar,
+    aside.is-open.applicant-sidebar {
+        animation: none;
+    }
+}
+
+@media (max-width: 600px) {
+    /* Short card tables (training modules, evaluation criteria) fit the card rather than scrolling 780px. */
+    .pathway-card .admin-table {
+        min-width: 0;
+    }
+}

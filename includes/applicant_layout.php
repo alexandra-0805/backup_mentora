@@ -41,7 +41,7 @@ $email = is_array($user) ? ($user['email'] ?? '') : '';
 ========================================================= */
 
 $query = $pdo->prepare(
-    'SELECT id, user_code, first_name, last_name, email, pathway, department_id, created_at
+    'SELECT id, user_code, first_name, last_name, email, pathway, department_id, avatar_path, created_at
      FROM users
      WHERE email = ?
      LIMIT 1'
@@ -57,7 +57,8 @@ $currentUser = $query->fetch() ?: [
     'pathway'       => $pathway === 'intern'
         ? 'internship'
         : 'employee_va',
-    'department_id' => null
+    'department_id' => null,
+    'avatar_path'   => null
 ];
 
 /* =========================================================
@@ -66,7 +67,6 @@ $currentUser = $query->fetch() ?: [
 
 $nav = $pathway === 'intern'
     ? [
-        'form.php'        => ['Form'],
         'overview.php'    => ['Overview'],
         'evaluation.php'  => ['Evaluation'],
         'profile.php'     => ['Profile'],
@@ -76,7 +76,6 @@ $nav = $pathway === 'intern'
         'settings.php'    => ['Settings']
     ]
     : [
-        'form.php'        => ['Form'],
         'overview.php'    => ['Overview'],
         'evaluation.php'  => ['Evaluation'],
         'profile.php'     => ['Profile'],
@@ -107,6 +106,8 @@ $initials = strtoupper(
 $initials = $initials !== ''
     ? $initials
     : 'U';
+
+$avatarUrl = mentora_avatar_url($currentUser['avatar_path'] ?? null, '../../');
 
 /* =========================================================
    BREADCRUMB
@@ -161,6 +162,20 @@ $now = new DateTimeImmutable(
         rel="stylesheet"
         href="../../assets/css/applicant.css?v=2">
 
+    <link
+        rel="stylesheet"
+        href="../../assets/css/settings.css?v=5">
+
+    <link
+        rel="stylesheet"
+        href="../../assets/css/theme.css?v=6">
+
+    <link
+        rel="stylesheet"
+        href="../../assets/css/dialog.css?v=1">
+
+    <?php require __DIR__ . '/theme_boot.php'; ?>
+
 </head>
 
 
@@ -177,8 +192,9 @@ $now = new DateTimeImmutable(
 
         <a
             class="admin-brand"
-            href="overview.php"
-            aria-label="Mentora workspace home">
+            href="<?= $e(basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'overview.php'))) ?>"
+            aria-label="Mentora, <?= $e($crumbTitle) ?>"
+            aria-current="page"><?php // The Mentora logo keeps you on the page you are on (e.g. Training -> Training). ?>
 
             <img
                 src="../../assets/images/mentora-logo.png"
@@ -189,6 +205,8 @@ $now = new DateTimeImmutable(
             </span>
 
         </a>
+
+        <?php require __DIR__ . '/sidebar_toggle.php'; ?>
 
 
         <small class="nav-label">
@@ -203,6 +221,7 @@ $now = new DateTimeImmutable(
 
         <nav
             class="admin-nav"
+            id="workspace-nav"
             aria-label="<?= $e($crumbRole) ?> navigation">
 
             <?php foreach ($nav as $file => [$label]): ?>
@@ -235,9 +254,7 @@ $now = new DateTimeImmutable(
                 href="profile.php"
                 aria-label="Open profile">
 
-                <span>
-                    <?= $e($initials) ?>
-                </span>
+                <?= mentora_avatar($avatarUrl, $initials) ?>
 
 
                 <div>
@@ -312,6 +329,7 @@ $now = new DateTimeImmutable(
 
             <span class="topbar-actions">
 
+                <?php $themeToggleClass = 'header-icon-link'; require __DIR__ . '/theme_toggle.php'; ?>
 
                 <?php require __DIR__ . '/message_panel.php'; ?>
 
@@ -322,12 +340,12 @@ $now = new DateTimeImmutable(
                 <!-- Profile -->
 
                 <a
-                    class="header-avatar-link"
+                    class="header-avatar-link<?= $avatarUrl ? ' has-photo' : '' ?>"
                     href="profile.php"
                     aria-label="Profile"
                     title="Profile">
 
-                    <?= $e($initials) ?>
+                    <?= $avatarUrl ? '<img class="avatar-img" src="' . $e($avatarUrl) . '" alt="">' : $e($initials) ?>
 
                 </a>
 

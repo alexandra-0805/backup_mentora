@@ -1,2 +1,17 @@
-<?php $pathway='employee';$pageTitle='Settings';$activePage='settings.php';require __DIR__.'/../../includes/applicant_layout.php'; ?>
-<div class="admin-heading"><div><h1>Settings</h1><p>Manage your account, keep it secure, and choose how you stay updated.</p></div><a class="admin-btn primary" href="settings.php?saved=1">Save changes</a></div><?php if(isset($_GET['saved'])): ?><div class="notice">Your settings were saved.</div><?php endif; ?><div class="admin-grid"><section class="pathway-card"><h3>Account & contact information</h3><div class="form-grid"><div class="field"><label>First name</label><input value="<?= htmlspecialchars($currentUser['first_name']) ?>"></div><div class="field"><label>Last name</label><input value="<?= htmlspecialchars($currentUser['last_name']) ?>"></div><div class="field full"><label>Email address</label><input value="<?= htmlspecialchars($currentUser['email']) ?>"></div><div class="field full"><label>Location</label><input placeholder="Quezon City, Philippines"></div></div></section><section class="pathway-card"><h3>Password & security</h3><div class="notice-row"><span>Password</span><strong>••••••••••</strong></div><div class="notice-row"><span>Two-step verification</span><span class="badge info">Not enabled</span></div><a class="admin-btn" href="../../auth/forgot_password.php">Change password</a></section></div><section class="pathway-card"><h3>Notification preferences</h3><div class="notice-row"><span>Training & onboarding updates</span><span class="badge">Enabled</span></div><div class="notice-row"><span>Department & manager updates</span><span class="badge">Enabled</span></div><div class="notice-row"><span>Daily work reports</span><span class="badge info">Off</span></div></section><?php require __DIR__.'/../../includes/applicant_footer.php'; ?>
+<?php
+$pathway = 'employee';
+$pageTitle = 'Settings';
+$activePage = 'settings.php';
+require __DIR__ . '/../../includes/applicant_layout.php';
+
+$settingsRole = 'employee';
+require __DIR__ . '/../../includes/settings_applicant_account.php';
+?>
+<div class="admin-heading">
+    <div>
+        <h1 data-i18n="settingsTitle">Settings</h1>
+        <p data-i18n="settingsSubtitle">Make Mentora feel like yours.</p>
+    </div>
+</div>
+<?php require __DIR__ . '/../../includes/settings_panel.php'; ?>
+<?php require __DIR__ . '/../../includes/applicant_footer.php'; ?>

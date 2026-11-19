@@ -96,7 +96,11 @@ require __DIR__ . '/applicant_layout.php';
     <?php mentora_render_application_fields($answers, $formPathway); ?>
     <label><input type="checkbox" name="confirm" required> I confirm the information provided is accurate.</label>
     <div class="form-actions">
-        <button class="admin-btn primary" type="submit"><?= $application ? 'Save changes' : 'Submit application' ?></button>
+        <button class="admin-btn primary" type="submit"
+            data-confirm-title="<?= $application ? 'Update your application?' : 'Submit your application?' ?>"
+            data-confirm="<?= $application
+                ? 'Your qualifications form will be updated with these details.'
+                : 'The Mentora team will review your qualifications. You can still update them later.' ?>"><?= $application ? 'Save changes' : 'Submit application' ?></button>
     </div>
 </form>
 <?php require __DIR__ . '/applicant_footer.php'; ?>

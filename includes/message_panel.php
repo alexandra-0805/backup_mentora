@@ -29,7 +29,7 @@ $messageItems = $messageQuery->fetchAll();
                         <div>
                             <strong><?= htmlspecialchars($message['sender_name'], ENT_QUOTES, 'UTF-8') ?></strong>
                             <h3><?= htmlspecialchars($message['subject'], ENT_QUOTES, 'UTF-8') ?></h3>
-                            <p><?= htmlspecialchars($message['body'], ENT_QUOTES, 'UTF-8') ?></p>
+                            <p><?= trim((string) $message['body']) !== '' ? htmlspecialchars($message['body'], ENT_QUOTES, 'UTF-8') : '📎 Attachment' ?></p>
                             <small><?= htmlspecialchars($message['created_at'], ENT_QUOTES, 'UTF-8') ?></small>
                         </div>
                     </article>

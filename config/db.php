@@ -58,6 +58,10 @@ try {
     if (!in_array('user_code', $userColumns, true)) {
         $pdo->exec('ALTER TABLE users ADD COLUMN user_code VARCHAR(20) NULL AFTER id, ADD UNIQUE KEY uq_users_user_code (user_code)');
     }
+    // Profile photo, relative to the app root (uploads/avatars/...); NULL shows initials instead.
+    if (!in_array('avatar_path', $userColumns, true)) {
+        $pdo->exec('ALTER TABLE users ADD COLUMN avatar_path VARCHAR(190) NULL AFTER department_id');
+    }
     // Give every user without a code one: role prefix + their id, e.g. ADM-0001, AGT-0002, INT-0003, EMP-0004.
     // Covers app sign-ups and rows added by hand (e.g. in phpMyAdmin). The id part keeps codes unique.
     $pdo->exec(
@@ -153,6 +157,38 @@ try {
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT fk_messages_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL,
             CONSTRAINT fk_messages_recipient FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // Files, images and GIFs sent with a message (account/messages.php). Uploaded files live in
+    // uploads/messages/ (not directly reachable) and are served by account/attachment.php after an
+    // access check; a GIF from GIPHY is stored as its URL.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS message_attachments (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            message_id BIGINT UNSIGNED NOT NULL,
+            kind ENUM("image", "file", "gif") NOT NULL,
+            stored_name VARCHAR(80) NULL,
+            url VARCHAR(500) NULL,
+            original_name VARCHAR(190) NOT NULL DEFAULT "",
+            mime VARCHAR(120) NOT NULL DEFAULT "",
+            size INT UNSIGNED NOT NULL DEFAULT 0,
+            width SMALLINT UNSIGNED NULL,
+            height SMALLINT UNSIGNED NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_message_attachments_message (message_id),
+            CONSTRAINT fk_message_attachments_message FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // Who has read an announcement (a message with recipient_id NULL goes to everyone, so its
+    // own read_at can't say which person read it). Direct messages keep using messages.read_at.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS message_reads (
+            message_id BIGINT UNSIGNED NOT NULL,
+            user_id INT UNSIGNED NOT NULL,
+            read_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (message_id, user_id),
+            CONSTRAINT fk_message_reads_message FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+            CONSTRAINT fk_message_reads_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
 } catch (PDOException $exception) {

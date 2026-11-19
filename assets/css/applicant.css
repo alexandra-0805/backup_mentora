@@ -319,10 +319,18 @@
 @media (max-width: 760px) {
     .applicant-sidebar {
         padding: 14px 12px;
+        /* The base rule above re-declares position: fixed, which would float the sidebar over the page here. */
+        position: relative;
         width: auto;
     }
 
     .applicant-body .admin-main {
         margin-left: 0;
+    }
+
+    /* The 700px ellipsis rule (span:first-child) must not clip the message/notification popovers. */
+    .admin-topbar .topbar-actions > span {
+        max-width: none;
+        overflow: visible;
     }
 }

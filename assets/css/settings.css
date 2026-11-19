@@ -1,0 +1,1270 @@
+/* ==========================================================================
+   Workspace preferences + Settings page (admin, agent, employee, intern)
+   Values are set on <body> by includes/workspace_theme_runtime.php:
+     .workspace-dark-mode, .accent-custom + data-accent, data-text-size, data-ui-style,
+     .hide-header-badges, .hide-message-previews
+   With no saved preferences the workspace looks exactly as before.
+   ========================================================================== */
+
+/* ---------- UI style: corner radius tokens ---------- */
+body {
+    --ui-radius-card: 18px;
+    --ui-radius-control: 999px;
+    --ui-radius-item: 12px;
+    --settings-card-solid: #fff;
+}
+
+body[data-ui-style="soft"] {
+    --ui-radius-card: 12px;
+    --ui-radius-control: 10px;
+    --ui-radius-item: 8px;
+}
+
+body[data-ui-style="crisp"] {
+    --ui-radius-card: 4px;
+    --ui-radius-control: 4px;
+    --ui-radius-item: 3px;
+}
+
+body:is([data-ui-style="soft"], [data-ui-style="crisp"]) :is(.metric-card, .admin-panel, .pathway-card, .notice, .applicant-banner, .notification-panel, .message-toast-panel) {
+    border-radius: var(--ui-radius-card);
+}
+
+body:is([data-ui-style="soft"], [data-ui-style="crisp"]) :is(.admin-btn, .badge, .button) {
+    border-radius: var(--ui-radius-control);
+}
+
+body:is([data-ui-style="soft"], [data-ui-style="crisp"]) :is(.admin-nav a, .profile-chip:hover, .admin-brand, .table-toolbar input, .table-toolbar select, .field input, .field select, .field textarea) {
+    border-radius: var(--ui-radius-item);
+}
+
+/* ---------- Theme color (Mentora teal is the default and needs no overrides) ---------- */
+body[data-accent="ocean"] {
+    --mentora-deep: #0a3550;
+    --mentora-teal: #155e85;
+    --mentora-green: #1f7aa0;
+    --mentora-mint: #9fdcf5;
+    --mentora-pale: #e3f1f8;
+    --mentora-gradient: linear-gradient(135deg, #0a3550 0%, #155e85 55%, #1f7aa0 100%);
+    --accent-sidebar-start: #0f344b;
+    --accent-sidebar-end: #165a7d;
+}
+
+body[data-accent="forest"] {
+    --mentora-deep: #1d3d1f;
+    --mentora-teal: #2f6b35;
+    --mentora-green: #3f8a45;
+    --mentora-mint: #b5ecb0;
+    --mentora-pale: #e6f3e4;
+    --mentora-gradient: linear-gradient(135deg, #1d3d1f 0%, #2f6b35 55%, #3f8a45 100%);
+    --accent-sidebar-start: #1f4122;
+    --accent-sidebar-end: #2c6431;
+}
+
+body[data-accent="plum"] {
+    --mentora-deep: #3a2346;
+    --mentora-teal: #5e3a75;
+    --mentora-green: #7a4d94;
+    --mentora-mint: #e0c4f2;
+    --mentora-pale: #f1e8f6;
+    --mentora-gradient: linear-gradient(135deg, #3a2346 0%, #5e3a75 55%, #7a4d94 100%);
+    --accent-sidebar-start: #3a2346;
+    --accent-sidebar-end: #5a3870;
+}
+
+body[data-accent="amber"] {
+    --mentora-deep: #4a2e08;
+    --mentora-teal: #8a5a12;
+    --mentora-green: #a8701c;
+    --mentora-mint: #ffd38a;
+    --mentora-pale: #f8eedf;
+    --mentora-gradient: linear-gradient(135deg, #4a2e08 0%, #8a5a12 55%, #a8701c 100%);
+    --accent-sidebar-start: #4a3010;
+    --accent-sidebar-end: #7a5214;
+}
+
+body.accent-custom .admin-sidebar,
+body.accent-custom .applicant-sidebar {
+    background: linear-gradient(180deg, var(--accent-sidebar-start) 0%, var(--accent-sidebar-end) 100%);
+}
+
+body.accent-custom .admin-nav a.active,
+body.accent-custom .admin-btn:not(.primary),
+body.accent-custom .admin-brand:hover span {
+    color: var(--mentora-teal);
+}
+
+body.accent-custom .header-icon-link,
+body.accent-custom .header-avatar-link,
+body.accent-custom .profile-chip > span {
+    background: var(--mentora-pale);
+    color: var(--mentora-teal);
+}
+
+body.accent-custom .admin-panel h2,
+body.accent-custom .applicant-banner,
+body.accent-custom .notice {
+    color: var(--mentora-deep);
+}
+
+body.accent-custom .applicant-banner,
+body.accent-custom .notice {
+    background: var(--mentora-pale);
+}
+
+body.accent-custom .metric-card span {
+    color: var(--mentora-green);
+}
+
+body.accent-custom .progress i {
+    background: var(--mentora-teal);
+}
+
+/* ---------- Text size (scales the page content, not the sidebar) ---------- */
+body[data-text-size="small"] .admin-content {
+    zoom: 0.92;
+}
+
+body[data-text-size="large"] .admin-content {
+    zoom: 1.1;
+}
+
+body[data-text-size="xlarge"] .admin-content {
+    zoom: 1.2;
+}
+
+/* ---------- Notification options ---------- */
+body.hide-header-badges .header-icon-badge,
+body.hide-message-previews .message-toast-item p {
+    display: none;
+}
+
+/* ---------- Dark mode (whole workspace) ---------- */
+body.workspace-dark-mode {
+    --workspace-bg: #0b1a19;
+    --workspace-surface: rgba(19, 42, 41, 0.92);
+    --workspace-line: rgba(255, 255, 255, 0.1);
+    --workspace-muted: #9cb7b4;
+    --settings-card-solid: #142a29;
+    background:
+        radial-gradient(circle at 100% 0, color-mix(in srgb, var(--mentora-teal) 24%, transparent), transparent 25rem),
+        var(--workspace-bg);
+    color: #e4f1ef;
+    color-scheme: dark;
+}
+
+body.workspace-dark-mode .admin-topbar {
+    background: rgba(11, 26, 25, 0.84);
+}
+
+body.workspace-dark-mode :is(.admin-heading h1, .crumbs [aria-current="page"], .admin-topbar strong, .metric-card strong, .admin-panel h2, .pathway-card h2, .pathway-card h3, .notification-panel, .message-toast-panel, .message-toast-item h3, .message-toast-header strong) {
+    color: #eef6f5;
+}
+
+body.workspace-dark-mode :is(.metric-card:hover strong, .admin-panel:hover h2, .pathway-card:hover h2, .pathway-card:hover h3, .status-list li:hover, .checklist li:hover) {
+    color: var(--mentora-mint);
+}
+
+/* Every workspace card uses the same dark surface as the Settings cards
+   (applicant.css sets .pathway-card to plain white, so it needs its own override). */
+body.workspace-dark-mode :is(.metric-card, .admin-panel, .pathway-card) {
+    background: var(--workspace-surface);
+    border-color: var(--workspace-line);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+}
+
+body.workspace-dark-mode .alert {
+    background: rgba(240, 68, 56, 0.14);
+    color: #fda29b;
+}
+
+body.workspace-dark-mode .alert.success {
+    background: rgba(52, 168, 120, 0.16);
+    color: #8fe0b8;
+}
+
+body.workspace-dark-mode :is(.metric-card:hover, .admin-panel:hover, .pathway-card:hover) {
+    border-color: rgba(143, 239, 218, 0.25);
+}
+
+body.workspace-dark-mode .metric-card span {
+    color: color-mix(in srgb, var(--mentora-mint) 80%, #fff);
+}
+
+body.workspace-dark-mode .admin-table th {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--workspace-muted);
+}
+
+body.workspace-dark-mode .admin-table td {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+body.workspace-dark-mode .admin-table td:first-child {
+    color: #d5ece8;
+}
+
+body.workspace-dark-mode .admin-table tbody tr:hover td {
+    background: rgba(143, 239, 218, 0.06);
+}
+
+body.workspace-dark-mode :is(.notice-row, .list-row, .status-list li) {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+body.workspace-dark-mode .table-toolbar {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+body.workspace-dark-mode :is(.table-toolbar input, .table-toolbar select, .field input, .field select, .field textarea, .applicant-form textarea, .admin-table select) {
+    background: #0f2221;
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #e4f1ef;
+}
+
+body.workspace-dark-mode .field label {
+    color: #cfe3e0;
+}
+
+body.workspace-dark-mode .admin-btn:not(.primary) {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #d5ece8;
+}
+
+body.workspace-dark-mode .admin-btn:not(.primary):hover {
+    color: var(--mentora-mint);
+}
+
+body.workspace-dark-mode .badge {
+    background: rgba(52, 168, 120, 0.18);
+    color: #8fe0b8;
+}
+
+body.workspace-dark-mode .badge.warn {
+    background: rgba(245, 190, 90, 0.16);
+    color: #f2cc7d;
+}
+
+body.workspace-dark-mode .badge.info {
+    background: rgba(143, 239, 218, 0.12);
+    color: var(--mentora-mint);
+}
+
+body.workspace-dark-mode .badge:hover {
+    background: var(--mentora-green);
+    color: #fff;
+}
+
+body.workspace-dark-mode :is(.notice, .applicant-banner) {
+    background: rgba(143, 239, 218, 0.08);
+    border-color: rgba(143, 239, 218, 0.16);
+    color: #cdeee8;
+}
+
+body.workspace-dark-mode :is(.header-icon-link, .header-avatar-link) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #d5ece8;
+}
+
+body.workspace-dark-mode .header-icon-badge {
+    border-color: #0b1a19;
+}
+
+body.workspace-dark-mode :is(.notification-panel, .message-toast-panel) {
+    background: #132a29;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+}
+
+body.workspace-dark-mode :is(.notification-panel-header, .message-toast-header) {
+    background: #0f2221;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+body.workspace-dark-mode :is(.notification-item, .message-toast-item) {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+body.workspace-dark-mode :is(.notification-item p, .message-toast-item p, .notification-empty, .message-toast-empty, .pathway-card p, .pathway-card li) {
+    color: #b5ccc9;
+}
+
+body.workspace-dark-mode .message-toast-item strong {
+    color: var(--workspace-muted);
+}
+
+body.workspace-dark-mode :is(.notification-close, .message-toast-close) {
+    background: rgba(255, 255, 255, 0.12);
+    color: #e4f1ef;
+}
+
+body.workspace-dark-mode :is(.message-toast-all, .notification-panel-header a, .notification-mark-done, .admin-content a:not([class])) {
+    color: var(--mentora-mint);
+}
+
+body.workspace-dark-mode :is(.bar, .progress) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.workspace-dark-mode .timeline-step::before {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+body.workspace-dark-mode .timeline-step.pending .timeline-dot {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--workspace-muted);
+}
+
+body.workspace-dark-mode .timeline-step small,
+body.workspace-dark-mode .checklist li.pending::before {
+    color: var(--workspace-muted);
+}
+
+body.workspace-dark-mode .kpi-large {
+    color: #eef6f5 !important;
+}
+
+body.workspace-dark-mode .admin-content hr {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================================================
+   Settings page (includes/settings_panel.php)
+   ========================================================================== */
+.settings-shell {
+    align-items: start;
+    display: grid;
+    gap: 0 24px;
+    grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+    max-width: 1180px;
+}
+
+.settings-list,
+.settings-detail {
+    min-width: 0;
+}
+
+.settings-shell [hidden],
+.settings-changes[hidden],
+.settings-toast[hidden] {
+    display: none !important;
+}
+
+/* Language search (stays in view while scrolling the long list) */
+.settings-search {
+    align-items: center;
+    background: var(--settings-card-solid);
+    border: 1px solid var(--workspace-line);
+    border-radius: var(--ui-radius-control);
+    box-shadow: 0 6px 18px rgba(60, 60, 67, 0.06);
+    color: var(--workspace-muted);
+    display: flex;
+    gap: 10px;
+    margin: 14px 0 4px;
+    padding: 0 16px;
+    position: sticky;
+    top: 76px;
+    z-index: 5;
+}
+
+.settings-search:focus-within {
+    border-color: var(--mentora-teal);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--mentora-teal) 14%, transparent);
+}
+
+.settings-search input {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    flex: 1;
+    font: inherit;
+    font-size: 13px;
+    min-height: 44px;
+    min-width: 0;
+    outline: 0;
+}
+
+.settings-search input:not(:placeholder-shown) {
+    color: #1d1d1f;
+}
+
+body.workspace-dark-mode .settings-search {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+body.workspace-dark-mode .settings-search input:not(:placeholder-shown) {
+    color: #eef6f5;
+}
+
+body.workspace-dark-mode .settings-search:focus-within {
+    border-color: var(--mentora-mint);
+}
+
+@media (max-width: 760px) {
+    .settings-search {
+        top: 68px;
+    }
+}
+
+/* Cards and rows */
+.settings-card {
+    background: var(--workspace-surface);
+    border: 1px solid var(--workspace-line);
+    border-radius: var(--ui-radius-card);
+    box-shadow: 0 10px 28px rgba(60, 60, 67, 0.06);
+    overflow: hidden;
+}
+
+.settings-card + .settings-card {
+    margin-top: 12px;
+}
+
+.settings-row {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-top: 1px solid var(--workspace-line);
+    color: inherit;
+    display: flex;
+    font: inherit;
+    gap: 12px;
+    min-height: 60px;
+    padding: 12px 16px;
+    text-align: left;
+    text-decoration: none;
+    transition: background 160ms ease;
+    width: 100%;
+}
+
+.settings-card > .settings-row:first-child {
+    border-top: 0;
+}
+
+a.settings-row,
+button.settings-row,
+.settings-switch-row {
+    cursor: pointer;
+}
+
+a.settings-row:hover,
+button.settings-row:hover,
+.settings-switch-row:hover {
+    background: color-mix(in srgb, var(--mentora-teal) 6%, transparent);
+}
+
+.settings-row:focus-visible {
+    outline: 2px solid var(--mentora-teal);
+    outline-offset: -2px;
+}
+
+.settings-row.is-active {
+    background: color-mix(in srgb, var(--mentora-teal) 9%, transparent);
+}
+
+.settings-row.is-active strong {
+    color: var(--mentora-teal);
+}
+
+.settings-row-icon,
+.settings-code {
+    align-items: center;
+    background: var(--mentora-pale);
+    color: var(--mentora-teal);
+    display: inline-flex;
+    flex: 0 0 34px;
+    height: 34px;
+    justify-content: center;
+}
+
+.settings-row-icon {
+    border-radius: var(--ui-radius-item);
+}
+
+.settings-code {
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.settings-svg {
+    fill: none;
+    height: 18px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    width: 18px;
+}
+
+.settings-row-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.settings-row-copy strong {
+    color: #1d1d1f;
+    font-size: 13px;
+    transition: color 160ms ease;
+}
+
+.settings-row-copy small {
+    color: var(--workspace-muted);
+    font-size: 11px;
+    line-height: 1.4;
+    margin-top: 2px;
+}
+
+.settings-row-end {
+    color: #a1a1a6;
+    display: inline-flex;
+}
+
+.settings-group-label {
+    color: var(--workspace-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin: 20px 6px 8px;
+    text-transform: uppercase;
+}
+
+.settings-group-head {
+    align-items: baseline;
+    display: flex;
+    justify-content: space-between;
+}
+
+.settings-current {
+    color: var(--mentora-teal);
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 6px;
+}
+
+.settings-footnote {
+    color: var(--workspace-muted);
+    font-size: 11px;
+    line-height: 1.5;
+    margin: 14px 6px 0;
+}
+
+/* Detail view header */
+.settings-view-header {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    margin: 0 0 4px;
+    min-height: 40px;
+}
+
+.settings-view-header h2 {
+    color: #1d1d1f;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.settings-back {
+    align-items: center;
+    background: var(--workspace-surface);
+    border: 1px solid var(--workspace-line);
+    border-radius: var(--ui-radius-control);
+    color: var(--mentora-teal);
+    display: none;
+    font-size: 12px;
+    font-weight: 700;
+    gap: 2px;
+    padding: 6px 12px 6px 8px;
+    text-decoration: none;
+}
+
+/* On/off switch */
+.settings-switch {
+    display: inline-flex;
+    flex: 0 0 auto;
+    position: relative;
+}
+
+.settings-switch input {
+    cursor: pointer;
+    height: 100%;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    z-index: 1;
+}
+
+.settings-switch span {
+    background: rgba(60, 60, 67, 0.2);
+    border-radius: 999px;
+    display: block;
+    height: 26px;
+    position: relative;
+    transition: background 180ms ease;
+    width: 44px;
+}
+
+.settings-switch span::after {
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    content: "";
+    height: 20px;
+    left: 3px;
+    position: absolute;
+    top: 3px;
+    transition: transform 180ms ease;
+    width: 20px;
+}
+
+.settings-switch input:checked + span {
+    background: var(--mentora-teal);
+}
+
+.settings-switch input:checked + span::after {
+    transform: translateX(18px);
+}
+
+.settings-switch input:focus-visible + span {
+    outline: 2px solid var(--mentora-teal);
+    outline-offset: 2px;
+}
+
+/* Single-choice rows (language, visibility, auto sign-out) */
+.settings-check {
+    align-items: center;
+    border: 1.5px solid var(--workspace-line);
+    border-radius: 50%;
+    color: transparent;
+    display: inline-flex;
+    flex: 0 0 22px;
+    height: 22px;
+    justify-content: center;
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.settings-check .settings-svg {
+    height: 14px;
+    stroke-width: 2.4;
+    width: 14px;
+}
+
+.settings-choice.is-selected .settings-check {
+    background: var(--mentora-teal);
+    border-color: var(--mentora-teal);
+    color: #fff;
+}
+
+/* Appearance: preview card */
+.settings-preview {
+    align-items: center;
+    display: flex;
+    gap: 14px;
+    margin-top: 14px;
+    padding: 18px;
+}
+
+.settings-preview > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-preview-icon {
+    align-items: center;
+    background: var(--mentora-gradient);
+    border-radius: var(--ui-radius-item);
+    color: var(--mentora-mint);
+    display: inline-flex;
+    flex: 0 0 44px;
+    height: 44px;
+    justify-content: center;
+}
+
+.settings-preview strong {
+    color: #1d1d1f;
+    display: block;
+    font-size: 14px;
+}
+
+.settings-preview small {
+    color: var(--workspace-muted);
+    font-size: 12px;
+}
+
+.settings-preview-button {
+    background: var(--mentora-teal);
+    border-radius: var(--ui-radius-control);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 16px;
+}
+
+/* Appearance: theme color swatches */
+.settings-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 16px;
+}
+
+.settings-swatch {
+    background: var(--swatch);
+    border: 0;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px transparent;
+    cursor: pointer;
+    height: 38px;
+    padding: 0;
+    transition: box-shadow 180ms ease, transform 180ms ease;
+    width: 38px;
+}
+
+.settings-swatch:hover {
+    transform: scale(1.06);
+}
+
+.settings-swatch.is-selected {
+    box-shadow: 0 0 0 3px var(--settings-card-solid), 0 0 0 5px var(--swatch);
+}
+
+.settings-swatch:focus-visible {
+    outline: 2px solid var(--swatch);
+    outline-offset: 6px;
+}
+
+/* Appearance: text size + UI style tiles */
+.settings-tiles {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+}
+
+.settings-tiles-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.settings-tiles-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.settings-tile {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--workspace-line);
+    border-radius: var(--ui-radius-item);
+    color: #1d1d1f;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    font: inherit;
+    font-weight: 700;
+    gap: 8px;
+    justify-content: center;
+    min-height: 58px;
+    padding: 10px;
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.settings-tile:hover {
+    border-color: color-mix(in srgb, var(--mentora-teal) 45%, transparent);
+}
+
+.settings-tile.is-selected {
+    background: var(--mentora-pale);
+    border-color: var(--mentora-teal);
+    box-shadow: inset 0 0 0 1px var(--mentora-teal);
+    color: var(--mentora-teal);
+}
+
+.settings-tile:focus-visible {
+    outline: 2px solid var(--mentora-teal);
+    outline-offset: 2px;
+}
+
+.settings-size-small > span:first-child {
+    font-size: 12px;
+}
+
+.settings-size-default > span:first-child {
+    font-size: 15px;
+}
+
+.settings-size-large > span:first-child {
+    font-size: 18px;
+}
+
+.settings-size-xlarge > span:first-child {
+    font-size: 21px;
+}
+
+.settings-style {
+    min-height: 88px;
+}
+
+.settings-style small {
+    font-size: 11px;
+}
+
+.settings-style-shape {
+    background: var(--mentora-teal);
+    display: block;
+    height: 26px;
+    width: min(72px, 100%);
+}
+
+.settings-style-rounded .settings-style-shape {
+    border-radius: 999px;
+}
+
+.settings-style-soft .settings-style-shape {
+    border-radius: 9px;
+}
+
+.settings-style-crisp .settings-style-shape {
+    border-radius: 2px;
+}
+
+/* Security + account rows */
+.settings-pill {
+    border: 1px solid var(--workspace-line);
+    border-radius: var(--ui-radius-control);
+    color: var(--mentora-teal);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+}
+
+.settings-danger strong {
+    color: #b42318;
+}
+
+.settings-info-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 0;
+}
+
+.settings-info-row small {
+    color: var(--workspace-muted);
+    font-size: 11px;
+}
+
+.settings-info-row strong {
+    color: #1d1d1f;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+/* Unsaved changes bar */
+.settings-changes {
+    align-items: center;
+    animation: settings-bar-in 220ms ease;
+    background: var(--mentora-deep);
+    border-radius: var(--ui-radius-card);
+    bottom: 16px;
+    box-shadow: 0 18px 40px rgba(3, 30, 29, 0.3);
+    color: #fff;
+    display: flex;
+    gap: 8px;
+    grid-column: 1 / -1;
+    margin-top: 20px;
+    padding: 10px 10px 10px 18px;
+    position: sticky;
+    z-index: 15;
+}
+
+.settings-changes-dot {
+    background: var(--mentora-mint);
+    border-radius: 50%;
+    flex: 0 0 8px;
+    height: 8px;
+}
+
+.settings-changes-count {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 700;
+    margin-left: 4px;
+}
+
+.settings-discard,
+.settings-save {
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.settings-discard {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.75);
+    padding: 10px 12px;
+}
+
+.settings-discard:hover {
+    color: #fff;
+}
+
+.settings-save {
+    background: var(--mentora-mint);
+    border-radius: var(--ui-radius-control);
+    color: var(--mentora-deep);
+    padding: 11px 20px;
+    transition: background 160ms ease;
+}
+
+.settings-save:hover {
+    background: #fff;
+}
+
+.settings-discard:focus-visible,
+.settings-save:focus-visible {
+    outline: 2px solid var(--mentora-mint);
+    outline-offset: 2px;
+}
+
+.settings-toast {
+    background: var(--mentora-deep);
+    border-radius: 999px;
+    bottom: 24px;
+    box-shadow: 0 12px 30px rgba(3, 30, 29, 0.3);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    left: 50%;
+    padding: 10px 18px;
+    position: fixed;
+    transform: translateX(-50%);
+    z-index: 70;
+}
+
+@keyframes settings-bar-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* ---------- Collapsible "All languages" list ---------- */
+/* Collapsed: only the chosen language (if it is in this list) and the toggle show. Searching shows every match. */
+.settings-collapsible.is-collapsed:not(.is-searching) .settings-choice:not(.is-selected) {
+    display: none;
+}
+
+.settings-collapsible.is-collapsed:not(.is-searching) .settings-choice.is-selected {
+    border-top: 0;
+}
+
+.settings-collapsible.is-collapsed:not(.is-searching):not(:has(.settings-choice.is-selected)) .settings-collapse-toggle {
+    border-top: 0;
+}
+
+.settings-collapse-toggle {
+    min-height: 52px;
+}
+
+.settings-collapse-toggle strong {
+    color: var(--mentora-teal);
+}
+
+.settings-collapse-chevron {
+    color: var(--mentora-teal);
+    display: inline-flex;
+}
+
+.settings-collapse-chevron .settings-svg {
+    transform: rotate(90deg);
+    transition: transform 200ms ease;
+}
+
+.settings-collapse-toggle[aria-expanded="true"] .settings-collapse-chevron .settings-svg {
+    transform: rotate(-90deg);
+}
+
+body.workspace-dark-mode :is(.settings-collapse-toggle strong, .settings-collapse-chevron) {
+    color: var(--mentora-mint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .settings-collapse-chevron .settings-svg {
+        transition: none;
+    }
+}
+
+/* ---------- Avatars: <span class="avatar"><img class="avatar-img"></span> or initials ---------- */
+.avatar {
+    flex: 0 0 auto;
+    overflow: hidden;
+}
+
+.avatar-img {
+    border-radius: inherit;
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.profile-chip > .avatar:has(.avatar-img) {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+.header-avatar-link.has-photo {
+    overflow: hidden;
+    padding: 0;
+}
+
+.avatar-xl {
+    border-radius: 50%;
+    box-shadow: 0 10px 26px rgba(6, 61, 59, 0.18);
+    font-size: 28px;
+    font-weight: 700;
+    height: 88px;
+    letter-spacing: 0.02em;
+    width: 88px;
+}
+
+.avatar-xl.avatar-initials {
+    background: var(--mentora-gradient);
+    color: #fff;
+}
+
+/* In the Settings list, the Profile row shows the avatar in place of an icon. */
+.settings-row-icon:has(.avatar) {
+    background: transparent;
+}
+
+.settings-row-icon .avatar {
+    font-size: 12px;
+    font-weight: 700;
+    height: 34px;
+    width: 34px;
+}
+
+/* Settings > Profile: photo card */
+.settings-avatar-card {
+    align-items: center;
+    display: flex;
+    gap: 20px;
+    margin: 14px 0 12px;
+    padding: 20px;
+}
+
+.settings-avatar-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.settings-avatar-copy strong {
+    color: #1d1d1f;
+    font-size: 15px;
+}
+
+.settings-avatar-copy small {
+    color: var(--workspace-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.settings-avatar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.settings-avatar-actions form {
+    margin: 0;
+}
+
+.settings-avatar-pick {
+    cursor: pointer;
+}
+
+.settings-avatar-pick:focus-within {
+    outline: 3px solid var(--mentora-mint);
+    outline-offset: 2px;
+}
+
+.settings-avatar-status {
+    color: var(--mentora-green);
+    font-size: 12px;
+    font-weight: 700;
+    margin: 8px 0 0;
+}
+
+.settings-avatar-status.is-error {
+    color: #b42318;
+}
+
+body.workspace-dark-mode .settings-avatar-copy strong {
+    color: #eef6f5;
+}
+
+body.workspace-dark-mode .settings-avatar-status {
+    color: var(--mentora-mint);
+}
+
+body.workspace-dark-mode .settings-avatar-status.is-error {
+    color: #fda29b;
+}
+
+body.workspace-dark-mode .avatar-xl {
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+}
+
+/* Applicant Profile page: photo next to the name */
+.profile-hero {
+    align-items: center;
+    display: flex;
+    gap: 20px;
+}
+
+.profile-hero-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-hero-copy h2 {
+    margin-top: 0;
+}
+
+@media (max-width: 560px) {
+    .settings-avatar-card,
+    .profile-hero {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 14px;
+    }
+}
+
+/* Narrow screens: list first, then one view at a time with a Back button. */
+@media (max-width: 900px) {
+    .settings-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-shell:not(.is-viewing) .settings-detail,
+    .settings-shell.is-viewing .settings-list {
+        display: none;
+    }
+
+    .settings-back {
+        display: inline-flex;
+    }
+
+    /* No "selected" row while the list is shown on its own. */
+    .settings-shell:not(.is-viewing) .settings-row.is-active,
+    body.workspace-dark-mode .settings-shell:not(.is-viewing) .settings-row.is-active {
+        background: transparent;
+    }
+
+    .settings-shell:not(.is-viewing) .settings-row.is-active strong {
+        color: inherit;
+    }
+}
+
+@media (max-width: 480px) {
+    .settings-tiles-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .settings-swatches {
+        gap: 12px;
+        justify-content: space-between;
+    }
+
+    .settings-changes {
+        padding-left: 14px;
+    }
+
+    .settings-discard {
+        padding: 10px 8px;
+    }
+
+    .settings-save {
+        padding: 11px 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .settings-changes {
+        animation: none;
+    }
+
+    .settings-swatch:hover {
+        transform: none;
+    }
+}
+
+/* Settings in dark mode */
+body.workspace-dark-mode .settings-card {
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+}
+
+body.workspace-dark-mode :is(.settings-row-copy strong, .settings-view-header h2, .settings-preview strong, .settings-info-row strong, .settings-tile) {
+    color: #eef6f5;
+}
+
+body.workspace-dark-mode :is(.settings-row-icon, .settings-code) {
+    background: rgba(143, 239, 218, 0.1);
+    color: var(--mentora-mint);
+}
+
+body.workspace-dark-mode :is(.settings-current, .settings-back, .settings-pill, .settings-row.is-active strong) {
+    color: var(--mentora-mint);
+}
+
+body.workspace-dark-mode :is(a.settings-row:hover, button.settings-row:hover, .settings-switch-row:hover, .settings-row.is-active) {
+    background: rgba(143, 239, 218, 0.07);
+}
+
+body.workspace-dark-mode .settings-back {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.workspace-dark-mode .settings-switch span {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+body.workspace-dark-mode .settings-switch input:checked + span {
+    background: color-mix(in srgb, var(--mentora-teal) 70%, var(--mentora-mint));
+}
+
+body.workspace-dark-mode .settings-check {
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+body.workspace-dark-mode .settings-tile.is-selected {
+    background: rgba(143, 239, 218, 0.08);
+    border-color: var(--mentora-mint);
+    box-shadow: inset 0 0 0 1px var(--mentora-mint);
+    color: var(--mentora-mint);
+}
+
+body.workspace-dark-mode .settings-danger strong {
+    color: #ff8a80;
+}
+
+body.workspace-dark-mode .settings-changes {
+    background: #0f2221;
+    border: 1px solid rgba(143, 239, 218, 0.2);
+}

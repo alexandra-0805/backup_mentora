@@ -1,4 +1,49 @@
 <?php
-$pageTitle='Settings';$activePage='settings.php';require __DIR__.'/../includes/admin_layout.php';
+$pageTitle = 'Settings';
+$activePage = 'settings.php';
+require __DIR__ . '/../includes/admin_layout.php';
+
+$settingsRole = 'admin';
+$settingsAccount = [
+    [
+        'key' => 'profile',
+        'label' => 'Profile',
+        'i18n' => 'profile',
+        'icon' => 'user',
+        'summary' => $adminName . ($adminCode !== '' ? ' · ' . $adminCode : ''),
+        'avatar' => ['url' => $avatarUrl, 'initials' => $initials, 'name' => $adminName, 'canEdit' => !empty($_SESSION['user']['id'])],
+        'rows' => [
+            ['fullName', 'Full name', $adminName],
+            ['role', 'Role', 'HR administrator'],
+            ['userId', 'User ID', $adminCode !== '' ? $adminCode : '—'],
+            ['email', 'Email', (string) ($adminUser['email'] ?? '—')],
+        ],
+        'link' => ['openUsers', 'Users & access', 'user&access_management.php'],
+        'note' => ['accountNoteAdmin', 'Manage accounts and roles in Users & access.'],
+    ],
+    [
+        'key' => 'workspace',
+        'label' => 'Workspace',
+        'i18n' => 'workspace',
+        'icon' => 'building',
+        'summary' => 'Mentora PH · HR management',
+        'rows' => [
+            ['organization', 'Organization', 'Mentora PH'],
+            ['workspaceName', 'Workspace name', 'HR management'],
+            ['contactEmail', 'Contact email', 'hr@mentora.ph'],
+            ['country', 'Country', 'Philippines'],
+            ['workingDays', 'Working days', 'Mon – Fri'],
+            ['defaultShift', 'Default shift', '08:00 AM – 05:00 PM'],
+            ['lateGrace', 'Late check-in grace', '15 minutes'],
+        ],
+    ],
+];
 ?>
-<div class="admin-heading"><div><h1>Settings</h1><p>Manage your HR workspace, attendance rules, notifications, and account security.</p></div><div class="admin-actions"><a class="admin-btn" href="settings.php">Discard changes</a><a class="admin-btn primary" href="settings.php?saved=1">Save changes</a></div></div><?php if(isset($_GET['saved'])): ?><div class="notice">Workspace settings saved.</div><?php endif; ?><div class="admin-grid"><section class="admin-panel"><h2>Workspace details</h2><p class="panel-subtitle">Organization information used across records and reports.</p><div class="field"><label>Organization name</label><input value="Mentora PH"></div><div class="field"><label>Workspace name</label><input value="HR management"></div><div class="field"><label>Contact email</label><input value="hr@mentora.ph"></div><div class="field"><label>Country</label><select><option>Philippines</option></select></div></section><section class="admin-panel"><h2>Attendance & review rules</h2><p class="panel-subtitle">Set defaults for your HR/Admin pathway.</p><div class="notice-row"><span>Working days</span><strong>Mon – Fri</strong></div><div class="notice-row"><span>Default shift</span><strong>08:00 AM – 05:00 PM</strong></div><div class="notice-row"><span>Late check-in grace</span><strong>15 minutes</strong></div><div class="notice-row"><span>Review reminders</span><strong class="badge">Enabled</strong></div></section></div><section class="admin-panel"><h2>Security & privacy</h2><p class="panel-subtitle">Protect administrator access and sensitive people information.</p><div class="notice-row"><span>Two-factor authentication</span><strong class="badge">Available</strong></div><div class="notice-row"><span>Session timeout</span><strong>60 minutes</strong></div><div class="notice-row"><span>Restrict people data exports</span><strong class="badge">Enabled</strong></div></section><?php require __DIR__.'/../includes/admin_footer.php'; ?>
+<div class="admin-heading">
+    <div>
+        <h1 data-i18n="settingsTitle">Settings</h1>
+        <p data-i18n="settingsSubtitle">Make Mentora feel like yours.</p>
+    </div>
+</div>
+<?php require __DIR__ . '/../includes/settings_panel.php'; ?>
+<?php require __DIR__ . '/../includes/admin_footer.php'; ?>

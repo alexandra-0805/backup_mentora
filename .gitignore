@@ -1,2 +1,11 @@
 # Local secrets (Google OAuth client secret)
 config/google.local.php
+
+# Optional GIPHY key for GIF search in Messages (see config/giphy.local.example.php)
+config/giphy.local.php
+
+# Users' uploaded profile photos and message attachments (keep each folder's .htaccess lock-down)
+uploads/avatars/*
+!uploads/avatars/.htaccess
+uploads/messages/*
+!uploads/messages/.htaccess

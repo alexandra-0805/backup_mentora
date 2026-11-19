@@ -44,6 +44,8 @@ foreach (
 
 $initials = $initials !== '' ? $initials : 'CF';
 
+$avatarUrl = mentora_avatar_url($agentUser['avatar_path'] ?? null, '../');
+
 $now = new DateTimeImmutable(
     'now',
     new DateTimeZone('Asia/Manila')
@@ -84,6 +86,20 @@ $agentNav = [
     <link
         rel="stylesheet"
         href="../assets/css/admin.css?v=5">
+
+    <link
+        rel="stylesheet"
+        href="../assets/css/settings.css?v=5">
+
+    <link
+        rel="stylesheet"
+        href="../assets/css/theme.css?v=6">
+
+    <link
+        rel="stylesheet"
+        href="../assets/css/dialog.css?v=1">
+
+    <?php require __DIR__ . '/theme_boot.php'; ?>
 </head>
 
 <body class="admin-body">
@@ -102,8 +118,9 @@ $agentNav = [
 
         <a
             class="admin-brand"
-            href="dashboard.php"
-            aria-label="Mentora dashboard">
+            href="<?= $e(basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'dashboard.php'))) ?>"
+            aria-label="Mentora, <?= $e($crumbTitle) ?>"
+            aria-current="page"><?php // The Mentora logo keeps you on the page you are on. ?>
             <img
                 src="../assets/images/mentora-logo.png"
                 alt="Mentora">
@@ -111,8 +128,11 @@ $agentNav = [
             <span>Mentora</span>
         </a>
 
+        <?php require __DIR__ . '/sidebar_toggle.php'; ?>
+
         <nav
             class="admin-nav"
+            id="workspace-nav"
             aria-label="Agent navigation">
 
             <small class="nav-label">
@@ -144,9 +164,7 @@ $agentNav = [
                 href="settings.php"
                 aria-label="Open profile settings">
 
-                <span>
-                    <?= $e($initials) ?>
-                </span>
+                <?= mentora_avatar($avatarUrl, $initials) ?>
 
                 <div>
 
@@ -206,6 +224,8 @@ $agentNav = [
             <!-- RIGHT: Actions -->
             <span class="topbar-actions">
 
+                <?php $themeToggleClass = 'header-icon-link'; require __DIR__ . '/theme_toggle.php'; ?>
+
                 <?php require __DIR__ . '/message_panel.php'; ?>
 
                 <?php require __DIR__ . '/notification_panel.php'; ?>
@@ -213,11 +233,11 @@ $agentNav = [
 
                 <!-- Profile -->
                 <a
-                    class="header-avatar-link"
-                    href="settings.php"
+                    class="header-avatar-link<?= $avatarUrl ? ' has-photo' : '' ?>"
+                    href="settings.php#profile"
                     aria-label="Profile"
                     title="Profile">
-                    <?= $e($initials) ?>
+                    <?= $avatarUrl ? '<img class="avatar-img" src="' . $e($avatarUrl) . '" alt="">' : $e($initials) ?>
                 </a>
 
 

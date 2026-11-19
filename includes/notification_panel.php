@@ -37,14 +37,15 @@ foreach ($notificationItems as $notification) {
 }
 ?>
 <span class="notification-popover">
-    <button class="header-icon-link notification-toggle" type="button" aria-label="Notifications" aria-expanded="false" aria-controls="notification-panel" title="Notifications">♢<?php if ($unreadNotificationCount > 0): ?><span class="header-icon-badge"><?= $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount ?></span><?php endif; ?></button>
+    <button class="header-icon-link notification-toggle" type="button" aria-label="Notifications" aria-expanded="false" aria-controls="notification-panel" title="Notifications"><svg class="header-icon-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><?php if ($unreadNotificationCount > 0): ?><span class="header-icon-badge"><?= $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount ?></span><?php endif; ?></button>
     <aside class="notification-panel" id="notification-panel" hidden aria-label="Notifications">
         <div class="notification-panel-header">
             <strong>Notifications</strong>
             <div class="notification-panel-actions">
                 <form method="post">
                     <input type="hidden" name="notification_action_token" value="<?= htmlspecialchars($notificationActionToken, ENT_QUOTES, 'UTF-8') ?>">
-                    <button class="notification-mark-done" type="submit" name="mark_notifications_done" value="1">Mark as done</button>
+                    <button class="notification-mark-done" type="submit" name="mark_notifications_done" value="1"
+                        data-confirm-title="Mark all as done?" data-confirm="All of your notifications will be marked as read." data-confirm-action="Mark as done">Mark as done</button>
                 </form>
                 <button class="notification-close" type="button" aria-label="Close notifications">×</button>
             </div>

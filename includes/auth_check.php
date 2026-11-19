@@ -123,7 +123,7 @@ function mentora_current_user(): ?array
         require MENTORA_APP_ROOT . '/config/db.php';
     }
 
-    $query = $pdo->prepare('SELECT id, user_code, first_name, last_name, email, pathway, password_hash, role FROM users WHERE id = ?');
+    $query = $pdo->prepare('SELECT id, user_code, first_name, last_name, email, pathway, password_hash, role, avatar_path FROM users WHERE id = ?');
     $query->execute([(int) $sessionUser['id']]);
     $row = $query->fetch();
 
@@ -180,7 +180,41 @@ function mentora_session_user(array $row): array
         'email' => $row['email'],
         'role' => $row['role'],
         'pathway' => $row['pathway'],
+        'avatar_path' => $row['avatar_path'] ?? null,
     ];
+}
+
+/**
+ * Public URL of a stored profile photo, or null when there is none (initials are shown instead).
+ * $prefix is the relative path from the current page back to the app root ("../", "../../").
+ */
+function mentora_avatar_url(mixed $path, string $prefix): ?string
+{
+    if (!is_string($path) || !preg_match('#^uploads/avatars/u\d+-[a-f0-9]{16}\.(jpg|png|webp)$#', $path)) {
+        return null;
+    }
+    $file = MENTORA_APP_ROOT . '/' . $path;
+    if (!is_file($file)) {
+        return null;
+    }
+
+    return $prefix . $path . '?v=' . filemtime($file);
+}
+
+/**
+ * Avatar markup: <span class="avatar"><img class="avatar-img" src alt></span>, or the initials.
+ */
+function mentora_avatar(?string $url, string $initials, string $alt = '', string $class = ''): string
+{
+    $h = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $classes = trim('avatar ' . $class);
+
+    if ($url !== null) {
+        return '<span class="' . $h($classes) . '"><img class="avatar-img" src="' . $h($url) . '" alt="' . $h($alt) . '"></span>';
+    }
+
+    return '<span class="' . $h($classes . ' avatar-initials') . '"' . ($alt === '' ? ' aria-hidden="true"' : ' role="img" aria-label="' . $h($alt) . '"') . '>'
+        . $h($initials) . '</span>';
 }
 
 /**

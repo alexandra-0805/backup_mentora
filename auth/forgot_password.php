@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
+// Start the session before any output: the form's security token (mentora_csrf_field) is stored in it.
+mentora_session_start();
 $sent = false;
 $error = '';
 $email = '';

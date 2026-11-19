@@ -153,19 +153,19 @@ require __DIR__ . '/../includes/header.php';
             <fieldset>
                 <div class="form-grid">
                     <div class="field">
-                        <label for="first_name">First name *</label>
+                        <label for="first_name">First name</label>
                         <input id="first_name" name="first_name" required minlength="2" maxlength="80" autocomplete="given-name" placeholder="First Name"
                                data-check="name" data-label="first name" aria-describedby="first_name-error"<?= $invalid('first_name') ?> value="<?= $h($account['first_name']) ?>">
                         <?= $fieldError('first_name') ?>
                     </div>
                     <div class="field">
-                        <label for="last_name">Last name *</label>
+                        <label for="last_name">Last name</label>
                         <input id="last_name" name="last_name" required minlength="2" maxlength="80" autocomplete="family-name" placeholder="Last Name"
                                data-check="name" data-label="last name" aria-describedby="last_name-error"<?= $invalid('last_name') ?> value="<?= $h($account['last_name']) ?>">
                         <?= $fieldError('last_name') ?>
                     </div>
                     <div class="field full">
-                        <label for="email">Email address *</label>
+                        <label for="email">Email address</label>
                         <input id="email" type="email" name="email" required maxlength="190" autocomplete="email" placeholder="name@gmail.com"
                                data-check="email" aria-describedby="email-error"<?= $invalid('email') ?> value="<?= $h($account['email']) ?>">
                         <?= $fieldError('email') ?>

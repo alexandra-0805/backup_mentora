@@ -5,6 +5,10 @@ $inAuth = str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/auth/');
 $inAccount = str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/account/');
 $root = ($inAuth || $inAccount) ? '../' : '';
 $headerStyle = $headerStyle ?? $bodyClass;
+// Public pages have no light/dark button and always follow the device's light or dark setting.
+// Signed-in pages that use this header (Messages) set $themeFollowsDevice = false to use the
+// person's own Light / Dark / Auto choice from Settings instead.
+$themeFollowsDevice = $themeFollowsDevice ?? true;
 ?>
 <!doctype html>
 <html lang="en">
@@ -15,21 +19,28 @@ $headerStyle = $headerStyle ?? $bodyClass;
     <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="icon" type="image/png" href="<?= $root ?>assets/images/mentora-logo.png?v=1">
     <link rel="stylesheet" href="<?= $root ?>assets/css/style.css?v=36">
+    <link rel="stylesheet" href="<?= $root ?>assets/css/theme.css?v=6">
+    <link rel="stylesheet" href="<?= $root ?>assets/css/dialog.css?v=1">
+    <?php require __DIR__ . '/theme_boot.php'; ?>
 </head>
 
 <body class="<?= htmlspecialchars($bodyClass, ENT_QUOTES, 'UTF-8') ?>">
+    <?php if (empty($hideTopbar)): // a page can set $hideTopbar = true (Messages does) to go without the top header ?>
     <header class="topbar<?= $headerStyle ? ' ' . htmlspecialchars($headerStyle, ENT_QUOTES, 'UTF-8') . '-topbar' : '' ?>">
         <a class="brand" href="<?= $root ?>index.php" aria-label="Mentora home">
             <img src="<?= $root ?>assets/images/mentora-logo.png" alt="Mentora">
             <span>Mentora</span>
         </a>
-        <?php if ($headerStyle !== 'signin-page'): ?>
-            <nav>
-                <a href="<?= $root ?>auth/signin.php"><strong>Sign in</strong></a>
-                <a class="button button-small" href="<?= $root ?>auth/signup.php">Apply now</a>
-            </nav>
-        <?php endif; ?>
+        <div class="topbar-tools">
+            <?php if ($headerStyle !== 'signin-page'): ?>
+                <nav>
+                    <a href="<?= $root ?>auth/signin.php"><strong>Sign in</strong></a>
+                    <a class="button button-small" href="<?= $root ?>auth/signup.php">Apply now</a>
+                </nav>
+            <?php endif; ?>
+        </div>
     </header>
+    <?php endif; ?>
     <div class="cursor-spotlight" aria-hidden="true"></div>
     <script>
         (() => {

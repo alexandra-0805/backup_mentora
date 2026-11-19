@@ -7,6 +7,8 @@
 
 </div>
 
+<?php require __DIR__ . '/confirm_dialog.php'; ?>
+
 </body>
 
 </html>

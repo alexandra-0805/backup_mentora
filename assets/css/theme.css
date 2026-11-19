@@ -1,0 +1,604 @@
+/* ==========================================================================
+   Light / dark theme for every page.
+   html[data-theme] is set in <head> by includes/theme_boot.php (no flash on load).
+   Workspaces (admin, agent, applicant) are themed in settings.css via body.workspace-dark-mode;
+   this file themes the public pages (landing, About, sign-in/up, password reset, Messages)
+   and styles the sun/moon toggle.
+   ========================================================================== */
+
+/* ---------- Smooth switch (only while toggling, so normal hovers keep their own timing) ---------- */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+    transition: background-color 320ms ease, border-color 320ms ease, color 320ms ease,
+        fill 320ms ease, stroke 320ms ease, box-shadow 320ms ease !important;
+    transition-delay: 0s !important;
+}
+
+/* ---------- Sun / moon toggle ---------- */
+.topbar-tools {
+    align-items: center;
+    display: flex;
+    gap: 14px;
+    margin-left: auto;
+}
+
+.topbar-tools nav {
+    margin-left: 0;
+}
+
+.theme-toggle {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 38px;
+    justify-content: center;
+    padding: 0;
+    transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+    width: 38px;
+}
+
+.theme-toggle:hover {
+    background: #fff;
+    border-color: #fff;
+    color: var(--mentora-deep);
+    transform: translateY(-1px);
+}
+
+.theme-toggle:focus-visible {
+    outline: 3px solid var(--mentora-mint);
+    outline-offset: 2px;
+}
+
+.theme-toggle svg {
+    fill: none;
+    height: 18px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    transition: transform 320ms ease;
+    width: 18px;
+}
+
+.theme-toggle .theme-icon-sun,
+html[data-theme="dark"] .theme-toggle .theme-icon-moon {
+    display: none;
+}
+
+html[data-theme="dark"] .theme-toggle .theme-icon-sun {
+    display: block;
+}
+
+.theme-toggle:hover svg {
+    transform: rotate(-15deg);
+}
+
+/* "A" badge: the theme is on Auto and follows the device. */
+.theme-toggle {
+    position: relative;
+}
+
+html[data-theme-preference="system"] .theme-toggle::after {
+    align-items: center;
+    background: var(--mentora-teal);
+    border: 2px solid #fff;
+    border-radius: 999px;
+    color: #fff;
+    content: "A";
+    display: inline-flex;
+    font: 800 8px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    height: 15px;
+    justify-content: center;
+    pointer-events: none;
+    position: absolute;
+    right: -5px;
+    top: -5px;
+    width: 15px;
+}
+
+html[data-theme="dark"][data-theme-preference="system"] .theme-toggle::after {
+    background: var(--mentora-mint);
+    border-color: #0b1a19;
+    color: #063d3b;
+}
+
+/* Workspace top bar: same look as the message / notification buttons. */
+.admin-topbar .theme-toggle {
+    background: rgba(11, 98, 93, 0.08);
+    border-color: rgba(11, 98, 93, 0.12);
+    color: var(--mentora-teal);
+}
+
+.admin-topbar .theme-toggle:hover {
+    background: rgba(11, 98, 93, 0.16);
+    border-color: rgba(11, 98, 93, 0.12);
+    color: var(--mentora-teal);
+}
+
+body.workspace-dark-mode .admin-topbar .theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--mentora-mint);
+}
+
+.admin-topbar .theme-toggle svg {
+    height: 16px;
+    width: 16px;
+}
+
+/* Settings: Light / Dark / Auto tiles */
+.settings-mode .settings-svg {
+    height: 20px;
+    width: 20px;
+}
+
+@media (max-width: 480px) {
+    .topbar-tools {
+        gap: 6px;
+    }
+
+    .landing-page .theme-toggle {
+        height: 34px;
+        width: 34px;
+    }
+}
+
+/* The logo mark stays; the word "Mentora" steps aside on the narrowest phones to fit the toggle. */
+@media (max-width: 400px) {
+    .landing-page .topbar:has(.theme-toggle) .brand span {
+        display: none;
+    }
+
+    .landing-page .topbar:has(.theme-toggle) .brand {
+        padding-right: 3px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-toggle,
+    .theme-toggle svg {
+        transition: none;
+    }
+
+    .theme-toggle:hover,
+    .theme-toggle:hover svg {
+        transform: none;
+    }
+}
+
+/* ==========================================================================
+   Dark mode: public pages
+   ========================================================================== */
+/* Same palette as the workspace / Settings dark theme (settings.css). */
+html[data-theme="dark"] {
+    --dark-bg: #0b1a19;
+    --dark-section: #0e2120;
+    --dark-surface: rgba(19, 42, 41, 0.92);
+    --dark-surface-solid: #132a29;
+    --dark-input: #0f2221;
+    --dark-line: rgba(255, 255, 255, 0.1);
+    --dark-text: #e4f1ef;
+    --dark-heading: #eef6f5;
+    --dark-muted: #9cb7b4;
+    background: var(--dark-bg);
+    color-scheme: dark;
+}
+
+/* ---------- Landing + About ---------- */
+html[data-theme="dark"] body.landing-page {
+    background:
+        radial-gradient(circle at 8% 8%, rgba(20, 123, 113, 0.22), transparent 28rem),
+        var(--dark-bg);
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] .landing-page .section:not(.pale):not(.about-teaser):not(.about-gallery) {
+    background: var(--dark-section);
+}
+
+html[data-theme="dark"] .landing-page .section h2 {
+    color: var(--dark-heading);
+}
+
+html[data-theme="dark"] .landing-page .section-intro,
+html[data-theme="dark"] .landing-page .feature-card p,
+html[data-theme="dark"] .landing-page .mini-card p,
+html[data-theme="dark"] .landing-page .feature-card li,
+html[data-theme="dark"] .landing-page .preparation-copy p,
+html[data-theme="dark"] .landing-page .preparation-list small,
+html[data-theme="dark"] .landing-page .faq-list p {
+    color: var(--dark-muted);
+}
+
+/* Sections that already sit on Mentora green keep their own colors. */
+html[data-theme="dark"] .landing-page .pale {
+    background: #0a4844;
+}
+
+html[data-theme="dark"] .landing-page .pale .section-intro,
+html[data-theme="dark"] .about-page .about-gallery .section-intro {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+html[data-theme="dark"] .landing-page .feature-card,
+html[data-theme="dark"] .landing-page .mini-card {
+    background: var(--dark-surface);
+    border-color: var(--dark-line);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .landing-page #pathways .feature-card:hover,
+html[data-theme="dark"] .landing-page .mini-card:hover,
+html[data-theme="dark"] .about-page .about-card:hover {
+    background: #163432;
+    border-color: rgba(143, 239, 218, 0.3);
+    box-shadow: 0 22px 44px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="dark"] .landing-page .feature-card h3,
+html[data-theme="dark"] .landing-page .mini-card h3,
+html[data-theme="dark"] .landing-page .preparation-list strong,
+html[data-theme="dark"] .landing-page .faq-list summary {
+    color: var(--dark-heading);
+}
+
+html[data-theme="dark"] .landing-page #pathways .feature-card:hover h3,
+html[data-theme="dark"] .landing-page .mini-card:hover h3,
+html[data-theme="dark"] .about-page .about-card:hover h3,
+html[data-theme="dark"] .landing-page .preparation-list div:hover strong,
+html[data-theme="dark"] .landing-page .faq-list summary:hover {
+    color: var(--mentora-mint);
+}
+
+html[data-theme="dark"] .landing-page #pathways .feature-card li:hover {
+    color: var(--dark-heading);
+}
+
+html[data-theme="dark"] .landing-page .feature-card ul {
+    border-bottom-color: var(--dark-line);
+}
+
+html[data-theme="dark"] .landing-page .icon,
+html[data-theme="dark"] .landing-page .trust-icon {
+    background: rgba(143, 239, 218, 0.1);
+}
+
+html[data-theme="dark"] .landing-page .page-icon,
+html[data-theme="dark"] .landing-page .preparation-list .page-icon {
+    color: var(--mentora-mint);
+}
+
+html[data-theme="dark"] .landing-page .tag {
+    background: rgba(143, 239, 218, 0.12);
+    color: var(--mentora-mint);
+}
+
+html[data-theme="dark"] .landing-page .pathways-apply .text-button {
+    border-color: var(--mentora-mint);
+    color: var(--mentora-mint);
+}
+
+html[data-theme="dark"] .landing-page .pathways-apply .text-button:hover {
+    border-color: var(--mentora-mint);
+    color: #fff;
+}
+
+html[data-theme="dark"] .landing-page .preparation-list div {
+    border-bottom-color: var(--dark-line);
+}
+
+html[data-theme="dark"] .landing-page .about-teaser-journey li {
+    background: rgba(6, 40, 38, 0.88);
+}
+
+html[data-theme="dark"] .landing-page .about-teaser-journey strong {
+    color: var(--dark-heading);
+}
+
+html[data-theme="dark"] .landing-page .about-teaser-journey small {
+    color: var(--dark-muted);
+}
+
+html[data-theme="dark"] .landing-page .faq-list {
+    border-color: var(--dark-line);
+    box-shadow: none;
+}
+
+html[data-theme="dark"] .landing-page .faq-list details {
+    background: var(--dark-surface);
+    border-bottom-color: var(--dark-line);
+}
+
+html[data-theme="dark"] .landing-page .faq-list summary::after {
+    color: var(--mentora-mint);
+}
+
+html[data-theme="dark"] .landing-notice {
+    background: #10342a;
+    border-bottom-color: #1e5a44;
+    color: #a7e8c4;
+}
+
+/* Support chat + floating buttons */
+html[data-theme="dark"] .support-chat {
+    background: var(--dark-surface-solid);
+    border-color: var(--dark-line);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .support-chat-date {
+    color: var(--dark-muted);
+}
+
+html[data-theme="dark"] .support-chat-answer {
+    background: var(--dark-input);
+    border-top-color: var(--dark-line);
+}
+
+html[data-theme="dark"] .support-message-bot {
+    background: #183533;
+    border-color: var(--dark-line);
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] .support-message-user {
+    background: rgba(143, 239, 218, 0.14);
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] .support-chat-form {
+    border-top-color: var(--dark-line);
+}
+
+html[data-theme="dark"] .support-chat-form input {
+    background: transparent;
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] .support-chat a,
+html[data-theme="dark"] .support-chat-form button {
+    color: var(--mentora-mint);
+}
+
+html[data-theme="dark"] .floating-control {
+    background: rgba(143, 239, 218, 0.18);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="dark"] .floating-control:hover {
+    background: rgba(143, 239, 218, 0.32);
+}
+
+/* ---------- Footer (includes/footer.php) ----------
+   Light mode keeps its original light look (style.css); dark mode uses Mentora deep green. */
+html[data-theme="dark"] .footer,
+html[data-theme="dark"] .landing-page .footer {
+    background: var(--deep); /* #0f4847 */
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+html[data-theme="dark"] .footer small {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+/* ---------- Sign in, sign up, password reset ---------- */
+html[data-theme="dark"] body:is(.signin-page, .account-page) {
+    background: var(--dark-bg);
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] body .auth-shell {
+    background:
+        radial-gradient(circle at 8% 8%, rgba(20, 123, 113, 0.22), transparent 28rem),
+        var(--dark-bg);
+}
+
+html[data-theme="dark"] body .auth-card {
+    background: var(--dark-surface-solid);
+    border-color: var(--dark-line);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] body .auth-card h1,
+html[data-theme="dark"] body .auth-card legend,
+html[data-theme="dark"] body .auth-card .pathway-choice strong {
+    color: var(--dark-heading);
+}
+
+html[data-theme="dark"] body .auth-card .eyebrow {
+    color: var(--mentora-mint);
+}
+
+html[data-theme="dark"] body .auth-card :is(.intro, .account-required, .account-hint, .check, .auth-links, .google-auth small, .auth-divider, .field small:not(.field-error), .pathway-choice small) {
+    color: var(--dark-muted);
+}
+
+html[data-theme="dark"] body .auth-card .field label {
+    color: #cfe3e0;
+}
+
+html[data-theme="dark"] body .auth-card :is(.field input, .field select, .field textarea, textarea, select) {
+    background: var(--dark-input);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] body .auth-card :is(input, textarea)::placeholder {
+    color: #6f8a87;
+}
+
+html[data-theme="dark"] body .auth-card :is(.field input, .field select, .field textarea):focus {
+    border-color: var(--mentora-mint);
+    box-shadow: 0 0 0 4px rgba(143, 239, 218, 0.14);
+}
+
+html[data-theme="dark"] body .auth-card .field input.is-valid {
+    border-color: #34c38f;
+}
+
+html[data-theme="dark"] body .auth-card .field input[aria-invalid="true"] {
+    border-color: #f97066;
+    box-shadow: 0 0 0 3px rgba(249, 112, 102, 0.16);
+}
+
+html[data-theme="dark"] .field-error,
+html[data-theme="dark"] body .auth-card .field .field-error {
+    color: #fda29b;
+}
+
+html[data-theme="dark"] body .auth-card .pathway-choice label {
+    border-color: rgba(255, 255, 255, 0.14);
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] body .auth-card .pathway-choice label:hover,
+html[data-theme="dark"] body .auth-card .pathway-choice label:has(input:checked) {
+    background: rgba(143, 239, 218, 0.08);
+    border-color: rgba(143, 239, 218, 0.45);
+}
+
+html[data-theme="dark"] body .auth-card fieldset {
+    border-top-color: var(--dark-line);
+}
+
+html[data-theme="dark"] body .auth-card .notice {
+    background: rgba(143, 239, 218, 0.08);
+    color: #cdeee8;
+}
+
+html[data-theme="dark"] body .auth-card .alert {
+    background: rgba(240, 68, 56, 0.14);
+    color: #fda29b;
+}
+
+html[data-theme="dark"] body .auth-card .alert.success {
+    background: rgba(52, 168, 120, 0.16);
+    color: #8fe0b8;
+}
+
+html[data-theme="dark"] body .auth-card :is(.auth-links a, .alert a) {
+    color: var(--mentora-mint);
+}
+
+html[data-theme="dark"] body .auth-card .auth-links a:hover {
+    color: #fff;
+}
+
+html[data-theme="dark"] body .auth-card .google-button {
+    background: var(--dark-input);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] body .auth-card .google-button:hover {
+    background: rgba(143, 239, 218, 0.08);
+    border-color: rgba(143, 239, 218, 0.4);
+}
+
+html[data-theme="dark"] .auth-divider::before,
+html[data-theme="dark"] .auth-divider::after {
+    background: var(--dark-line);
+}
+
+html[data-theme="dark"] .password-rules li {
+    color: var(--dark-muted);
+}
+
+html[data-theme="dark"] .password-rules li::before {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+html[data-theme="dark"] .password-rules li.is-met {
+    color: #6ee7b7;
+}
+
+html[data-theme="dark"] .password-toggle {
+    color: var(--dark-muted);
+}
+
+html[data-theme="dark"] .password-toggle:hover,
+html[data-theme="dark"] .password-toggle.is-visible {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--mentora-mint);
+}
+
+/* ---------- Messages page (account/messages.php) ---------- */
+html[data-theme="dark"] .account-page :is(.account-shell, .message-page-card) {
+    background: var(--dark-bg);
+}
+
+html[data-theme="dark"] .account-page .chat-workspace {
+    background: var(--dark-bg);
+    border-color: var(--dark-line);
+}
+
+html[data-theme="dark"] .account-page :is(.chat-sidebar, .chat-info) {
+    background: var(--dark-input);
+    border-color: var(--dark-line);
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] .account-page :is(.chat-thread, .chat-thread-header) {
+    background: var(--dark-surface-solid);
+    border-color: var(--dark-line);
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] .account-page :is(.chat-thread-header strong, .chat-message-subject, .chat-info h2, .chat-sidebar-heading h2, .chat-info h3, .chat-conversation-copy strong, .chat-conversation-copy span) {
+    color: var(--dark-heading);
+}
+
+html[data-theme="dark"] .account-page :is(.chat-thread-header small, .chat-info > small, .chat-thread-empty, .chat-conversation-copy small, .chat-collapse-content) {
+    color: var(--dark-muted);
+}
+
+html[data-theme="dark"] .account-page :is(.chat-sidebar-heading button, .chat-thread-actions button, .chat-info > button) {
+    background: rgba(255, 255, 255, 0.08);
+    color: #cfeee9;
+}
+
+html[data-theme="dark"] .account-page .chat-search {
+    background: var(--dark-bg);
+    border-color: var(--dark-line);
+}
+
+html[data-theme="dark"] .account-page :is(.chat-search input, .chat-composer input) {
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] .account-page .chat-composer input {
+    background: var(--dark-input);
+}
+
+html[data-theme="dark"] .account-page .chat-tabs button {
+    color: #cfe3e0;
+}
+
+html[data-theme="dark"] .account-page :is(.chat-tabs button.active, .chat-tabs button:hover) {
+    background: var(--mentora-teal);
+    color: #fff;
+}
+
+html[data-theme="dark"] .account-page :is(.chat-conversation:hover, .chat-conversation.selected) {
+    background: rgba(143, 239, 218, 0.08);
+}
+
+html[data-theme="dark"] .account-page .chat-message-bubble {
+    background: #183533;
+    border-color: var(--dark-line);
+}
+
+html[data-theme="dark"] .account-page .chat-message-text {
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] .account-page :is(.chat-composer, .chat-info h3) {
+    border-color: var(--dark-line);
+}
