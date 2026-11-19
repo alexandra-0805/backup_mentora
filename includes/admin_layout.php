@@ -37,8 +37,12 @@ $avatarUrl = mentora_avatar_url($adminUser['avatar_path'] ?? null, '../');
 
 $now = new DateTimeImmutable('now', new DateTimeZone('Asia/Manila'));
 
+// Applications waiting for an HR decision (badge on "Applications").
+$pendingApplications = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'applicant' AND status = 'pending'")->fetchColumn();
+
 $adminNav = [
     'dashboard.php'              => 'Dashboard',
+    'applications.php'           => 'Applications',
     'employee_list.php'          => 'Employee list',
     'intern_list.php'            => 'Intern list',
     'agent_list.php'             => 'Agent list',
@@ -59,8 +63,8 @@ $adminNav = [
     <link rel="icon" type="image/png" href="../assets/images/mentora-logo.png?v=1">
     <link rel="stylesheet" href="../assets/css/style.css?v=36">
     <link rel="stylesheet" href="../assets/css/admin.css?v=5">
-    <link rel="stylesheet" href="../assets/css/settings.css?v=5">
-    <link rel="stylesheet" href="../assets/css/theme.css?v=6">
+    <link rel="stylesheet" href="../assets/css/settings.css?v=11">
+    <link rel="stylesheet" href="../assets/css/theme.css?v=7">
     <link rel="stylesheet" href="../assets/css/dialog.css?v=1">
     <?php require __DIR__ . '/theme_boot.php'; ?>
 </head>
@@ -82,6 +86,9 @@ $adminNav = [
                     href="<?= $e($file) ?>"
                     <?= $activePage === $file ? 'aria-current="page"' : '' ?>>
                     <span aria-hidden="true"></span><?= $e($label) ?>
+                    <?php if ($file === 'applications.php' && $pendingApplications > 0): ?>
+                        <b class="nav-count" aria-label="<?= $pendingApplications ?> waiting"><?= $pendingApplications ?></b>
+                    <?php endif; ?>
                 </a>
             <?php endforeach; ?>
         </nav>

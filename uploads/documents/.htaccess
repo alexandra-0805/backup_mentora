@@ -1,0 +1,11 @@
+# Documents are private: never served directly. account/document.php checks that the
+# person signed in may see the document, then sends it.
+Options -Indexes -ExecCGI
+Require all denied
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>

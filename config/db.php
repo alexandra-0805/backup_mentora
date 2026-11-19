@@ -15,6 +15,10 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
+    // Mentora runs on Philippine time: PHP dates and MySQL NOW() / CURDATE() / TIMESTAMP columns agree
+    // (attendance, late check-ins, report dates) whatever time zone the server itself uses.
+    date_default_timezone_set('Asia/Manila');
+    $pdo->exec("SET time_zone = '+08:00'");
 
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS users (
@@ -62,6 +66,29 @@ try {
     if (!in_array('avatar_path', $userColumns, true)) {
         $pdo->exec('ALTER TABLE users ADD COLUMN avatar_path VARCHAR(190) NULL AFTER department_id');
     }
+    // Sign-in name chosen when the applicant confirms their account (stored lowercase; email still works too).
+    if (!in_array('username', $userColumns, true)) {
+        $pdo->exec('ALTER TABLE users ADD COLUMN username VARCHAR(40) NULL AFTER email, ADD UNIQUE KEY uq_users_username (username)');
+    }
+    // Application approval: pending (waiting for HR) -> approved (confirmation link sent) -> active (username
+    // and password created), or rejected. Only active accounts can sign in. Existing accounts are active.
+    if (!in_array('status', $userColumns, true)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN status ENUM('pending', 'approved', 'active', 'rejected') NOT NULL DEFAULT 'active' AFTER role");
+    }
+    // One-time confirmation links an HR admin sends to approved applicants (auth/activate.php).
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS account_invites (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            token_hash CHAR(64) NOT NULL UNIQUE,
+            created_by INT UNSIGNED NULL,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_account_invites_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            CONSTRAINT fk_account_invites_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
     // Give every user without a code one: role prefix + their id, e.g. ADM-0001, AGT-0002, INT-0003, EMP-0004.
     // Covers app sign-ups and rows added by hand (e.g. in phpMyAdmin). The id part keeps codes unique.
     $pdo->exec(
@@ -146,6 +173,13 @@ try {
             CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
+    // Where a notification leads when clicked (a page inside Mentora, relative to the app root,
+    // e.g. "admin/applications.php?view=pending"); NULL = not clickable. Opened via account/notification.php.
+    $notificationColumns = $pdo->query('SHOW COLUMNS FROM notifications')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('link', $notificationColumns, true)) {
+        $pdo->exec('ALTER TABLE notifications ADD COLUMN link VARCHAR(255) NULL AFTER body');
+        $pdo->exec("UPDATE notifications SET link = 'admin/applications.php?view=pending' WHERE title LIKE 'New application:%'");
+    }
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS messages (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -189,6 +223,89 @@ try {
             PRIMARY KEY (message_id, user_id),
             CONSTRAINT fk_message_reads_message FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
             CONSTRAINT fk_message_reads_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+
+    // ---------- Workflow (includes/workflow.php) ----------
+    $userColumns = $pdo->query('SHOW COLUMNS FROM users')->fetchAll(PDO::FETCH_COLUMN);
+    // Supervising agent of an intern (set by HR in admin/user_edit.php or by an agent in agent/edit_intern.php).
+    if (!in_array('agent_id', $userColumns, true)) {
+        $pdo->exec('ALTER TABLE users ADD COLUMN agent_id INT UNSIGNED NULL AFTER department_id');
+    }
+    // "disabled": HR turned off an account's access (Users & access). Like pending/rejected, it can't sign in.
+    $statusType = (string) ($pdo->query("SHOW COLUMNS FROM users LIKE 'status'")->fetch()['Type'] ?? '');
+    if ($statusType !== '' && !str_contains($statusType, "'disabled'")) {
+        $pdo->exec("ALTER TABLE users MODIFY status ENUM('pending', 'approved', 'active', 'rejected', 'disabled') NOT NULL DEFAULT 'active'");
+    }
+    // Agent notes on an intern / employee's training.
+    $trainingColumns = $pdo->query('SHOW COLUMNS FROM training_records')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('notes', $trainingColumns, true)) {
+        $pdo->exec('ALTER TABLE training_records ADD COLUMN notes TEXT NULL AFTER status');
+    }
+    // Evaluations: who wrote it, per-criterion ratings (JSON {criterion: 1-5}) and written feedback.
+    $evaluationColumns = $pdo->query('SHOW COLUMNS FROM evaluations')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('evaluator_id', $evaluationColumns, true)) {
+        $pdo->exec('ALTER TABLE evaluations
+            ADD COLUMN evaluator_id INT UNSIGNED NULL AFTER user_id,
+            ADD COLUMN ratings TEXT NULL AFTER score,
+            ADD COLUMN strengths TEXT NULL AFTER feedback,
+            ADD COLUMN improvements TEXT NULL AFTER strengths,
+            ADD COLUMN next_steps VARCHAR(255) NULL AFTER improvements,
+            ADD COLUMN published_at DATETIME NULL AFTER next_steps,
+            ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER published_at');
+    }
+    // Uploaded files for documents (stored in uploads/documents/, served by account/document.php).
+    $documentColumns = $pdo->query('SHOW COLUMNS FROM documents')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('stored_name', $documentColumns, true)) {
+        $pdo->exec('ALTER TABLE documents
+            ADD COLUMN stored_name VARCHAR(80) NULL AFTER status,
+            ADD COLUMN original_name VARCHAR(190) NOT NULL DEFAULT "" AFTER stored_name,
+            ADD COLUMN mime VARCHAR(120) NOT NULL DEFAULT "" AFTER original_name,
+            ADD COLUMN size INT UNSIGNED NOT NULL DEFAULT 0 AFTER mime,
+            ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+    }
+    // Which training modules each person has finished (module keys from includes/workflow.php).
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS training_progress (
+            user_id INT UNSIGNED NOT NULL,
+            module_key VARCHAR(60) NOT NULL,
+            completed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, module_key),
+            CONSTRAINT fk_training_progress_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // Daily work / activity reports: submitted by interns and employees, approved or returned by an
+    // agent or HR. Approved hours make up training_records.hours_logged.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS work_reports (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            report_date DATE NOT NULL,
+            hours DECIMAL(4,1) NOT NULL DEFAULT 0,
+            summary TEXT NOT NULL,
+            notes TEXT NULL,
+            status ENUM("submitted", "approved", "returned") NOT NULL DEFAULT "submitted",
+            reviewer_id INT UNSIGNED NULL,
+            review_note VARCHAR(500) NULL,
+            reviewed_at DATETIME NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_work_reports_user (user_id, report_date),
+            KEY idx_work_reports_status (status),
+            CONSTRAINT fk_work_reports_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            CONSTRAINT fk_work_reports_reviewer FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // Time in / time out, one row per person per day (applicant Reporting page; admin Monitoring).
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS attendance (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            work_date DATE NOT NULL,
+            time_in DATETIME NULL,
+            time_out DATETIME NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_attendance_day (user_id, work_date),
+            CONSTRAINT fk_attendance_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
 } catch (PDOException $exception) {

@@ -143,7 +143,9 @@ require __DIR__ . '/includes/header.php';
                     <li><?= $icon('message-heart') ?>Guidance, not guesswork</li>
                     <li><?= $icon('shield-check') ?>Privacy &amp; trust</li>
                 </ul>
-                <a class="button about-teaser-link" href="about.php">Learn more about us</a>
+                <a class="button about-teaser-link" href="about.php">Learn more about us
+                    
+                </a>
             </div>
 
             <div class="about-teaser-visual" aria-hidden="true">

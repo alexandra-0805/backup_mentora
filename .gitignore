@@ -4,8 +4,13 @@ config/google.local.php
 # Optional GIPHY key for GIF search in Messages (see config/giphy.local.example.php)
 config/giphy.local.php
 
+# Email account (Gmail App Password) for sending confirmation links (see config/mail.local.example.php)
+config/mail.local.php
+
 # Users' uploaded profile photos and message attachments (keep each folder's .htaccess lock-down)
 uploads/avatars/*
 !uploads/avatars/.htaccess
 uploads/messages/*
 !uploads/messages/.htaccess
+uploads/documents/*
+!uploads/documents/.htaccess

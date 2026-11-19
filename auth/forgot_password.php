@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
+require_once __DIR__ . '/../includes/mailer.php';
 // Start the session before any output: the form's security token (mentora_csrf_field) is stored in it.
 mentora_session_start();
 $sent = false;
@@ -11,7 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!mentora_csrf_valid($_POST['csrf_token'] ?? null)) {
         $error = 'Your session expired. Please try again.';
     } elseif (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $query = $pdo->prepare('SELECT id FROM users WHERE email = ?');
+        // Only confirmed accounts: an application waiting for HR can't get a password this way.
+        $query = $pdo->prepare("SELECT id FROM users WHERE email = ? AND status = 'active'");
         $query->execute([$email]);
         $user = $query->fetch();
         if ($user) {
@@ -21,13 +23,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $insert = $pdo->prepare('INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE))');
             $insert->execute([$user['id'], mentora_reset_code_hash((int) $user['id'], $code)]);
 
-            $from = getenv('MENTORA_FROM_EMAIL') ?: 'no-reply@mentora.ph';
             $subject = 'Your Mentora password reset code';
             $message = "Your Mentora password reset code is: {$code}\n\nThis code expires in 15 minutes. If you did not request a password reset, you can ignore this email.";
-            $headers = 'From: ' . $from;
-            // @: a mail-server failure must not print a PHP warning (with server paths) into the page; it is logged instead.
-            if (!@mail($email, $subject, $message, $headers)) {
-                error_log('Mentora password reset email could not be sent for user ' . $user['id'] . ': ' . (error_get_last()['message'] ?? 'unknown error'));
+            // Through the mail account in config/mail.local.php when it's set up; PHP's mail() otherwise.
+            if (!mentora_deliver_mail($email, $subject, $message, getenv('MENTORA_FROM_EMAIL') ?: 'no-reply@mentora.ph')) {
+                error_log('Mentora password reset email could not be sent for user ' . $user['id'] . '.');
             }
         }
         // Same response whether or not the account exists, so this form can't be used to discover registered emails.

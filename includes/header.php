@@ -19,7 +19,7 @@ $themeFollowsDevice = $themeFollowsDevice ?? true;
     <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="icon" type="image/png" href="<?= $root ?>assets/images/mentora-logo.png?v=1">
     <link rel="stylesheet" href="<?= $root ?>assets/css/style.css?v=36">
-    <link rel="stylesheet" href="<?= $root ?>assets/css/theme.css?v=6">
+    <link rel="stylesheet" href="<?= $root ?>assets/css/theme.css?v=7">
     <link rel="stylesheet" href="<?= $root ?>assets/css/dialog.css?v=1">
     <?php require __DIR__ . '/theme_boot.php'; ?>
 </head>

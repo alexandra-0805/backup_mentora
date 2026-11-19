@@ -123,13 +123,15 @@ function mentora_current_user(): ?array
         require MENTORA_APP_ROOT . '/config/db.php';
     }
 
-    $query = $pdo->prepare('SELECT id, user_code, first_name, last_name, email, pathway, password_hash, role, avatar_path FROM users WHERE id = ?');
+    $query = $pdo->prepare('SELECT id, user_code, username, first_name, last_name, email, pathway, password_hash, role, status, avatar_path FROM users WHERE id = ?');
     $query->execute([(int) $sessionUser['id']]);
     $row = $query->fetch();
 
-    // Account deleted, or password changed since this session signed in (e.g. via reset): sign it out.
+    // Account deleted, not active (e.g. still waiting for approval), or password changed since this
+    // session signed in (e.g. via reset): sign it out.
     $fingerprint = $_SESSION['auth_fingerprint'] ?? '';
-    if (!$row || !is_string($fingerprint) || !hash_equals(mentora_password_fingerprint($row['password_hash']), $fingerprint)) {
+    if (!$row || ($row['status'] ?? 'active') !== 'active'
+        || !is_string($fingerprint) || !hash_equals(mentora_password_fingerprint($row['password_hash']), $fingerprint)) {
         unset($_SESSION['user'], $_SESSION['auth_fingerprint']);
         return null;
     }
@@ -176,6 +178,7 @@ function mentora_session_user(array $row): array
     return [
         'id' => (int) $row['id'],
         'user_code' => $row['user_code'] ?? null,
+        'username' => $row['username'] ?? null,
         'name' => trim($row['first_name'] . ' ' . $row['last_name']),
         'email' => $row['email'],
         'role' => $row['role'],

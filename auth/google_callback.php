@@ -2,13 +2,14 @@
 /**
  * Step 2 of "Continue with Google": Google sends the person back here.
  * - The Google email already has a Mentora account: sign in to it.
- * - No account yet and they came from sign-up: create the account with the chosen pathway,
- *   then open the qualifications form (same as signing up with a password).
+ * - No account yet and they came from sign-up: send an application with the chosen pathway; it waits
+ *   for HR to confirm it, like any application (includes/account_invites.php).
  * - No account yet and they came from sign-in: send them to sign-up to choose a pathway.
  */
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/google_auth.php';
+require_once __DIR__ . '/../includes/account_invites.php';
 
 mentora_session_start();
 
@@ -56,24 +57,27 @@ if (($profile['email_verified'] ?? false) !== true || !filter_var($email, FILTER
     $fail('That Google account’s email address isn’t verified, so it can’t be used to sign in.', $backTo);
 }
 
-$columns = 'SELECT id, user_code, first_name, last_name, email, pathway, password_hash, role FROM users';
+$columns = 'SELECT id, user_code, username, first_name, last_name, email, pathway, password_hash, role, status FROM users';
 $query = $pdo->prepare($columns . ' WHERE email = ?');
 $query->execute([$email]);
 $user = $query->fetch();
 
 if ($user) {
-    // Existing account (made with a password or with Google before): sign in to it.
+    if ($user['status'] !== 'active') {
+        // Applied but not confirmed by HR yet (or declined): Google can't skip the approval.
+        $fail(mentora_account_status_message($user['status']), 'auth/signin.php');
+    }
+    // Confirmed account (made with a password or with Google before): sign in to it.
     mentora_sign_in($user);
     mentora_redirect(mentora_after_sign_in_path($pdo, $_SESSION['user']));
 }
 
 $pathway = $saved['pathway'] ?? null;
 if ($intent !== 'signup' || !in_array($pathway, ['employee_va', 'internship'], true)) {
-    $fail('There’s no Mentora account for ' . $email . ' yet. Choose Employee VA or Intern, then continue with Google to create one.', 'auth/signup.php');
+    $fail('There’s no Mentora account for ' . $email . ' yet. Choose Employee VA or Intern, then apply with Google.', 'auth/signup.php');
 }
 
-// New account from the Google profile. It gets a random password nobody knows;
-// they sign in with Google, or set a password later with "Forgot your password?".
+// New application from the Google profile: it waits for HR like any other application.
 $firstName = trim((string) ($profile['given_name'] ?? ''));
 $lastName = trim((string) ($profile['family_name'] ?? ''));
 if ($firstName === '') {
@@ -83,16 +87,15 @@ $firstName = mb_substr($firstName, 0, 80);
 $lastName = mb_substr($lastName, 0, 80);
 
 try {
-    $pdo->prepare('INSERT INTO users (first_name, last_name, email, pathway, password_hash) VALUES (?, ?, ?, ?, ?)')
-        ->execute([$firstName, $lastName, $email, $pathway, password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT)]);
-    $newId = (int) $pdo->lastInsertId();
+    $result = mentora_create_pending_applicant($pdo, $firstName, $lastName, $email, $pathway);
 } catch (PDOException $exception) {
-    error_log('Mentora Google sign-up failed: ' . $exception->getMessage());
-    $fail('We couldn’t create your account right now. Please try again.', 'auth/signup.php');
+    error_log('Mentora Google application failed: ' . $exception->getMessage());
+    $result = ['ok' => false, 'error' => 'We couldn’t send your application right now. Please try again.'];
+}
+if (!$result['ok']) {
+    $fail($result['error'], 'auth/signup.php');
 }
 
-$query = $pdo->prepare($columns . ' WHERE id = ?');
-$query->execute([$newId]);
-mentora_sign_in($query->fetch());
-$_SESSION['flash_notice'] = 'Your account is ready. Next, tell us about your qualifications so we can review your application.';
-mentora_redirect(mentora_form_path($_SESSION['user']));
+mentora_notify_admins_new_applicant($pdo, trim($firstName . ' ' . $lastName), $email, $pathway);
+$_SESSION['applied'] = ['name' => $firstName, 'email' => $email, 'pathway' => $pathway];
+mentora_redirect('auth/signup.php?applied=1');

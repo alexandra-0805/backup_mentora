@@ -160,15 +160,15 @@ $now = new DateTimeImmutable(
 
     <link
         rel="stylesheet"
-        href="../../assets/css/applicant.css?v=2">
+        href="../../assets/css/applicant.css?v=3">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/settings.css?v=5">
+        href="../../assets/css/settings.css?v=11">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/theme.css?v=6">
+        href="../../assets/css/theme.css?v=7">
 
     <link
         rel="stylesheet"

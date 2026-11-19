@@ -138,7 +138,7 @@ $isAdmin = $me['role'] === 'admin';
 $contactRoles = in_array($me['role'], ['admin', 'agent'], true) ? ['admin', 'agent', 'applicant'] : ['admin', 'agent'];
 $contactQuery = $pdo->prepare(
     'SELECT id, first_name, last_name, email, role, pathway, avatar_path FROM users
-     WHERE id <> ? AND role IN (' . implode(',', array_fill(0, count($contactRoles), '?')) . ')
+     WHERE id <> ? AND status = "active" AND role IN (' . implode(',', array_fill(0, count($contactRoles), '?')) . ')
      ORDER BY FIELD(role, "admin", "agent", "applicant"), pathway, first_name, last_name'
 );
 $contactQuery->execute([$userId, ...$contactRoles]);
@@ -2732,6 +2732,15 @@ require __DIR__ . '/../includes/header.php';
             open(item, { focus: true });
         };
         contactButtons.forEach((contact) => contact.addEventListener('click', () => startConversation(contact)));
+
+        // messages.php?to=12 (e.g. "Message your agent" links): open that person's conversation, or start one.
+        const wantedContact = (new URLSearchParams(location.search).get('to') || '').replace(/\D/g, '');
+        if (wantedContact) {
+            const contact = contactButtons.find((button) => button.dataset.contact === 'u' + wantedContact);
+            if (contact) {
+                setTimeout(() => startConversation(contact), 0);
+            }
+        }
 
         // Search + tabs
         const filterItems = () => {

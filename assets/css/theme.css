@@ -173,6 +173,157 @@ body.workspace-dark-mode .admin-topbar .theme-toggle:hover {
 }
 
 /* ==========================================================================
+   Application status (auth/signup.php "Waiting for confirmation", auth/activate.php)
+   ========================================================================== */
+.application-status {
+    max-width: 620px;
+    text-align: left;
+}
+
+.application-status-icon {
+    align-items: center;
+    background: var(--mentora-pale);
+    border-radius: 50%;
+    color: var(--mentora-teal);
+    display: inline-flex;
+    height: 64px;
+    justify-content: center;
+    margin-bottom: 6px;
+    width: 64px;
+}
+
+.application-status-icon svg {
+    fill: none;
+    height: 30px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    width: 30px;
+}
+
+.application-status-icon.is-warning {
+    background: #fff4e5;
+    color: #b54708;
+}
+
+.application-steps {
+    display: grid;
+    gap: 4px;
+    list-style: none;
+    margin: 6px 0 22px;
+    padding: 0;
+}
+
+.application-steps li {
+    align-items: flex-start;
+    border-radius: 14px;
+    display: flex;
+    gap: 14px;
+    padding: 12px 14px;
+    position: relative;
+}
+
+.application-steps li:not(:last-child)::after {
+    background: rgba(60, 60, 67, 0.15);
+    bottom: -8px;
+    content: "";
+    left: 27px;
+    position: absolute;
+    top: 42px;
+    width: 2px;
+}
+
+.application-steps b {
+    align-items: center;
+    background: #f0f2f2;
+    border-radius: 50%;
+    color: #6e6e73;
+    display: inline-flex;
+    flex: 0 0 28px;
+    font-size: 12px;
+    height: 28px;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+
+.application-steps li > span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.application-steps strong {
+    color: #1d1d1f;
+    font-size: 14px;
+}
+
+.application-steps small {
+    color: #6e6e73;
+    font-size: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.application-steps .is-done b {
+    background: var(--mentora-teal);
+    color: #fff;
+}
+
+.application-steps .is-current {
+    background: var(--mentora-pale);
+}
+
+.application-steps .is-current b {
+    background: #fff;
+    box-shadow: 0 0 0 2px var(--mentora-teal);
+    color: var(--mentora-teal);
+}
+
+html[data-theme="dark"] .application-status-icon {
+    background: rgba(143, 239, 218, 0.1);
+    color: var(--mentora-mint);
+}
+
+html[data-theme="dark"] .application-status-icon.is-warning {
+    background: rgba(245, 190, 90, 0.14);
+    color: #f2cc7d;
+}
+
+html[data-theme="dark"] .application-steps strong {
+    color: #eef6f5;
+}
+
+html[data-theme="dark"] .application-steps small {
+    color: #9cb7b4;
+}
+
+html[data-theme="dark"] .application-steps b {
+    background: rgba(255, 255, 255, 0.08);
+    color: #9cb7b4;
+}
+
+html[data-theme="dark"] .application-steps .is-done b {
+    background: var(--mentora-teal);
+    color: #fff;
+}
+
+html[data-theme="dark"] .application-steps .is-current {
+    background: rgba(143, 239, 218, 0.08);
+}
+
+html[data-theme="dark"] .application-steps .is-current b {
+    background: transparent;
+    box-shadow: 0 0 0 2px var(--mentora-mint);
+    color: var(--mentora-mint);
+}
+
+html[data-theme="dark"] .application-steps li:not(:last-child)::after {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* ==========================================================================
    Dark mode: public pages
    ========================================================================== */
 /* Same palette as the workspace / Settings dark theme (settings.css). */

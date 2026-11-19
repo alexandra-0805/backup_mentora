@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'SELECT password_resets.id, password_resets.user_id, password_resets.token_hash
              FROM password_resets
              INNER JOIN users ON users.id = password_resets.user_id
-             WHERE users.email = ? AND password_resets.used_at IS NULL AND password_resets.expires_at > NOW()
+             WHERE users.email = ? AND users.status = \'active\' AND password_resets.used_at IS NULL AND password_resets.expires_at > NOW()
              ORDER BY password_resets.created_at DESC
              LIMIT 1'
         );

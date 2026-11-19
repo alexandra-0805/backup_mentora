@@ -261,6 +261,98 @@
     border-top-color: rgba(60, 60, 67, 0.13);
 }
 
+/* Hiring progress (includes/hiring_progress.php): done / current / upcoming steps, each a link. */
+.hiring-progress-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.hiring-progress-head .badge {
+    flex-shrink: 0;
+}
+
+ol.timeline {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 0;
+}
+
+.timeline-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 12px;
+    padding: 6px 4px 8px;
+    transition: background-color .15s ease;
+}
+
+.timeline-link:hover {
+    background: rgba(11, 98, 93, 0.06);
+}
+
+.timeline-link:focus-visible {
+    outline: 2px solid var(--mentora-teal);
+    outline-offset: 2px;
+}
+
+.timeline-step:before {
+    top: 17px;
+}
+
+.timeline-step.is-done:before,
+.timeline-step.is-current:before {
+    background: var(--mentora-teal);
+}
+
+.timeline-step.is-current .timeline-dot {
+    background: #fff;
+    color: var(--mentora-teal);
+    font-weight: 700;
+    box-shadow: 0 0 0 2px var(--mentora-teal), 0 0 0 6px rgba(11, 98, 93, 0.12);
+}
+
+.timeline-step.is-current strong {
+    color: var(--mentora-teal);
+}
+
+.timeline-step.is-current small {
+    color: #3a5f5c;
+    font-weight: 600;
+}
+
+.checklist li.is-current:before {
+    content: "→";
+    color: var(--mentora-teal);
+}
+
+.checklist li a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.checklist li a:hover {
+    color: var(--mentora-teal);
+    text-decoration: underline;
+}
+
+@media (max-width: 700px) {
+    /* Vertical connector: from the previous dot's centre to this one's. */
+    .timeline-step:before {
+        top: calc(-100% + 19px);
+        bottom: calc(100% - 19px);
+    }
+
+    .timeline-link {
+        padding: 2px 4px;
+    }
+
+    .timeline-step .timeline-dot {
+        top: 7px;
+    }
+}
+
 .checklist li:before {
     color: var(--mentora-teal);
 }

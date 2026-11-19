@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/google_auth.php';
+require_once __DIR__ . '/../includes/account_invites.php';
 
 // Already signed in and just opening this page: go straight to the right workspace.
 // A submitted form is always processed, so you can switch to another account without signing out first.
@@ -17,22 +18,30 @@ if (!empty($_SESSION['flash_error']) && is_string($_SESSION['flash_error'])) {
 unset($_SESSION['flash_error']);
 $email = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // "email" is the field name for both: a username or an email address.
     $email = trim(mentora_post_string('email'));
     $password = mentora_post_string('password');
 
     if (!mentora_csrf_valid($_POST['csrf_token'] ?? null)) {
         $error = 'Your session expired. Please try signing in again.';
     } else {
-        $query = $pdo->prepare('SELECT id, user_code, first_name, last_name, email, pathway, password_hash, role FROM users WHERE email = ?');
-        $query->execute([$email]);
+        $byEmail = str_contains($email, '@');
+        $query = $pdo->prepare(
+            'SELECT id, user_code, username, first_name, last_name, email, pathway, password_hash, role, status FROM users WHERE '
+            . ($byEmail ? 'email = ?' : 'username = ?')
+        );
+        $query->execute([strtolower($email)]);
         $user = $query->fetch();
 
-        // Verify against a dummy hash when the email is unknown so response time doesn't reveal which emails exist.
+        // Verify against a dummy hash when the account is unknown so response time doesn't reveal which accounts exist.
         $hash = $user ? $user['password_hash'] : '$2y$10$hvFgy6881nk50qVsp1kxXO6tADTPBwRbpAHIRfc0ZnPPK9ugVm8Ry';
         $passwordOk = password_verify($password, $hash);
 
-        if (!$user || !$passwordOk) {
-            $error = 'The email or password you entered is incorrect.';
+        if ($user && $user['status'] !== 'active') {
+            // Applied but not confirmed yet (or declined): say where they are instead of "wrong password".
+            $error = mentora_account_status_message($user['status']);
+        } elseif (!$user || !$passwordOk) {
+            $error = 'The username, email or password you entered is incorrect.';
         } else {
             if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {
                 $user['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
@@ -57,14 +66,14 @@ require __DIR__ . '/../includes/header.php';
         <?php if ($error): ?><div class="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
         <form method="post">
             <?= mentora_csrf_field() ?>
-            <div class="field"><label for="email">Email address</label><input id="email" type="email" name="email" required autocomplete="username" placeholder="name@gmail.com" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"></div>
+            <div class="field"><label for="email">Username or email</label><input id="email" type="text" name="email" required autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. juan.delacruz or name@gmail.com" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"></div>
             <div class="field"><label for="password">Password</label><input id="password" type="password" name="password" required autocomplete="current-password" placeholder="Enter your password"></div>
             <div class="form-actions"><button class="button button-primary" type="submit">Sign in</button></div>
             <div class="auth-divider"><span>or</span></div>
             <div class="google-auth"><?php mentora_google_button('signin'); ?></div>
         </form>
         <div class="notice"><strong>One sign-in. The right workspace for you.</strong><br>Your account opens your application, team, or HR workspace with private, role-based access.</div>
-        <div class="auth-links"><a href="forgot_password.php">Forgot your password? </a><br><br>New to Mentora? <a href="signup.php">Sign up</a></div>
+        <div class="auth-links"><a href="forgot_password.php">Forgot your password? </a><br><br>New to Mentora? <a href="signup.php">Apply now</a></div>
     </section>
 </main>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

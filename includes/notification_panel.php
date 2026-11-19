@@ -19,8 +19,10 @@ if (
 }
 
 $notificationQuery = $userId
-    ? $pdo->prepare('SELECT title, body, read_at, created_at FROM notifications WHERE user_id = ? OR user_id IS NULL ORDER BY created_at DESC')
-    : $pdo->prepare('SELECT title, body, read_at, created_at FROM notifications WHERE user_id IS NULL ORDER BY created_at DESC');
+    ? $pdo->prepare('SELECT id, title, body, link, read_at, created_at FROM notifications WHERE user_id = ? OR user_id IS NULL ORDER BY created_at DESC')
+    : $pdo->prepare('SELECT id, title, body, link, read_at, created_at FROM notifications WHERE user_id IS NULL ORDER BY created_at DESC');
+// Clicking a notification opens account/notification.php (marks it read, then goes to its page).
+$notificationOpenUrl = (str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/applicant/') ? '../../' : '../') . 'account/notification.php?id=';
 
 if ($userId) {
     $notificationQuery->execute([$userId]);
@@ -54,15 +56,21 @@ foreach ($notificationItems as $notification) {
             <?php if (!$notificationItems): ?>
                 <p class="notification-empty">You’re all caught up.</p>
             <?php else: ?>
-                <?php foreach ($notificationItems as $notification): ?>
-                    <article class="notification-item<?= $notification['read_at'] ? '' : ' unread' ?>">
+                <?php foreach ($notificationItems as $notification):
+                    $clickable = $userId && trim((string) ($notification['link'] ?? '')) !== '';
+                    $tag = $clickable ? 'a' : 'article';
+                ?>
+                    <<?= $tag ?> class="notification-item<?= $notification['read_at'] ? '' : ' unread' ?><?= $clickable ? ' is-link' : '' ?>"<?= $clickable ? ' href="' . htmlspecialchars($notificationOpenUrl . (int) $notification['id'], ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
                         <span class="notification-item-dot" aria-hidden="true"></span>
                         <div>
                             <strong><?= htmlspecialchars($notification['title'], ENT_QUOTES, 'UTF-8') ?></strong>
                             <p><?= htmlspecialchars($notification['body'], ENT_QUOTES, 'UTF-8') ?></p>
                             <small><?= htmlspecialchars($notification['created_at'], ENT_QUOTES, 'UTF-8') ?></small>
                         </div>
-                    </article>
+                        <?php if ($clickable): ?>
+                            <svg class="notification-item-go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg>
+                        <?php endif; ?>
+                    </<?= $tag ?>>
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>

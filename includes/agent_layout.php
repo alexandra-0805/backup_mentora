@@ -7,9 +7,8 @@ date_default_timezone_set('Asia/Manila');
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/auth_check.php';
 
-// Original open flow: agent pages are viewable without signing in (demo profile shown to guests).
-// This only starts the session and refreshes the signed-in user, if any; it does not restrict access.
-mentora_current_user();
+// Agent pages show and change interns' records, so they need an agent (or HR admin) account.
+mentora_require_login(['agent', 'admin']);
 
 require __DIR__ . '/header_counts.php';
 
@@ -89,11 +88,11 @@ $agentNav = [
 
     <link
         rel="stylesheet"
-        href="../assets/css/settings.css?v=5">
+        href="../assets/css/settings.css?v=11">
 
     <link
         rel="stylesheet"
-        href="../assets/css/theme.css?v=6">
+        href="../assets/css/theme.css?v=7">
 
     <link
         rel="stylesheet"
