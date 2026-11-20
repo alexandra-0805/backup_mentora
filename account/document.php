@@ -35,9 +35,19 @@ if (!$document) {
 
 $isStaff = in_array($me['role'], ['agent', 'admin'], true);
 $isOwner = (int) ($document['owner_id'] ?? 0) === (int) $me['id'];
-$isPublic = $document['status'] === 'published' && $document['category'] !== 'Application documents';
+$isPrivate = in_array($document['category'], ['Application documents', 'Certificates'], true);
+$isPublic = $document['status'] === 'published' && !$isPrivate;
 if (!$isStaff && !$isOwner && !$isPublic) {
     $notFound();
+}
+// A certificate of completion unlocks for its owner only after every training module is done.
+if (!$isStaff && $document['category'] === 'Certificates') {
+    require_once __DIR__ . '/../includes/training_certificate.php';
+    if (!mentora_training_complete($pdo, (int) $me['id'], (string) $me['pathway'])) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=utf-8');
+        exit('Finish all training modules to download your certificate.');
+    }
 }
 
 $types = [

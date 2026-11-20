@@ -98,7 +98,10 @@ require __DIR__ . '/../includes/header.php';
     <?php if (!$invite): ?>
         <section class="auth-card account-card application-status">
             <span class="application-status-icon is-warning" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M12 9v4M12 17h.01"/>
+                    <path d="M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+                </svg>
             </span>
             <h1>This link can’t be used.</h1>
             <p class="intro">

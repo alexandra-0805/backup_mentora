@@ -16,7 +16,7 @@ try {
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
     // Mentora runs on Philippine time: PHP dates and MySQL NOW() / CURDATE() / TIMESTAMP columns agree
-    // (attendance, late check-ins, report dates) whatever time zone the server itself uses.
+    // (attendance, report dates) whatever time zone the server itself uses.
     date_default_timezone_set('Asia/Manila');
     $pdo->exec("SET time_zone = '+08:00'");
 
@@ -98,13 +98,17 @@ try {
              '-', IF(id < 10000, LPAD(id, 4, '0'), id))
          WHERE user_code IS NULL"
     );
-    $pdo->exec(
-        'INSERT IGNORE INTO departments (name, description) VALUES
-            ("HR & Admin", "People operations, employee records and compliance"),
-            ("Customer Success", "Client support, service quality and intern monitoring"),
-            ("Operations", "Delivery coordination, process support and training"),
-            ("Sales", "Lead qualification, pipeline support and growth")'
-    );
+    // Mentora's starting departments, added only to an empty list; HR adds, edits and deletes them
+    // in admin/department.php (so a deleted department doesn't come back).
+    if ((int) $pdo->query('SELECT COUNT(*) FROM departments')->fetchColumn() === 0) {
+        $pdo->exec(
+            'INSERT IGNORE INTO departments (name, description) VALUES
+                ("Web Developer", "Websites, web apps, landing pages and site maintenance for clients"),
+                ("Marketing Services", "Social media, content, email campaigns and online advertising"),
+                ("Accounting", "Bookkeeping, invoicing, payroll support and financial reports"),
+                ("Psychotherapist", "Client intake, scheduling and admin support for therapy practices")'
+        );
+    }
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS training_records (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -264,6 +268,14 @@ try {
             ADD COLUMN size INT UNSIGNED NOT NULL DEFAULT 0 AFTER mime,
             ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
     }
+    // A document can be a link instead of a file (e.g. a Google Drive portfolio); then stored_name is NULL.
+    if (!in_array('link_url', $pdo->query('SHOW COLUMNS FROM documents')->fetchAll(PDO::FETCH_COLUMN), true)) {
+        $pdo->exec('ALTER TABLE documents ADD COLUMN link_url VARCHAR(500) NULL AFTER size');
+    }
+    // Who uploaded a document for someone else (e.g. the agent who uploaded an intern's certificate).
+    if (!in_array('uploaded_by', $pdo->query('SHOW COLUMNS FROM documents')->fetchAll(PDO::FETCH_COLUMN), true)) {
+        $pdo->exec('ALTER TABLE documents ADD COLUMN uploaded_by INT UNSIGNED NULL AFTER owner_id');
+    }
     // Which training modules each person has finished (module keys from includes/workflow.php).
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS training_progress (
@@ -274,6 +286,27 @@ try {
             CONSTRAINT fk_training_progress_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
+    // Social profile monitoring: a Student VA (intern) or Professional VA (employee) builds these public
+    // profiles; entered on the applicant Profile page, exported by agents and HR (export.php?type=social).
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS social_profiles (
+            user_id INT UNSIGNED NOT NULL PRIMARY KEY,
+            upwork_url VARCHAR(255) NULL,
+            linkedin_url VARCHAR(255) NULL,
+            quora_url VARCHAR(255) NULL,
+            reddit_url VARCHAR(255) NULL,
+            instagram_url VARCHAR(255) NULL,
+            threads_url VARCHAR(255) NULL,
+            substack_url VARCHAR(255) NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            CONSTRAINT fk_social_profiles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // Best quiz score (%) for a module passed on its lesson page; NULL when an agent ticked it as done.
+    $progressColumns = $pdo->query('SHOW COLUMNS FROM training_progress')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('quiz_score', $progressColumns, true)) {
+        $pdo->exec('ALTER TABLE training_progress ADD COLUMN quiz_score TINYINT UNSIGNED NULL AFTER module_key');
+    }
     // Daily work / activity reports: submitted by interns and employees, approved or returned by an
     // agent or HR. Approved hours make up training_records.hours_logged.
     $pdo->exec(

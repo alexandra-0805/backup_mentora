@@ -189,10 +189,18 @@ require __DIR__ . '/includes/header.php';
             <p>The ideas that shape how Mentora works for you.</p>
         </div>
         <div class="preparation-list">
-            <div><span><?= mentora_icon('sprout') ?></span><strong>Growth first</strong><small>Every feature exists to help people learn, improve, and move forward.</small></div>
-            <div><span><?= mentora_icon('message-heart') ?></span><strong>Guidance, not guesswork</strong><small>Mentors and clear next steps, so no one is left wondering what to do.</small></div>
-            <div><span><?= mentora_icon('shield-check') ?></span><strong>Privacy &amp; trust</strong><small>Your information is kept private, with access based on your role.</small></div>
-            <div><span><?= mentora_icon('heart') ?></span><strong>People-centred</strong><small>Thoughtful tools built for applicants, mentors, and people teams alike.</small></div>
+            <div>
+                <span><?= mentora_icon('sprout') ?></span><strong>Growth first</strong><small>Every feature exists to help people learn, improve, and move forward.</small>
+            </div>
+            <div>
+                <span><?= mentora_icon('message-heart') ?></span><strong>Guidance, not guesswork</strong><small>Mentors and clear next steps, so no one is left wondering what to do.</small>
+            </div>
+            <div>
+                <span><?= mentora_icon('shield-check') ?></span><strong>Privacy &amp; trust</strong><small>Your information is kept private, with access based on your role.</small>
+            </div>
+            <div>
+                <span><?= mentora_icon('heart') ?></span><strong>People-centred</strong><small>Thoughtful tools built for applicants, mentors, and people teams alike.</small>
+            </div>
         </div>
     </section>
 

@@ -32,9 +32,8 @@ $settingsAccount = [
             ['workspaceName', 'Workspace name', 'HR management'],
             ['contactEmail', 'Contact email', 'hr@mentora.ph'],
             ['country', 'Country', 'Philippines'],
-            ['workingDays', 'Working days', 'Mon – Fri'],
-            ['defaultShift', 'Default shift', '08:00 AM – 05:00 PM'],
-            ['lateGrace', 'Late check-in grace', '15 minutes'],
+            ['workingDays', 'Working days', 'Any day'],
+            ['defaultShift', 'Default shift', 'Open shift'],
         ],
     ],
 ];

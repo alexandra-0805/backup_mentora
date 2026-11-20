@@ -21,7 +21,9 @@ function mentora_render_invite_panel(array $invite, string $adminName): void
 ?>
     <section class="admin-panel invite-ready<?= $emailed ? ' is-sent' : '' ?>" aria-labelledby="invite-ready-title">
         <?php if ($emailed): ?>
-            <h2 id="invite-ready-title">✓ <?= $invite['resent'] ? 'New link emailed' : ($staff ? 'Invitation emailed' : 'Approved and emailed') ?> to <?= $h($invite['full_name']) ?></h2>
+            <h2 id="invite-ready-title">✓ <?= $invite['resent']
+                ? 'New link emailed'
+                : ($staff ? 'Invitation emailed' : 'Approved and emailed') ?> to <?= $h($invite['full_name']) ?></h2>
             <p class="panel-subtitle">
                 The confirmation link was sent automatically to <strong><?= $h($invite['email']) ?></strong>.
                 It works once and expires in <?= MENTORA_INVITE_DAYS ?> days.<?= $invite['resent'] ? ' Any link sent earlier no longer works.' : '' ?>
@@ -48,7 +50,18 @@ function mentora_render_invite_panel(array $invite, string $adminName): void
         </div>
         <div class="invite-actions">
             <a class="admin-btn primary" href="<?= $h($gmailUrl) ?>" target="_blank" rel="noopener">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                <svg viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2"/>
+                    <path d="m3 7 9 6 9-6"/>
+                </svg>
                 Open in Gmail
             </a>
             <a class="admin-btn" href="<?= $h($mailtoUrl) ?>">Other email app</a>

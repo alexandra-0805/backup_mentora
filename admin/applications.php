@@ -39,7 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fullName = trim($applicant['first_name'] . ' ' . $applicant['last_name']);
             // Email it automatically when a mail account is set up (config/mail.local.php).
             $mail = mentora_mail_enabled()
-                ? mentora_send_invite_email($applicant['email'], $fullName, $applicant['first_name'], $applicant['pathway'], $link, $admin['name'], $admin['email'])
+                ? mentora_send_invite_email(
+                    $applicant['email'],
+                    $fullName,
+                    $applicant['first_name'],
+                    $applicant['pathway'],
+                    $link,
+                    $admin['name'],
+                    $admin['email']
+                )
                 : ['ok' => false, 'error' => '', 'not_configured' => true];
             // The link is also shown once, to this admin, as a backup (Gmail / copy).
             $_SESSION['applications_flash'] = [
@@ -173,7 +181,14 @@ $pathwayLabel = static fn(string $pathway): string => $pathway === 'internship' 
                     <td>
                         <div class="application-actions">
                             <?php
-                            $button = static function (string $action, string $label, string $class, string $title, string $message, string $tone = '') use ($applicant, $view, $h): string {
+                            $button = static function (
+                                string $action,
+                                string $label,
+                                string $class,
+                                string $title,
+                                string $message,
+                                string $tone = ''
+                            ) use ($applicant, $view, $h): string {
                                 return '<form method="post">' . mentora_csrf_field()
                                     . '<input type="hidden" name="user_id" value="' . (int) $applicant['id'] . '">'
                                     . '<input type="hidden" name="action" value="' . $h($action) . '">'
@@ -182,11 +197,37 @@ $pathwayLabel = static fn(string $pathway): string => $pathway === 'internship' 
                                     . ($tone !== '' ? ' data-confirm-tone="' . $h($tone) . '"' : '') . '>' . $h($label) . '</button></form>';
                             };
                             if ($view === 'pending') {
-                                echo $button('approve', 'Approve', 'primary', "Approve {$name}?", 'You’ll get a one-time link to send from your Gmail so they can create their username and password.');
-                                echo $button('reject', 'Decline', 'danger', "Decline {$name}’s application?", 'They won’t be able to create an account. You can reopen it later.', 'danger');
+                                echo $button(
+                                    'approve',
+                                    'Approve',
+                                    'primary',
+                                    "Approve {$name}?",
+                                    'You’ll get a one-time link to send from your Gmail so they can create their username and password.'
+                                );
+                                echo $button(
+                                    'reject',
+                                    'Decline',
+                                    'danger',
+                                    "Decline {$name}’s application?",
+                                    'They won’t be able to create an account. You can reopen it later.',
+                                    'danger'
+                                );
                             } elseif ($view === 'approved') {
-                                echo $button('resend', 'Resend link', 'primary', "Send {$name} a new link?", 'A new link replaces the old one, which stops working.');
-                                echo $button('reject', 'Decline', 'danger', "Decline {$name}’s application?", 'Their link stops working and they won’t be able to create an account.', 'danger');
+                                echo $button(
+                                    'resend',
+                                    'Resend link',
+                                    'primary',
+                                    "Send {$name} a new link?",
+                                    'A new link replaces the old one, which stops working.'
+                                );
+                                echo $button(
+                                    'reject',
+                                    'Decline',
+                                    'danger',
+                                    "Decline {$name}’s application?",
+                                    'Their link stops working and they won’t be able to create an account.',
+                                    'danger'
+                                );
                             } elseif ($view === 'rejected') {
                                 echo $button('reopen', 'Reopen', '', "Reopen {$name}’s application?", 'It moves back to Waiting so you can approve it.');
                             } else {

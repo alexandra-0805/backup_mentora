@@ -3,11 +3,23 @@ $pathway='employee';$pageTitle='Employee pathway';$activePage='overview.php';req
 require_once __DIR__.'/../../includes/hiring_progress.php';
 $progress=mentora_hiring_progress($pdo,$currentUser,'employee');
 $stepState=array_column($progress['steps'],'state','label');
-$badge=static fn(string $state,string $done,string $current,string $upcoming): string => match($state){'done'=>'<span class="badge">'.$done.'</span>','current'=>'<span class="badge info">'.$current.'</span>',default=>'<span class="badge warn">'.$upcoming.'</span>'};
+$badge=static fn(
+    string $state,
+    string $done,
+    string $current,
+    string $upcoming
+): string => match($state){'done'=>'<span class="badge">'.$done.'</span>','current'=>'<span class="badge info">'.$current.'</span>',default=>'<span class="badge warn">'.$upcoming.'</span>'};
 $stepDetail=array_column($progress['steps'],'detail','label');
 ?>
-<div class="admin-heading"><div><h1>Employee pathway</h1><p>Track your hiring progress, upcoming milestones, and next steps in one place.</p></div><span class="badge info">Active pathway</span></div>
-<div class="applicant-banner"><strong>Welcome to your Mentora workspace.</strong>Your application, evaluation, training, and department details are kept together here.</div>
+<div class="admin-heading">
+    <div>
+        <h1>Employee pathway</h1>
+        <p>Track your hiring progress, upcoming milestones, and next steps in one place.</p>
+    </div>
+    <span class="badge info">Active pathway</span>
+</div>
+<div class="applicant-banner">
+    <strong>Welcome to your Mentora workspace.</strong>Your application, evaluation, training, and department details are kept together here.</div>
 <?php mentora_render_hiring_progress($progress,'Hiring progress'); ?>
 <div class="admin-grid"><section class="pathway-card"><h3>Pathway summary</h3><ul class="status-list">
 <li><span>Application verified</span><?= $badge($stepState['Application'],'Complete','Form needed','Form needed') ?></li>

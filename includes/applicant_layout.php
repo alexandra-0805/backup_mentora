@@ -164,11 +164,11 @@ $now = new DateTimeImmutable(
 
     <link
         rel="stylesheet"
-        href="../../assets/css/settings.css?v=11">
+        href="../../assets/css/settings.css?v=29">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/theme.css?v=7">
+        href="../../assets/css/theme.css?v=8">
 
     <link
         rel="stylesheet"
@@ -244,9 +244,11 @@ $now = new DateTimeImmutable(
 
         <div class="sidebar-bottom">
 
-            <a href="../../auth/signout.php">
-                ↪ Sign out
-            </a>
+            <a class="sidebar-signout" href="../../auth/signout.php"><svg class="signout-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M9 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H9"/>
+                <path d="M10 12h10"/>
+                <path d="m16 8 4 4-4 4"/>
+            </svg><span>Sign out</span></a>
 
 
             <a

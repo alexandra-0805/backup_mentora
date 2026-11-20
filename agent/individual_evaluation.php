@@ -48,10 +48,29 @@ if (mentora_is_post()) {
     }
     $score = $ratings ? round(array_sum($ratings) / count($ratings), 1) : null;
     $status = $publish ? 'published' : ($evaluation['status'] === 'published' ? 'published' : 'draft');
-    $pdo->prepare('UPDATE evaluations SET evaluator_id = ?, ratings = ?, score = ?, strengths = ?, improvements = ?, next_steps = ?, feedback = ?, status = ?, published_at = IF(? AND published_at IS NULL, NOW(), published_at) WHERE id = ?')
-        ->execute([$me['id'], json_encode($ratings, JSON_UNESCAPED_UNICODE), $score, $strengths ?: null, $improvements ?: null, $nextSteps ?: null, $strengths ?: null, $status, $publish ? 1 : 0, $id]);
+    $pdo->prepare('UPDATE evaluations
+        SET evaluator_id = ?, ratings = ?, score = ?, strengths = ?, improvements = ?, next_steps = ?, feedback = ?, status = ?, published_at = IF(? AND published_at IS NULL, NOW(), published_at)
+        WHERE id = ?')
+        ->execute([
+            $me['id'],
+            json_encode($ratings, JSON_UNESCAPED_UNICODE),
+            $score,
+            $strengths ?: null,
+            $improvements ?: null,
+            $nextSteps ?: null,
+            $strengths ?: null,
+            $status,
+            $publish ? 1 : 0,
+            $id
+        ]);
     if ($publish) {
-        mentora_notify($pdo, (int) $evaluation['user_id'], 'Your ' . mb_strtolower($evaluation['review_type']) . ' is ready', 'Overall score ' . mentora_hours($score) . ' / 5. Open it to see your feedback and next steps.', 'applicant/' . mentora_pathway_folder($evaluation['pathway']) . '/evaluation.php?id=' . $id);
+        mentora_notify(
+            $pdo,
+            (int) $evaluation['user_id'],
+            'Your ' . mb_strtolower($evaluation['review_type']) . ' is ready',
+            'Overall score ' . mentora_hours($score) . ' / 5. Open it to see your feedback and next steps.',
+            'applicant/' . mentora_pathway_folder($evaluation['pathway']) . '/evaluation.php?id=' . $id
+        );
         mentora_flash('Evaluation published. ' . $evaluation['first_name'] . ' can see it now.');
     } else {
         mentora_flash('Draft saved. ' . $evaluation['first_name'] . ' won’t see it until you publish.');
@@ -65,15 +84,31 @@ require __DIR__ . '/../includes/agent_layout.php';
 
 $evaluation = $loadEvaluation($pdo, (int) ($_GET['id'] ?? 0));
 if (!$evaluation):
-    $open = $pdo->query("SELECT e.id, e.review_type, e.status, e.due_date, u.first_name, u.last_name, u.pathway FROM evaluations e JOIN users u ON u.id = e.user_id AND u.status = 'active' WHERE e.status <> 'published' ORDER BY e.due_date IS NULL, e.due_date")->fetchAll();
+    $open = $pdo->query("SELECT e.id, e.review_type, e.status, e.due_date, u.first_name, u.last_name, u.pathway
+        FROM evaluations e
+        JOIN users u ON u.id = e.user_id AND u.status = 'active'
+        WHERE e.status <> 'published'
+        ORDER BY e.due_date IS NULL, e.due_date")
+        ->fetchAll();
 ?>
-    <div class="admin-heading"><div><h1>Individual evaluation</h1><p>Choose an evaluation to score, or create a new one.</p></div><a class="admin-btn primary" href="evaluation_list.php#create">+ Create evaluation</a></div>
+    <div class="admin-heading">
+        <div>
+            <h1>Individual evaluation</h1>
+            <p>Choose an evaluation to score, or create a new one.</p>
+        </div>
+        <a class="admin-btn primary" href="evaluation_list.php#create">+ Create evaluation</a>
+    </div>
     <?= mentora_flash_html() ?>
     <section class="admin-panel data-panel">
         <h2>Waiting for your review</h2>
         <?php if (!$open): ?><p class="panel-subtitle">Nothing to review. Create an evaluation from the Evaluation list.</p><?php endif; ?>
         <?php foreach ($open as $row): ?>
-            <div class="list-row"><span><?= mentora_h($row['first_name'] . ' ' . $row['last_name']) ?> · <?= mentora_h($row['review_type']) ?><br><small><?= mentora_pathway_label($row['pathway']) ?> · <?= $row['due_date'] ? 'Due ' . date('d M Y', strtotime($row['due_date'])) : 'No due date' ?></small></span><a class="admin-btn primary" href="individual_evaluation.php?id=<?= (int) $row['id'] ?>">Review</a></div>
+            <div class="list-row">
+                <span><?= mentora_h($row['first_name'] . ' ' . $row['last_name']) ?> · <?= mentora_h($row['review_type']) ?><br><small><?= mentora_pathway_label($row['pathway']) ?> · <?= $row['due_date']
+                    ? 'Due ' . date('d M Y', strtotime($row['due_date']))
+                    : 'No due date' ?></small></span><a class="admin-btn primary"
+                        href="individual_evaluation.php?id=<?= (int) $row['id'] ?>"><?= mentora_icon('view') ?>Review</a>
+            </div>
         <?php endforeach; ?>
     </section>
 <?php else:
@@ -92,29 +127,61 @@ if (!$evaluation):
 ?>
     <form method="post">
         <?= mentora_csrf_field() ?><input type="hidden" name="id" value="<?= (int) $evaluation['id'] ?>">
-        <div class="admin-heading"><div><h1><?= mentora_h($name) ?> / <?= mentora_h($evaluation['review_type']) ?></h1><p><?= mentora_pathway_label($evaluation['pathway']) ?> · <?= mentora_h($evaluation['user_code']) ?> · <?= $isPublished ? 'Published ' . date('d M Y', strtotime($evaluation['published_at'])) : ($evaluation['due_date'] ? 'Due ' . date('d M Y', strtotime($evaluation['due_date'])) : 'No due date') ?></p></div>
+        <div class="admin-heading">
+            <div>
+                <h1><?= mentora_h($name) ?> / <?= mentora_h($evaluation['review_type']) ?></h1>
+                <p><?= mentora_pathway_label($evaluation['pathway']) ?> · <?= mentora_h($evaluation['user_code']) ?> · <?= $isPublished
+                    ? 'Published ' . date('d M Y', strtotime($evaluation['published_at']))
+                    : ($evaluation['due_date'] ? 'Due ' . date('d M Y', strtotime($evaluation['due_date'])) : 'No due date') ?></p>
+            </div>
             <div class="admin-actions">
                 <a class="admin-btn" href="evaluation_list.php">← All evaluations</a>
-                <?php if (!$isPublished): ?><button class="admin-btn" type="submit" name="action" value="draft" data-confirm-title="Save this evaluation as a draft?" data-confirm="Your scores and feedback will be saved. <?= mentora_h($evaluation['first_name']) ?> won't see them until you publish.">Save draft</button><?php endif; ?>
-                <button class="admin-btn primary" type="submit" name="action" value="publish" data-confirm-title="<?= $isPublished ? 'Update the published evaluation?' : 'Publish this evaluation?' ?>" data-confirm="<?= mentora_h($evaluation['first_name']) ?> will be able to see their scores, feedback and next steps."><?= $isPublished ? 'Update published' : 'Publish evaluation' ?></button>
+                <?php if (!$isPublished): ?><button class="admin-btn"
+                    type="submit"
+                    name="action"
+                    value="draft"
+                    data-confirm-title="Save this evaluation as a draft?"
+                    data-confirm="Your scores and feedback will be saved. <?= mentora_h($evaluation['first_name']) ?> won't see them until you publish.">Save draft</button><?php endif; ?>
+                <button class="admin-btn primary"
+                    type="submit"
+                    name="action"
+                    value="publish"
+                    data-confirm-title="<?= $isPublished ? 'Update the published evaluation?' : 'Publish this evaluation?' ?>"
+                    data-confirm="<?= mentora_h($evaluation['first_name']) ?> will be able to see their scores, feedback and next steps."><?= $isPublished ? 'Update published' : 'Publish evaluation' ?></button>
             </div>
         </div>
         <?= mentora_flash_html() ?>
         <section class="admin-panel">
             <h2>Performance scoring</h2>
-            <p class="panel-subtitle">Rate each criterion from 1 (needs development) to 5 (excellent). The overall score is the average<?= $evaluation['score'] !== null ? ': currently <strong>' . mentora_hours($evaluation['score']) . ' / 5</strong>' : '' ?>.</p>
+            <p class="panel-subtitle">Rate each criterion from 1 (needs development) to 5 (excellent). The overall score is the average<?= $evaluation['score'] !== null
+                ? ': currently <strong>' . mentora_hours($evaluation['score']) . ' / 5</strong>'
+                : '' ?>.</p>
             <table class="admin-table"><thead><tr><th>Criterion</th><th>Weight</th><th>Rating</th></tr></thead><tbody>
                 <?php foreach ($criteria as $index => $criterion): $current = (int) ($saved[$criterion] ?? 0); ?>
-                    <tr><td><label for="rating-<?= $index ?>"><?= mentora_h($criterion) ?></label></td><td><?= round(100 / count($criteria)) ?>%</td><td><select id="rating-<?= $index ?>" name="rating[<?= $index ?>]"><option value="">Not rated</option><?php for ($r = 5; $r >= 1; $r--): ?><option value="<?= $r ?>"<?= $current === $r ? ' selected' : '' ?>><?= $r ?> / 5</option><?php endfor; ?></select></td></tr>
+                    <tr>
+                        <td><label for="rating-<?= $index ?>"><?= mentora_h($criterion) ?></label>
+                        </td>
+                        <td><?= round(100 / count($criteria)) ?>%</td>
+                        <td><select id="rating-<?= $index ?>" name="rating[<?= $index ?>]"><option value="">Not rated</option>
+                                <?php for ($r = 5; $r >= 1; $r--): ?>
+                                <option value="<?= $r ?>"<?= $current === $r ? ' selected' : '' ?>><?= $r ?> / 5</option>
+                                <?php endfor; ?></select>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
             </tbody></table>
         </section>
         <section class="admin-panel" style="margin-top:16px">
             <h2>Feedback & development plan</h2>
             <div class="form-grid">
-                <div class="field"><label for="strengths">Strengths *</label><textarea id="strengths" name="strengths" rows="4" maxlength="4000"><?= mentora_h($evaluation['strengths'] ?? '') ?></textarea></div>
-                <div class="field"><label for="improvements">Areas for improvement *</label><textarea id="improvements" name="improvements" rows="4" maxlength="4000"><?= mentora_h($evaluation['improvements'] ?? '') ?></textarea></div>
-                <div class="field full"><label for="next_steps">Agreed next steps *</label><input id="next_steps" name="next_steps" maxlength="255" value="<?= mentora_h($evaluation['next_steps'] ?? '') ?>"></div>
+                <div class="field">
+                    <label for="strengths">Strengths *</label><textarea id="strengths" name="strengths" rows="4" maxlength="4000"><?= mentora_h($evaluation['strengths'] ?? '') ?></textarea>
+                </div>
+                <div class="field">
+                    <label for="improvements">Areas for improvement *</label><textarea id="improvements" name="improvements" rows="4" maxlength="4000"><?= mentora_h($evaluation['improvements'] ?? '') ?></textarea>
+                </div>
+                <div class="field full">
+                    <label for="next_steps">Agreed next steps *</label><input id="next_steps" name="next_steps" maxlength="255" value="<?= mentora_h($evaluation['next_steps'] ?? '') ?>"></div>
             </div>
         </section>
     </form>

@@ -16,6 +16,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/workflow.php';
+
 /**
  * @return array{steps: list<array{label: string, state: string, detail: string, href: string}>,
  *               done: int, total: int, current: ?array, appliedAt: ?string, percent: int, hasAccount: bool}
@@ -64,7 +66,7 @@ function mentora_hiring_progress(PDO $pdo, array $user, string $pathway): array
 
     // Training
     $modulesDone = (int) ($training['modules_completed'] ?? 0);
-    $modulesTotal = max(1, (int) ($training['modules_total'] ?? ($isIntern ? 6 : 5)));
+    $modulesTotal = count(mentora_training_modules($pathway));
     $trainingStarted = $training !== null;
     $trainingDone = $trainingStarted && (($training['status'] ?? '') === 'completed' || $modulesDone >= $modulesTotal);
     $trainingDetail = match (true) {

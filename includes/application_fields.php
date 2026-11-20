@@ -6,7 +6,25 @@
  * Pathways use the database values: 'employee_va' or 'internship'.
  */
 
-const MENTORA_INTEREST_OPTIONS = ['Customer Success', 'Operations', 'Sales'];
+// Fallback when the departments table can't be read; normally the options are Mentora's departments.
+const MENTORA_INTEREST_OPTIONS = ['Web Developer', 'Marketing Services', 'Accounting', 'Psychotherapist'];
+
+/** "Area of interest" choices: the department names HR manages in admin/department.php. */
+function mentora_interest_options(): array
+{
+    global $pdo;
+    static $options = null;
+    if ($options === null) {
+        try {
+            $options = $pdo instanceof PDO ? $pdo->query('SELECT name FROM departments ORDER BY name')->fetchAll(PDO::FETCH_COLUMN) : [];
+        } catch (Throwable $exception) {
+            $options = [];
+        }
+        $options = $options ?: MENTORA_INTEREST_OPTIONS;
+    }
+
+    return $options;
+}
 const MENTORA_APPLICATION_FIELDS = ['mobile', 'location', 'desired_role', 'school', 'course', 'required_hours', 'interest', 'start_date', 'skills'];
 
 /**
@@ -21,8 +39,8 @@ function mentora_application_values(?array $application = null): array
     if ($values['required_hours'] === '') {
         $values['required_hours'] = '480';
     }
-    if (!in_array($values['interest'], MENTORA_INTEREST_OPTIONS, true)) {
-        $values['interest'] = MENTORA_INTEREST_OPTIONS[0];
+    if (!in_array($values['interest'], mentora_interest_options(), true)) {
+        $values['interest'] = mentora_interest_options()[0];
     }
 
     return $values;
@@ -53,7 +71,7 @@ function mentora_application_errors(array $values, string $pathway): array
         if (!ctype_digit($values['required_hours']) || (int) $values['required_hours'] < 1 || (int) $values['required_hours'] > 5000) {
             $errors[] = 'Required internship hours must be a whole number between 1 and 5000.';
         }
-        if (!in_array($values['interest'], MENTORA_INTEREST_OPTIONS, true)) {
+        if (!in_array($values['interest'], mentora_interest_options(), true)) {
             $errors[] = 'Please choose an area of interest.';
         }
     } elseif ($values['desired_role'] === '') {
@@ -159,7 +177,12 @@ function mentora_render_application_fields(array $values, string $pathway): void
         </div>
         <div class="field">
             <label for="location">City / province</label>
-            <input id="location" name="location" maxlength="190" autocomplete="address-level2" placeholder="e.g. Quezon City, Metro Manila" value="<?= $h($values['location']) ?>">
+            <input id="location"
+                name="location"
+                maxlength="190"
+                autocomplete="address-level2"
+                placeholder="e.g. Quezon City, Metro Manila"
+                value="<?= $h($values['location']) ?>">
         </div>
 
         <?php if ($isIntern): ?>
@@ -179,7 +202,7 @@ function mentora_render_application_fields(array $values, string $pathway): void
             <div class="field">
                 <label for="interest">Area of interest *</label>
                 <select id="interest" name="interest">
-                    <?php foreach (MENTORA_INTEREST_OPTIONS as $option): ?>
+                    <?php foreach (mentora_interest_options() as $option): ?>
                         <option <?= $values['interest'] === $option ? 'selected' : '' ?>><?= $h($option) ?></option>
                     <?php endforeach; ?>
                 </select>
@@ -187,7 +210,12 @@ function mentora_render_application_fields(array $values, string $pathway): void
         <?php else: ?>
             <div class="field full">
                 <label for="desired_role">Role you’re applying for *</label>
-                <input id="desired_role" name="desired_role" required maxlength="190" placeholder="e.g. Customer support VA, Executive assistant" value="<?= $h($values['desired_role']) ?>">
+                <input id="desired_role"
+                    name="desired_role"
+                    required
+                    maxlength="190"
+                    placeholder="e.g. Customer support VA, Executive assistant"
+                    value="<?= $h($values['desired_role']) ?>">
             </div>
         <?php endif; ?>
 

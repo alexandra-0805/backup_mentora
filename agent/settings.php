@@ -14,7 +14,7 @@ $settingsAccount = [
         'avatar' => ['url' => $avatarUrl, 'initials' => $initials, 'name' => $agentName, 'canEdit' => !empty($_SESSION['user']['id'])],
         'rows' => [
             ['fullName', 'Full name', $agentName],
-            ['role', 'Role', 'Agent · Customer Success'],
+            ['role', 'Role', 'Agent' . ($agentDepartment !== '' ? ' · ' . $agentDepartment : '')],
             ['userId', 'User ID', $agentCode !== '' ? $agentCode : '—'],
             ['email', 'Email', (string) ($agentUser['email'] ?? '—')],
         ],

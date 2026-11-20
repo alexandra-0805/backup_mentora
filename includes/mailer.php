@@ -101,7 +101,10 @@ function mentora_send_mail(string $to, string $toName, string $subject, string $
     $context = stream_context_create(['ssl' => ['verify_peer' => true, 'verify_peer_name' => true, 'peer_name' => $config['host']]]);
     $socket = @stream_socket_client($prefix . $config['host'] . ':' . $config['port'], $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $context);
     if (!is_resource($socket)) {
-        return $fail('Couldn’t connect to the mail server (' . $config['host'] . ':' . $config['port'] . '). Check the internet connection and mail settings.', $errstr);
+        return $fail(
+            'Couldn’t connect to the mail server (' . $config['host'] . ':' . $config['port'] . '). Check the internet connection and mail settings.',
+            $errstr
+        );
     }
     stream_set_timeout($socket, 20);
 
@@ -117,7 +120,11 @@ function mentora_send_mail(string $to, string $toName, string $subject, string $
 
     if ($config['encryption'] === 'tls') {
         [$ok, , $reply] = $command('STARTTLS', [220]);
-        $secured = $ok && @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | (defined('STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT') ? STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT : 0));
+        $secured = $ok && @stream_socket_enable_crypto(
+            $socket,
+            true,
+            STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | (defined('STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT') ? STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT : 0)
+        );
         if (!$secured) {
             return $fail('Couldn’t open a secure connection to the mail server.', $reply);
         }

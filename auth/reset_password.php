@@ -68,7 +68,9 @@ $headerStyle = 'signin-page';
 require __DIR__ . '/../includes/header.php';
 ?>
 <main class="auth-shell"><section class="auth-card">
-    <p class="eyebrow">Your Mentora workspace</p><h1>Change your password.</h1><p class="intro">Enter the verification code sent to your email, then choose a new password for your account.</p>
+    <p class="eyebrow">Your Mentora workspace</p>
+    <h1>Change your password.</h1>
+    <p class="intro">Enter the verification code sent to your email, then choose a new password for your account.</p>
     <?php if ($updated): ?>
         <div class="alert success">Your password has been changed. You can now sign in.</div>
         <div class="form-actions"><a class="button button-primary" href="signin.php">Back to sign in</a></div>
@@ -76,11 +78,31 @@ require __DIR__ . '/../includes/header.php';
         <?php if ($error): ?><div class="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
         <form method="post" data-validate>
             <?= mentora_csrf_field() ?>
-            <div class="field"><label for="email">Email address</label><input id="email" type="email" name="email" required placeholder="name@gmail.com" data-check="email" aria-describedby="email-error" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"><small class="field-error" id="email-error" role="alert"></small></div>
-            <div class="field"><label for="code">Verification code</label><input id="code" type="text" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required placeholder="Enter 6-digit code"></div>
+            <div class="field">
+                <label for="email">Email address</label><input id="email"
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="name@gmail.com"
+                    data-check="email"
+                    aria-describedby="email-error"
+                    value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"><small class="field-error" id="email-error" role="alert"></small>
+            </div>
+            <div class="field">
+                <label for="code">Verification code</label><input id="code" type="text" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required placeholder="Enter 6-digit code">
+            </div>
             <div class="field">
                 <label for="password">New password</label>
-                <input id="password" type="password" name="password" minlength="8" maxlength="64" required autocomplete="new-password" placeholder="Create a strong password" data-check="password" aria-describedby="password-rules password-error">
+                <input id="password"
+                    type="password"
+                    name="password"
+                    minlength="8"
+                    maxlength="64"
+                    required
+                    autocomplete="new-password"
+                    placeholder="Create a strong password"
+                    data-check="password"
+                    aria-describedby="password-rules password-error">
                 <ul class="password-rules" id="password-rules" aria-label="Password requirements">
                     <?php foreach (array_keys(mentora_password_checks('')) as $n => $rule): ?>
                         <li data-rule="<?= $n ?>"><?= htmlspecialchars(ucfirst($rule), ENT_QUOTES, 'UTF-8') ?></li>
@@ -90,7 +112,16 @@ require __DIR__ . '/../includes/header.php';
             </div>
             <div class="field">
                 <label for="password_confirmation">Confirm new password</label>
-                <input id="password_confirmation" type="password" name="password_confirmation" maxlength="64" required autocomplete="new-password" placeholder="Enter your new password again" data-check="match" data-match="password" aria-describedby="password_confirmation-error">
+                <input id="password_confirmation"
+                    type="password"
+                    name="password_confirmation"
+                    maxlength="64"
+                    required
+                    autocomplete="new-password"
+                    placeholder="Enter your new password again"
+                    data-check="match"
+                    data-match="password"
+                    aria-describedby="password_confirmation-error">
                 <small class="field-error" id="password_confirmation-error" role="alert"></small>
             </div>
             <div class="form-actions"><button class="button button-primary" type="submit">Change password</button></div>

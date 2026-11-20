@@ -123,7 +123,19 @@ function mentora_current_user(): ?array
         require MENTORA_APP_ROOT . '/config/db.php';
     }
 
-    $query = $pdo->prepare('SELECT id, user_code, username, first_name, last_name, email, pathway, password_hash, role, status, avatar_path FROM users WHERE id = ?');
+    $query = $pdo->prepare('SELECT id,
+            user_code,
+            username,
+            first_name,
+            last_name,
+            email,
+            pathway,
+            password_hash,
+            role,
+            status,
+            avatar_path
+        FROM users
+        WHERE id = ?');
     $query->execute([(int) $sessionUser['id']]);
     $row = $query->fetch();
 

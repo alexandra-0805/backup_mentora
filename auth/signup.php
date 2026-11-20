@@ -109,7 +109,9 @@ require __DIR__ . '/../includes/header.php';
         <!-- Waiting for confirmation -->
         <section class="auth-card account-card application-status" aria-labelledby="application-status-title">
             <span class="application-status-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false"><path d="M7 3h10M7 21h10M8 3v3.5a4 4 0 0 0 1.6 3.2L12 11.5l2.4-1.8A4 4 0 0 0 16 6.5V3M8 21v-3.5a4 4 0 0 1 1.6-3.2l2.4-1.8 2.4 1.8a4 4 0 0 1 1.6 3.2V21"/></svg>
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M7 3h10M7 21h10M8 3v3.5a4 4 0 0 0 1.6 3.2L12 11.5l2.4-1.8A4 4 0 0 0 16 6.5V3M8 21v-3.5a4 4 0 0 1 1.6-3.2l2.4-1.8 2.4 1.8a4 4 0 0 1 1.6 3.2V21"/>
+                </svg>
             </span>
             <h1 id="application-status-title">Waiting for confirmation.</h1>
             <p class="intro">

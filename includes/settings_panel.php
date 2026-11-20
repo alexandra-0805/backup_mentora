@@ -95,7 +95,7 @@ $translatedLanguageCodes = array_keys($languages);
 $topicsByRole = [
     'admin' => [
         ['topicA', 'topic_newApplications', 'New applications', 'When someone applies or updates their form'],
-        ['topicB', 'topic_attendance', 'Attendance exceptions', 'Late check-ins and missing time-outs'],
+        ['topicB', 'topic_attendance', 'Attendance exceptions', 'Missing time-outs'],
         ['topicC', 'topic_reports', 'Report reminders', 'When scheduled reports are ready'],
     ],
     'agent' => [
@@ -122,7 +122,14 @@ $visibilities = ['workspace' => 'Everyone in the workspace', 'team' => 'My team 
 $autoSignOuts = ['off' => 'Never', '15' => 'After 15 minutes', '30' => 'After 30 minutes', '60' => 'After 60 minutes'];
 
 // One list row that opens a detail view ($iconHtml replaces the icon, e.g. with the user's avatar).
-$settingsRow = static function (string $view, string $icon, string $i18n, string $label, string $summary = '', string $iconHtml = '') use ($se, $settingsIcon): string {
+$settingsRow = static function (
+    string $view,
+    string $icon,
+    string $i18n,
+    string $label,
+    string $summary = '',
+    string $iconHtml = ''
+) use ($se, $settingsIcon): string {
     return '<a class="settings-row" href="#' . $se($view) . '" data-open-view="' . $se($view) . '">'
         . '<span class="settings-row-icon">' . ($iconHtml !== '' ? $iconHtml : $settingsIcon($icon)) . '</span>'
         . '<span class="settings-row-copy"><strong data-i18n="' . $se($i18n) . '">' . $se($label) . '</strong>'
@@ -202,7 +209,7 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
 
     <div class="settings-detail">
         <!-- Appearance -->
-        <section class="settings-view" data-view="appearance" hidden>
+        <section class="settings-view" data-view="appearance">
             <?= $settingsViewHeader('appearance', 'Appearance') ?>
 
             <div class="settings-card settings-preview">
@@ -260,7 +267,10 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
             </div>
             <div class="settings-card settings-tiles settings-tiles-3">
                 <?php foreach ($uiStyles as $value => $label): ?>
-                    <button class="settings-tile settings-style settings-style-<?= $se($value) ?>" type="button" data-setting="uiStyle" data-value="<?= $se($value) ?>">
+                    <button class="settings-tile settings-style settings-style-<?= $se($value) ?>"
+                        type="button"
+                        data-setting="uiStyle"
+                        data-value="<?= $se($value) ?>">
                         <span class="settings-style-shape" aria-hidden="true"></span>
                         <small data-i18n="style_<?= $se($value) ?>"><?= $se($label) ?></small>
                     </button>
@@ -274,7 +284,12 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
 
             <label class="settings-search">
                 <?= $settingsIcon('search') ?>
-                <input type="search" data-language-search placeholder="Search languages" data-i18n-placeholder="searchLanguages" autocomplete="off" aria-label="Search languages">
+                <input type="search"
+                    data-language-search
+                    placeholder="Search languages"
+                    data-i18n-placeholder="searchLanguages"
+                    autocomplete="off"
+                    aria-label="Search languages">
             </label>
 
             <div data-language-group>
@@ -302,7 +317,11 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                             <span class="settings-check"><?= $settingsIcon('check') ?></span>
                         </button>
                     <?php endforeach; ?>
-                    <button class="settings-row settings-collapse-toggle" type="button" aria-expanded="false" aria-controls="settings-all-languages" data-language-toggle>
+                    <button class="settings-row settings-collapse-toggle"
+                        type="button"
+                        aria-expanded="false"
+                        aria-controls="settings-all-languages"
+                        data-language-toggle>
                         <span class="settings-row-copy"><strong data-language-toggle-label>Show all <?= count($worldLanguages) ?> languages</strong></span>
                         <span class="settings-collapse-chevron"><?= $settingsIcon('chevron') ?></span>
                     </button>
@@ -448,6 +467,19 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
     </div>
     <div class="settings-toast" role="status" hidden></div>
 </div>
+<script>
+    // Before the page is drawn: open the view named in the address (e.g. #profile), so a refresh
+    // doesn't flash an empty panel or jump. The full script below keeps it in sync afterwards.
+    (() => {
+        const shell = document.querySelector('[data-settings]');
+        const requested = window.location.hash.slice(1);
+        const target = requested ? shell.querySelector('.settings-view[data-view="' + CSS.escape(requested) + '"]') : null;
+        if (target) {
+            shell.querySelectorAll('.settings-view').forEach((view) => { view.hidden = view !== target; });
+            shell.classList.add('is-viewing');
+        }
+    })();
+</script>
 
 <script>
     (() => {
@@ -579,7 +611,7 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                 topic_newApplications: 'Bagong aplikasyon',
                 topic_newApplicationsHint: 'Kapag may nag-apply o nag-update ng form',
                 topic_attendance: 'Mga exception sa attendance',
-                topic_attendanceHint: 'Late na check-in at kulang na time-out',
+                topic_attendanceHint: 'Kulang na time-out',
                 topic_reports: 'Paalala sa report',
                 topic_reportsHint: 'Kapag handa na ang naka-iskedyul na report',
                 topic_evaluations: 'Paalala sa evaluation',
@@ -636,7 +668,6 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                 country: 'Bansa',
                 workingDays: 'Mga araw ng trabaho',
                 defaultShift: 'Default na shift',
-                lateGrace: 'Palugit sa late na check-in',
                 openProfile: 'Buksan ang profile ko',
                 openUsers: 'Users & access',
                 accountNoteAdmin: 'Pamahalaan ang mga account at tungkulin sa Users & access.',
@@ -734,7 +765,7 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                 topic_newApplications: 'Nuevas solicitudes',
                 topic_newApplicationsHint: 'Cuando alguien solicita o actualiza su formulario',
                 topic_attendance: 'Excepciones de asistencia',
-                topic_attendanceHint: 'Entradas tardías y salidas sin registrar',
+                topic_attendanceHint: 'Salidas sin registrar',
                 topic_reports: 'Recordatorios de informes',
                 topic_reportsHint: 'Cuando los informes programados estén listos',
                 topic_evaluations: 'Recordatorios de evaluación',
@@ -791,7 +822,6 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                 country: 'País',
                 workingDays: 'Días laborables',
                 defaultShift: 'Turno predeterminado',
-                lateGrace: 'Tolerancia de entrada tardía',
                 openProfile: 'Abrir mi perfil',
                 openUsers: 'Usuarios y acceso',
                 accountNoteAdmin: 'Administra cuentas y roles en Usuarios y acceso.',

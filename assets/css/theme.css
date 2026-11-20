@@ -753,3 +753,101 @@ html[data-theme="dark"] .account-page .chat-message-text {
 html[data-theme="dark"] .account-page :is(.chat-composer, .chat-info h3) {
     border-color: var(--dark-line);
 }
+
+/* ---------- Theme toggle animations (includes/theme_toggle.php) ----------
+   Hover: the moon rocks and its two stars twinkle; the sun's rays turn and its core glows.
+   Click: the new icon spins in (.is-switching, added for a moment by the button's script). */
+.theme-toggle:hover svg {
+    transform: none;
+}
+
+.theme-toggle svg {
+    overflow: visible;
+}
+
+.theme-toggle :is(.moon-body, .moon-star, .sun-rays, .sun-core) {
+    transform-box: view-box;
+}
+
+.theme-toggle .moon-body {
+    transform-origin: 12px 12px;
+}
+
+.theme-toggle .moon-star {
+    opacity: 0;
+    transform: scale(0.4);
+    transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.theme-toggle .moon-star-a {
+    transform-origin: 17px 4.1px;
+}
+
+.theme-toggle .moon-star-b {
+    transform-origin: 21px 8.5px;
+}
+
+.theme-toggle .sun-rays,
+.theme-toggle .sun-core {
+    transform-origin: 12px 12px;
+}
+
+@keyframes mentora-moon-rock {
+    0%, 100% { transform: rotate(0); }
+    30% { transform: rotate(-16deg); }
+    65% { transform: rotate(8deg); }
+}
+
+@keyframes mentora-star-twinkle {
+    0%, 100% { opacity: 1; transform: scale(1) rotate(0); }
+    50% { opacity: 0.35; transform: scale(0.55) rotate(45deg); }
+}
+
+@keyframes mentora-sun-spin {
+    to { transform: rotate(90deg); }
+}
+
+@keyframes mentora-sun-glow {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.14); }
+}
+
+@keyframes mentora-theme-in {
+    0% { opacity: 0; transform: rotate(-120deg) scale(0.3); }
+    70% { opacity: 1; transform: rotate(12deg) scale(1.12); }
+    100% { opacity: 1; transform: rotate(0) scale(1); }
+}
+
+.theme-toggle:is(:hover, :focus-visible) .moon-body {
+    animation: mentora-moon-rock 1.4s ease-in-out infinite;
+}
+
+.theme-toggle:is(:hover, :focus-visible) .moon-star {
+    opacity: 1;
+    transform: scale(1);
+    animation: mentora-star-twinkle 1.2s ease-in-out infinite;
+}
+
+.theme-toggle:is(:hover, :focus-visible) .moon-star-b {
+    animation-delay: 0.4s;
+}
+
+.theme-toggle:is(:hover, :focus-visible) .sun-rays {
+    animation: mentora-sun-spin 1.6s linear infinite;
+}
+
+.theme-toggle:is(:hover, :focus-visible) .sun-core {
+    animation: mentora-sun-glow 1.6s ease-in-out infinite;
+}
+
+.theme-toggle.is-switching svg {
+    animation: mentora-theme-in 0.55s cubic-bezier(.2, .9, .3, 1.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-toggle svg,
+    .theme-toggle svg * {
+        animation: none !important;
+        transition: none !important;
+    }
+}

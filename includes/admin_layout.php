@@ -63,8 +63,8 @@ $adminNav = [
     <link rel="icon" type="image/png" href="../assets/images/mentora-logo.png?v=1">
     <link rel="stylesheet" href="../assets/css/style.css?v=36">
     <link rel="stylesheet" href="../assets/css/admin.css?v=5">
-    <link rel="stylesheet" href="../assets/css/settings.css?v=11">
-    <link rel="stylesheet" href="../assets/css/theme.css?v=7">
+    <link rel="stylesheet" href="../assets/css/settings.css?v=29">
+    <link rel="stylesheet" href="../assets/css/theme.css?v=8">
     <link rel="stylesheet" href="../assets/css/dialog.css?v=1">
     <?php require __DIR__ . '/theme_boot.php'; ?>
 </head>
@@ -74,7 +74,10 @@ $adminNav = [
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <aside class="admin-sidebar">
         <?php // The Mentora logo keeps you on the page you are on (e.g. Monitoring -> Monitoring). ?>
-        <a class="admin-brand" href="<?= $e(basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'dashboard.php'))) ?>" aria-label="Mentora, <?= $e($crumbTitle) ?>" aria-current="page">
+        <a class="admin-brand"
+            href="<?= $e(basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'dashboard.php'))) ?>"
+            aria-label="Mentora, <?= $e($crumbTitle) ?>"
+            aria-current="page">
             <img src="../assets/images/mentora-logo.png" alt="Mentora">
             <span>Mentora</span>
         </a>
@@ -93,7 +96,11 @@ $adminNav = [
             <?php endforeach; ?>
         </nav>
         <div class="sidebar-bottom">
-            <a href="../auth/signout.php">↪ Sign out</a>
+            <a class="sidebar-signout" href="../auth/signout.php"><svg class="signout-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M9 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H9"/>
+                <path d="M10 12h10"/>
+                <path d="m16 8 4 4-4 4"/>
+            </svg><span>Sign out</span></a>
             <a class="profile-chip" href="settings.php" aria-label="Open profile settings">
                 <?= mentora_avatar($avatarUrl, $initials) ?>
                 <div>
@@ -118,7 +125,10 @@ $adminNav = [
                 <?php require __DIR__ . '/message_panel.php'; ?>
                 <?php require __DIR__ . '/notification_panel.php'; ?>
 
-                <a class="header-avatar-link<?= $avatarUrl ? ' has-photo' : '' ?>" href="settings.php#profile" aria-label="Profile" title="Profile"><?= $avatarUrl ? '<img class="avatar-img" src="' . $e($avatarUrl) . '" alt="">' : $e($initials) ?></a>
+                <a class="header-avatar-link<?= $avatarUrl ? ' has-photo' : '' ?>"
+                    href="settings.php#profile"
+                    aria-label="Profile"
+                    title="Profile"><?= $avatarUrl ? '<img class="avatar-img" src="' . $e($avatarUrl) . '" alt="">' : $e($initials) ?></a>
 
                 <span class="topbar-date"><?= $e($now->format('D, d M Y')) ?> · PHT</span>
             </span>

@@ -77,7 +77,12 @@ function mentora_notify_admins_new_applicant(PDO $pdo, string $name, string $ema
     $admins = $pdo->query("SELECT id FROM users WHERE role = 'admin' AND status = 'active'")->fetchAll(PDO::FETCH_COLUMN);
     $notify = $pdo->prepare('INSERT INTO notifications (user_id, title, body, link) VALUES (?, ?, ?, ?)');
     foreach ($admins as $adminId) {
-        $notify->execute([(int) $adminId, 'New application: ' . $name, $label . ' · ' . $email . ' is waiting for confirmation in Applications.', 'admin/applications.php?view=pending']);
+        $notify->execute([
+            (int) $adminId,
+            'New application: ' . $name,
+            $label . ' · ' . $email . ' is waiting for confirmation in Applications.',
+            'admin/applications.php?view=pending'
+        ]);
     }
     // Optional email alert to MENTORA_APPROVAL_EMAIL (sent through the mail account when one is set up).
     $alertTo = getenv('MENTORA_APPROVAL_EMAIL') ?: '';
@@ -99,7 +104,8 @@ function mentora_create_invite(PDO $pdo, int $userId, ?int $createdBy): string
     $pdo->beginTransaction();
     try {
         $pdo->prepare('DELETE FROM account_invites WHERE user_id = ? AND used_at IS NULL')->execute([$userId]);
-        $pdo->prepare('INSERT INTO account_invites (user_id, token_hash, created_by, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ' . MENTORA_INVITE_DAYS . ' DAY))')
+        $pdo->prepare('INSERT INTO account_invites (user_id, token_hash, created_by, expires_at)
+            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ' . MENTORA_INVITE_DAYS . ' DAY))')
             ->execute([$userId, hash('sha256', $token), $createdBy]);
         $pdo->prepare("UPDATE users SET status = 'approved' WHERE id = ? AND status IN ('pending', 'approved')")->execute([$userId]);
         $pdo->commit();
@@ -148,7 +154,16 @@ function mentora_invite_email(string $firstName, string $pathway, string $link, 
 }
 
 /** Email the confirmation link. Returns ['ok' => bool, 'error' => string] (see includes/mailer.php). */
-function mentora_send_invite_email(string $email, string $fullName, string $firstName, string $pathway, string $link, string $adminName, string $adminEmail = '', string $role = 'applicant'): array
+function mentora_send_invite_email(
+    string $email,
+    string $fullName,
+    string $firstName,
+    string $pathway,
+    string $link,
+    string $adminName,
+    string $adminEmail = '',
+    string $role = 'applicant'
+): array
 {
     [$subject, $text, $html] = mentora_invite_email($firstName, $pathway, $link, $adminName, $role);
 

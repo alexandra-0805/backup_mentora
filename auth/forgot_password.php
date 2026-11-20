@@ -41,15 +41,27 @@ $headerStyle = 'signin-page';
 require __DIR__ . '/../includes/header.php';
 ?>
 <main class="auth-shell"><section class="auth-card">
-    <p class="eyebrow">Your Mentora workspace</p><h1>Forgot your password?</h1><p class="intro">Enter the email address linked to your account. We’ll send you a verification code to change your password.</p>
-    <?php if ($sent): ?><div class="alert success">If an account exists for that email, a verification code is on its way. It expires in 15 minutes. <a href="reset_password.php?email=<?= urlencode($email) ?>">Enter the code to change your password.</a></div><?php endif; ?>
+    <p class="eyebrow">Your Mentora workspace</p>
+    <h1>Forgot your password?</h1>
+    <p class="intro">Enter the email address linked to your account. We’ll send you a verification code to change your password.</p>
+    <?php if ($sent): ?>
+    <div class="alert success">If an account exists for that email, a verification code is on its way. It expires in 15 minutes. <a href="reset_password.php?email=<?= urlencode($email) ?>">Enter the code to change your password.</a>
+    </div>
+    <?php endif; ?>
     <?php if ($error): ?><div class="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
     <form method="post">
         <?= mentora_csrf_field() ?>
-        <div class="field"><label for="email">Email address</label><input id="email" type="email" name="email" required placeholder="you@example.com" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"></div>
+        <div class="field">
+            <label for="email">Email address</label><input id="email"
+                type="email"
+                name="email"
+                required
+                placeholder="you@example.com"
+                value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"></div>
         <div class="form-actions"><button class="button button-primary" type="submit">Send verification code <span>→</span></button></div>
     </form>
-    <div class="notice"><strong>A secure way back to your workspace.</strong><br>If an account exists for this email, you’ll receive a password reset code.</div>
+    <div class="notice">
+        <strong>A secure way back to your workspace.</strong><br>If an account exists for this email, you’ll receive a password reset code.</div>
     <div class="auth-links">Remember your password? <a href="signin.php">Back to sign in</a><br><br>Need help? support@mentora.ph</div>
 </section></main>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

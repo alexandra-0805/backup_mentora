@@ -359,7 +359,6 @@ body.workspace-dark-mode .admin-content hr {
     display: grid;
     gap: 0 24px;
     grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
-    max-width: 1180px;
 }
 
 .settings-list,
@@ -1645,4 +1644,869 @@ body.workspace-dark-mode .review-form input {
 
 .admin-panel.data-panel > .panel-subtitle {
     padding: 0 16px;
+}
+
+/* ---------- Training module page (includes/pages/applicant_module.php) ---------- */
+.module-eyebrow {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--mentora-teal);
+    margin-bottom: 6px;
+}
+
+.module-heading p {
+    max-width: 68ch;
+}
+
+.module-layout {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.module-nav {
+    position: sticky;
+    top: 84px;
+    display: grid;
+    gap: 10px;
+}
+
+.module-nav ol {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.module-nav a:not(.admin-btn),
+.module-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.module-nav a:not(.admin-btn):hover,
+.module-link:hover {
+    color: var(--mentora-teal);
+    text-decoration: underline;
+}
+
+.module-body {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+}
+
+.module-body > section {
+    scroll-margin-top: 84px;
+}
+
+.module-lesson h2 {
+    margin: 0 0 8px;
+}
+
+.module-lesson ul {
+    margin: 12px 0 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 7px;
+}
+
+.module-lesson li,
+.module-lesson p {
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.module-tip {
+    margin: 14px 0 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(11, 98, 93, 0.07);
+    border-left: 3px solid var(--mentora-teal);
+}
+
+.module-tip strong {
+    display: block;
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--mentora-teal);
+    margin-bottom: 2px;
+}
+
+.quiz-question {
+    border: 1px solid var(--workspace-line, rgba(60, 60, 67, 0.13));
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 0 0 12px;
+    display: grid;
+    gap: 6px;
+}
+
+.quiz-question legend {
+    font-weight: 700;
+    font-size: 13px;
+    padding: 0 4px;
+}
+
+.quiz-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.quiz-option:hover {
+    background: rgba(11, 98, 93, 0.05);
+}
+
+.quiz-option input {
+    accent-color: var(--mentora-teal);
+}
+
+.quiz-option b {
+    font-size: 11px;
+    opacity: .6;
+}
+
+.quiz-option.is-answer {
+    border-color: rgba(39, 115, 83, 0.45);
+    background: rgba(39, 115, 83, 0.08);
+}
+
+.quiz-option.is-chosen {
+    border-color: rgba(176, 58, 46, 0.4);
+    background: rgba(176, 58, 46, 0.07);
+}
+
+.quiz-question.is-right {
+    border-color: rgba(39, 115, 83, 0.45);
+}
+
+.quiz-question.is-wrong {
+    border-color: rgba(176, 58, 46, 0.4);
+}
+
+.quiz-why {
+    margin: 4px 0 0;
+    font-size: 12px;
+}
+
+.quiz-score {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin: 0 0 14px;
+    font-size: 13px;
+}
+
+.quiz-score strong {
+    font-size: 24px;
+}
+
+.quiz-score.is-pass {
+    background: #e5f4ed;
+    color: #277353;
+}
+
+.quiz-score.is-fail {
+    background: #fff0ee;
+    color: #a3483f;
+}
+
+.module-pager {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+body.workspace-dark-mode .module-tip {
+    background: rgba(143, 239, 218, 0.07);
+}
+
+body.workspace-dark-mode :is(.module-eyebrow, .module-tip strong) {
+    color: color-mix(in srgb, var(--mentora-teal) 35%, #ffffff);
+}
+
+body.workspace-dark-mode .quiz-question {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.workspace-dark-mode .quiz-score.is-pass {
+    background: rgba(52, 168, 120, 0.16);
+    color: #8fe0b8;
+}
+
+body.workspace-dark-mode .quiz-score.is-fail {
+    background: rgba(240, 68, 56, 0.14);
+    color: #fda29b;
+}
+
+@media (max-width: 860px) {
+    .module-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .module-nav {
+        position: static;
+    }
+}
+
+/* ---------- Social profile monitoring (applicant Profile) ---------- */
+.social-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.social-head > div:first-child {
+    flex: 1 1 320px;
+    min-width: 0;
+}
+
+.social-score {
+    flex: 0 1 220px;
+    display: grid;
+    gap: 4px;
+    align-content: start;
+    text-align: right;
+}
+
+.social-score strong {
+    font-size: 28px;
+    line-height: 1;
+    color: var(--mentora-teal);
+    font-variant-numeric: tabular-nums;
+}
+
+.social-score span {
+    font-size: 12px;
+    color: var(--workspace-muted, #6e6e73);
+}
+
+.social-input {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.social-input input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.social-profiles label .badge {
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+body.workspace-dark-mode .social-score strong {
+    color: color-mix(in srgb, var(--mentora-teal) 35%, #ffffff);
+}
+
+@media (max-width: 600px) {
+    .social-score {
+        text-align: left;
+    }
+}
+
+/* ---------- Certificates (Training page card, certificate page) ---------- */
+.certificate-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.certificate-card > div {
+    flex: 1 1 320px;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.certificate-card h3,
+.certificate-card p {
+    margin: 0;
+}
+
+.certificate-card.is-earned {
+    border-color: rgba(179, 139, 77, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(179, 139, 77, 0.25);
+}
+
+.certificate-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.certificate-status {
+    font-size: 12px;
+    color: var(--workspace-muted, #6e6e73);
+}
+
+.certificate-frame {
+    overflow-x: auto;
+    border-radius: 14px;
+    box-shadow: 0 18px 44px rgba(6, 61, 59, 0.16);
+    background: #ffffff;
+}
+
+.certificate-frame svg {
+    display: block;
+    width: 100%;
+    min-width: 640px;
+    height: auto;
+}
+
+.certificate-note {
+    margin-top: 12px;
+    word-break: break-word;
+}
+
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 0;
+    }
+
+    :is(.certificate-actions, .certificate-note, .admin-heading) {
+        display: none !important;
+    }
+
+    .certificate-frame {
+        box-shadow: none !important;
+        border-radius: 0;
+    }
+
+    .certificate-frame svg {
+        min-width: 0;
+    }
+}
+
+/* ---------- Portfolio links & documents (applicant Profile, agent Documents / Edit intern) ---------- */
+.document-add {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.document-add-form {
+    display: grid;
+    gap: 4px;
+    padding: 12px 14px;
+    border: 1px solid var(--workspace-line, rgba(60, 60, 67, 0.13));
+    border-radius: 12px;
+    min-width: 0;
+}
+
+.document-add-form strong {
+    font-size: 13px;
+}
+
+.document-add-form small {
+    color: var(--workspace-muted, #6e6e73);
+    font-size: 11.5px;
+}
+
+.document-add-form .table-toolbar {
+    padding: 6px 0 0;
+    margin: 0;
+    border: 0;
+    flex-wrap: wrap;
+}
+
+.document-add-form .table-toolbar input {
+    flex: 1 1 160px;
+    min-width: 0;
+}
+
+.document-url {
+    word-break: break-all;
+    user-select: all;
+}
+
+body.workspace-dark-mode .document-add-form {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ---------- Self-study order: locked modules ---------- */
+.admin-btn.is-locked {
+    cursor: not-allowed;
+    opacity: .55;
+    background: transparent;
+    pointer-events: none;
+}
+
+.module-row-locked td {
+    color: var(--workspace-muted, #6e6e73);
+}
+
+.module-locked {
+    display: grid;
+    justify-items: start;
+    gap: 10px;
+}
+
+.module-locked .module-lock {
+    font-size: 28px;
+}
+
+/* Sign out (sidebar bottom): bracket-and-arrow icon + label. */
+.sidebar-bottom > a.sidebar-signout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-signout .signout-icon {
+    flex-shrink: 0;
+}
+
+/* ---------- Notification bell (includes/notification_panel.php) ----------
+   With unread notifications the bell rings every few seconds (swing + clapper) and the red badge
+   pulses; hovering rings it once. Nothing moves for people who prefer reduced motion. */
+.bell-icon {
+    overflow: visible;
+}
+
+.bell-icon .bell-body {
+    transform-box: view-box;
+    transform-origin: 12px 4px;
+}
+
+.bell-icon .bell-clapper {
+    transform-box: view-box;
+    transform-origin: 12px 18px;
+}
+
+@keyframes mentora-bell-ring {
+    0%, 62%, 100% { transform: rotate(0); }
+    66% { transform: rotate(16deg); }
+    71% { transform: rotate(-14deg); }
+    76% { transform: rotate(10deg); }
+    81% { transform: rotate(-7deg); }
+    86% { transform: rotate(3deg); }
+    90% { transform: rotate(0); }
+}
+
+@keyframes mentora-bell-clapper {
+    0%, 62%, 100% { transform: translateX(0); }
+    66% { transform: translateX(-1.6px); }
+    71% { transform: translateX(1.6px); }
+    76% { transform: translateX(-1.1px); }
+    81% { transform: translateX(0.8px); }
+    90% { transform: translateX(0); }
+}
+
+@keyframes mentora-bell-once {
+    0%, 100% { transform: rotate(0); }
+    20% { transform: rotate(14deg); }
+    40% { transform: rotate(-12deg); }
+    60% { transform: rotate(7deg); }
+    80% { transform: rotate(-3deg); }
+}
+
+@keyframes mentora-badge-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.55); }
+    70% { box-shadow: 0 0 0 7px rgba(255, 59, 48, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+}
+
+@keyframes mentora-badge-pop {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+}
+
+.notification-toggle.has-unread .bell-body {
+    animation: mentora-bell-ring 4.5s ease-in-out infinite;
+}
+
+.notification-toggle.has-unread .bell-clapper {
+    animation: mentora-bell-clapper 4.5s ease-in-out infinite;
+}
+
+.notification-toggle:hover .bell-body,
+.notification-toggle:focus-visible .bell-body {
+    animation: mentora-bell-once 0.7s ease-in-out;
+}
+
+.notification-toggle .header-icon-badge {
+    animation: mentora-badge-pop 0.35s ease-out both, mentora-badge-pulse 2s ease-out 0.4s infinite;
+}
+
+.notification-toggle[aria-expanded="true"] .bell-body,
+.notification-toggle[aria-expanded="true"] .bell-clapper,
+.notification-toggle[aria-expanded="true"] .header-icon-badge {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notification-toggle .bell-body,
+    .notification-toggle .bell-clapper,
+    .notification-toggle .header-icon-badge {
+        animation: none !important;
+    }
+}
+
+/* ---------- Button icons (includes/ui_icons.php): upload, view (eye), download ----------
+   Hover / keyboard focus: the upload arrow lifts out of the tray, the download arrow drops in,
+   the eye blinks and looks around. Pressing gives a small squeeze. Still for reduced motion. */
+.admin-btn:has(.btn-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-icon {
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.btn-icon :is(.icon-arrow, .icon-eye, .icon-pupil) {
+    transform-box: view-box;
+    transition: transform 160ms ease;
+}
+
+.btn-icon .icon-eye {
+    transform-origin: 12px 12px;
+}
+
+@keyframes mentora-icon-up {
+    0%, 100% { transform: translateY(0); }
+    45% { transform: translateY(-3.5px); }
+    70% { transform: translateY(-1px); }
+}
+
+@keyframes mentora-icon-down {
+    0%, 100% { transform: translateY(0); }
+    45% { transform: translateY(3px); }
+    70% { transform: translateY(1px); }
+}
+
+@keyframes mentora-icon-tray {
+    0%, 100% { transform: scaleX(1); }
+    45% { transform: scaleX(1.08); }
+}
+
+@keyframes mentora-icon-blink {
+    0%, 38%, 52%, 100% { transform: scaleY(1); }
+    45% { transform: scaleY(0.1); }
+}
+
+@keyframes mentora-icon-look {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-2px); }
+    60% { transform: translateX(2px); }
+}
+
+.admin-btn:is(:hover, :focus-visible) .icon-upload .icon-arrow {
+    animation: mentora-icon-up 0.9s ease-in-out infinite;
+}
+
+.admin-btn:is(:hover, :focus-visible) .icon-download .icon-arrow {
+    animation: mentora-icon-down 0.9s ease-in-out infinite;
+}
+
+.admin-btn:is(:hover, :focus-visible) :is(.icon-upload, .icon-download) .icon-tray {
+    transform-box: view-box;
+    transform-origin: 12px 18px;
+    animation: mentora-icon-tray 0.9s ease-in-out infinite;
+}
+
+.admin-btn:is(:hover, :focus-visible) .icon-view .icon-eye {
+    animation: mentora-icon-blink 1.6s ease-in-out infinite;
+}
+
+.admin-btn:is(:hover, :focus-visible) .icon-view .icon-pupil {
+    animation: mentora-icon-look 1.6s ease-in-out infinite;
+}
+
+.admin-btn:active .btn-icon {
+    transform: scale(0.88);
+    transition: transform 80ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn-icon,
+    .btn-icon * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ---------- Messages envelope (includes/message_panel.php) ----------
+   Hover: the envelope hops with a little tilt and its flap flicks open and shut. Unread messages:
+   it wiggles every few seconds and the red badge pulses (same pulse as the bell). Still for reduced motion. */
+.mail-icon {
+    overflow: visible;
+}
+
+.mail-icon :is(.mail-body, .mail-flap) {
+    transform-box: view-box;
+}
+
+.mail-icon .mail-body {
+    transform-origin: 12px 18px;
+}
+
+.mail-icon .mail-flap {
+    transform-origin: 12px 7.5px;
+}
+
+@keyframes mentora-mail-hop {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    35% { transform: translateY(-2.5px) rotate(-8deg); }
+    65% { transform: translateY(-1px) rotate(4deg); }
+}
+
+@keyframes mentora-mail-flick {
+    0%, 100% { transform: scaleY(1); }
+    40% { transform: scaleY(0.15); }
+    60% { transform: scaleY(0.4); }
+}
+
+@keyframes mentora-mail-wiggle {
+    0%, 70%, 100% { transform: rotate(0) translateY(0); }
+    74% { transform: rotate(-10deg) translateY(-1px); }
+    79% { transform: rotate(9deg) translateY(-1px); }
+    84% { transform: rotate(-5deg); }
+    89% { transform: rotate(2deg); }
+    93% { transform: rotate(0); }
+}
+
+.message-toggle.has-unread .mail-body {
+    animation: mentora-mail-wiggle 5s ease-in-out 1s infinite;
+}
+
+.message-toggle:is(:hover, :focus-visible) .mail-body {
+    animation: mentora-mail-hop 0.7s ease-in-out;
+}
+
+.message-toggle:is(:hover, :focus-visible) .mail-flap {
+    animation: mentora-mail-flick 0.7s ease-in-out;
+}
+
+.message-toggle[aria-expanded="true"] .mail-body {
+    animation: none;
+}
+
+.message-toggle .header-icon-badge {
+    animation: mentora-badge-pop 0.35s ease-out both, mentora-badge-pulse 2s ease-out 0.4s infinite;
+}
+
+.message-toggle[aria-expanded="true"] .header-icon-badge {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mail-icon,
+    .mail-icon *,
+    .message-toggle .header-icon-badge {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Department add / edit dialog (admin/department.php) */
+.department-dialog .dialog-body {
+    display: grid;
+    gap: 12px;
+}
+
+.department-dialog .field {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+}
+
+.department-dialog :is(input, textarea) {
+    width: 100%;
+    font: inherit;
+    font-size: 13px;
+    padding: 10px 12px;
+    border: 1px solid var(--workspace-line, #dbe8e6);
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    resize: vertical;
+}
+
+.department-dialog .dialog-footer {
+    flex-wrap: wrap;
+}
+
+/* ---------- Consolidated report (admin/consolidated_report.php) ----------
+   Setup panel on the left, a wider preview on the right; the preview's stat tiles fill each row
+   (as many as fit), numbers never wrap, units are smaller. Stacks on tablets and phones. */
+.admin-grid.report-layout {
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    align-items: start;
+}
+
+.report-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.report-stat {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--workspace-line, rgba(60, 60, 67, 0.12));
+    border-radius: 16px;
+    background: var(--workspace-surface, #fff);
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.report-stat:hover {
+    border-color: color-mix(in srgb, var(--mentora-teal) 35%, transparent);
+    box-shadow: 0 8px 22px rgba(6, 61, 59, 0.08);
+    transform: translateY(-1px);
+}
+
+.report-stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--workspace-muted, #6e6e73);
+    line-height: 1.3;
+}
+
+.report-stat-value {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1;
+    color: #1d1d1f;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.report-stat-value small {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--workspace-muted, #6e6e73);
+}
+
+.report-stat-note {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--mentora-teal);
+}
+
+.admin-panel .report-section-title {
+    margin: 22px 0 10px;
+}
+
+.report-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--workspace-line, rgba(60, 60, 67, 0.12));
+    border-radius: 14px;
+}
+
+.report-table-wrap .admin-table {
+    margin: 0;
+    min-width: 420px;
+}
+
+body.workspace-dark-mode .report-stat {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.workspace-dark-mode .report-stat-value {
+    color: #eef6f5;
+}
+
+body.workspace-dark-mode .report-stat-note {
+    color: color-mix(in srgb, var(--mentora-teal) 35%, #ffffff);
+}
+
+body.workspace-dark-mode .report-table-wrap {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 1100px) {
+    .admin-grid.report-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .report-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .report-stat {
+        padding: 13px;
+    }
+
+    .report-stat-value {
+        font-size: 24px;
+    }
+}
+
+/* Settings on desktop: the open section (right column) has its own scroll area that stays in view
+   below the top bar, so long sections (Appearance, Language) scroll by themselves. The padding /
+   negative margin keeps the cards' shadows from being cut off at the edges. */
+@media (min-width: 901px) {
+    .settings-detail {
+        position: sticky;
+        top: 84px;
+        max-height: calc(100vh - 104px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        scrollbar-width: thin;
+        scrollbar-color: color-mix(in srgb, var(--mentora-teal) 35%, transparent) transparent;
+        margin: -6px -12px 0 -6px;
+        padding: 6px 12px 24px 6px;
+    }
+
+    .settings-detail::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .settings-detail::-webkit-scrollbar-thumb {
+        background: color-mix(in srgb, var(--mentora-teal) 35%, transparent);
+        border-radius: 999px;
+    }
+
+    .settings-detail::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    /* the Language search sticks to the top of this scroll area */
+    .settings-detail .settings-search {
+        top: 0;
+    }
 }

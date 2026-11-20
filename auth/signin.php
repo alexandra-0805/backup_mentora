@@ -66,13 +66,22 @@ require __DIR__ . '/../includes/header.php';
         <?php if ($error): ?><div class="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
         <form method="post">
             <?= mentora_csrf_field() ?>
-            <div class="field"><label for="email">Username or email</label><input id="email" type="text" name="email" required autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. juan.delacruz or name@gmail.com" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"></div>
-            <div class="field"><label for="password">Password</label><input id="password" type="password" name="password" required autocomplete="current-password" placeholder="Enter your password"></div>
+            <div class="field">
+                <label for="email">Username or email</label><input id="email" type="text" name="email" required autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. juan.delacruz or name@gmail.com" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"></div>
+            <div class="field">
+                <label for="password">Password</label><input id="password"
+                    type="password"
+                    name="password"
+                    required
+                    autocomplete="current-password"
+                    placeholder="Enter your password">
+            </div>
             <div class="form-actions"><button class="button button-primary" type="submit">Sign in</button></div>
             <div class="auth-divider"><span>or</span></div>
             <div class="google-auth"><?php mentora_google_button('signin'); ?></div>
         </form>
-        <div class="notice"><strong>One sign-in. The right workspace for you.</strong><br>Your account opens your application, team, or HR workspace with private, role-based access.</div>
+        <div class="notice">
+            <strong>One sign-in. The right workspace for you.</strong><br>Your account opens your application, team, or HR workspace with private, role-based access.</div>
         <div class="auth-links"><a href="forgot_password.php">Forgot your password? </a><br><br>New to Mentora? <a href="signup.php">Apply now</a></div>
     </section>
 </main>

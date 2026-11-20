@@ -39,7 +39,27 @@ foreach ($notificationItems as $notification) {
 }
 ?>
 <span class="notification-popover">
-    <button class="header-icon-link notification-toggle" type="button" aria-label="Notifications" aria-expanded="false" aria-controls="notification-panel" title="Notifications"><svg class="header-icon-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><?php if ($unreadNotificationCount > 0): ?><span class="header-icon-badge"><?= $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount ?></span><?php endif; ?></button>
+    <button class="header-icon-link notification-toggle<?= $unreadNotificationCount > 0 ? ' has-unread' : '' ?>"
+        type="button"
+        aria-label="Notifications<?= $unreadNotificationCount > 0 ? ', ' . $unreadNotificationCount . ' unread' : '' ?>"
+        aria-expanded="false"
+        aria-controls="notification-panel"
+        title="Notifications"><svg class="header-icon-svg bell-icon"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            focusable="false">
+        <g class="bell-body">
+            <path d="M4.5 18h2V11a5.5 5.5 0 0 1 11 0v7h2"/>
+            <path class="bell-clapper" d="M10.6 20.6a1.6 1.4 0 0 0 2.8 0"/>
+        </g>
+    </svg><?php if ($unreadNotificationCount > 0): ?><span class="header-icon-badge"><?= $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount ?></span><?php endif; ?></button>
     <aside class="notification-panel" id="notification-panel" hidden aria-label="Notifications">
         <div class="notification-panel-header">
             <strong>Notifications</strong>
@@ -60,7 +80,9 @@ foreach ($notificationItems as $notification) {
                     $clickable = $userId && trim((string) ($notification['link'] ?? '')) !== '';
                     $tag = $clickable ? 'a' : 'article';
                 ?>
-                    <<?= $tag ?> class="notification-item<?= $notification['read_at'] ? '' : ' unread' ?><?= $clickable ? ' is-link' : '' ?>"<?= $clickable ? ' href="' . htmlspecialchars($notificationOpenUrl . (int) $notification['id'], ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
+                    <<?= $tag ?> class="notification-item<?= $notification['read_at'] ? '' : ' unread' ?><?= $clickable ? ' is-link' : '' ?>"<?= $clickable
+                        ? ' href="' . htmlspecialchars($notificationOpenUrl . (int) $notification['id'], ENT_QUOTES, 'UTF-8') . '"'
+                        : '' ?>>
                         <span class="notification-item-dot" aria-hidden="true"></span>
                         <div>
                             <strong><?= htmlspecialchars($notification['title'], ENT_QUOTES, 'UTF-8') ?></strong>
@@ -68,7 +90,19 @@ foreach ($notificationItems as $notification) {
                             <small><?= htmlspecialchars($notification['created_at'], ENT_QUOTES, 'UTF-8') ?></small>
                         </div>
                         <?php if ($clickable): ?>
-                            <svg class="notification-item-go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg>
+                            <svg class="notification-item-go"
+                                viewBox="0 0 24 24"
+                                width="16"
+                                height="16"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                                focusable="false">
+                                <path d="m9 6 6 6-6 6"/>
+                            </svg>
                         <?php endif; ?>
                     </<?= $tag ?>>
                 <?php endforeach; ?>

@@ -252,7 +252,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
                         throw new RuntimeException('Could not store ' . $storedName);
                     }
                     $stored[] = $folder . '/' . $storedName;
-                    $addAttachment->execute([$messageId, $file['kind'], $storedName, null, $file['name'], $file['mime'], $file['size'], $file['width'], $file['height']]);
+                    $addAttachment->execute([
+                        $messageId,
+                        $file['kind'],
+                        $storedName,
+                        null,
+                        $file['name'],
+                        $file['mime'],
+                        $file['size'],
+                        $file['width'],
+                        $file['height']
+                    ]);
                 }
                 if ($gif !== null) {
                     $addAttachment->execute([$messageId, 'gif', null, $gif['url'], $gif['title'], 'image/gif', 0, $gif['width'], $gif['height']]);
@@ -1895,10 +1905,21 @@ require __DIR__ . '/../includes/header.php';
                 <h2>Chats</h2>
                 <div class="chat-sidebar-actions">
                     <button class="chat-icon-button" type="button" data-action="refresh" aria-label="Refresh messages" title="Refresh messages">
-                        <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
+                        <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M20 11a8 8 0 1 0-2.3 5.7"/>
+                            <path d="M20 5v6h-6"/>
+                        </svg>
                     </button>
-                    <button class="chat-icon-button chat-new-button" type="button" data-bs-toggle="dialog" data-bs-target="#chatNewDialog" aria-label="New message" title="New message">
-                        <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                    <button class="chat-icon-button chat-new-button"
+                        type="button"
+                        data-bs-toggle="dialog"
+                        data-bs-target="#chatNewDialog"
+                        aria-label="New message"
+                        title="New message">
+                        <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -1953,7 +1974,8 @@ require __DIR__ . '/../includes/header.php';
                                 <small><?= $last['mine'] ? 'You: ' : '' ?><?= $h($lastPreview) ?></small>
                             </span>
                             <?php if ($conversation['unread']): ?>
-                                <span class="chat-unread-count" aria-label="<?= (int) $conversation['unread'] ?> unread"><?= (int) $conversation['unread'] ?></span>
+                                <span class="chat-unread-count"
+                                    aria-label="<?= (int) $conversation['unread'] ?> unread"><?= (int) $conversation['unread'] ?></span>
                             <?php endif; ?>
                         </button>
                     <?php endforeach; ?>
@@ -1977,10 +1999,14 @@ require __DIR__ . '/../includes/header.php';
             <div class="chat-thread-body" data-thread-body aria-live="polite">
                 <div class="chat-thread-empty">
                     <span class="chat-thread-empty-icon" aria-hidden="true">
-                        <svg class="chat-svg" viewBox="0 0 24 24" focusable="false"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3-.5L4 20l1.5-4A7.3 7.3 0 0 1 4.5 12 7.5 7.5 0 0 1 12 4.5a7.5 7.5 0 0 1 8 7Z"/></svg>
+                        <svg class="chat-svg" viewBox="0 0 24 24" focusable="false">
+                            <path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3-.5L4 20l1.5-4A7.3 7.3 0 0 1 4.5 12 7.5 7.5 0 0 1 12 4.5a7.5 7.5 0 0 1 8 7Z"/>
+                        </svg>
                     </span>
                     <strong><?= $conversations ? 'Select a conversation' : 'Start a conversation' ?></strong>
-                    <span><?= $conversations ? 'Or start a new one with someone in your workspace.' : 'Message HR, agents' . (in_array('applicant', $contactRoles, true) ? ', interns and employees' : '') . ' in your workspace.' ?></span>
+                    <span><?= $conversations
+                        ? 'Or start a new one with someone in your workspace.'
+                        : 'Message HR, agents' . (in_array('applicant', $contactRoles, true) ? ', interns and employees' : '') . ' in your workspace.' ?></span>
                     <button class="btn-solid theme-primary" type="button" data-bs-toggle="dialog" data-bs-target="#chatNewDialog">New message</button>
                 </div>
                 <?php foreach ($conversations as $conversation): ?>
@@ -2012,13 +2038,21 @@ require __DIR__ . '/../includes/header.php';
                                             <?php if ($picture['kind'] === 'gif'): ?>
                                                 <span class="chat-media-item chat-media-gif">
                                                     <img src="<?= $h($picture['url']) ?>" alt="<?= $h($picture['original_name']) ?>" loading="lazy" referrerpolicy="no-referrer"
-                                                        <?= $picture['width'] ? 'width="' . (int) $picture['width'] . '" height="' . (int) $picture['height'] . '"' : '' ?>>
+                                                        <?= $picture['width']
+                                                            ? 'width="' . (int) $picture['width'] . '" height="' . (int) $picture['height'] . '"'
+                                                            : '' ?>>
                                                     <span class="chat-gif-badge">GIF</span>
                                                 </span>
                                             <?php else: ?>
-                                                <a class="chat-media-item" href="attachment.php?id=<?= (int) $picture['id'] ?>" target="_blank" rel="noopener" title="Open <?= $h($picture['original_name']) ?>">
+                                                <a class="chat-media-item"
+                                                    href="attachment.php?id=<?= (int) $picture['id'] ?>"
+                                                    target="_blank"
+                                                    rel="noopener"
+                                                    title="Open <?= $h($picture['original_name']) ?>">
                                                     <img src="attachment.php?id=<?= (int) $picture['id'] ?>" alt="<?= $h($picture['original_name']) ?>" loading="lazy"
-                                                        <?= $picture['width'] ? 'width="' . (int) $picture['width'] . '" height="' . (int) $picture['height'] . '"' : '' ?>>
+                                                        <?= $picture['width']
+                                                            ? 'width="' . (int) $picture['width'] . '" height="' . (int) $picture['height'] . '"'
+                                                            : '' ?>>
                                                 </a>
                                             <?php endif; ?>
                                         <?php endforeach; ?>
@@ -2060,7 +2094,10 @@ require __DIR__ . '/../includes/header.php';
                 <div class="chat-picker-panel" data-picker-panel="gif" hidden>
                     <?php if ($giphyKey !== ''): ?>
                         <label class="chat-gif-search">
-                            <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+                            <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <circle cx="11" cy="11" r="6.5"/>
+                                <path d="m16 16 4.5 4.5"/>
+                            </svg>
                             <input type="search" placeholder="Search GIFs" aria-label="Search GIFs" data-gif-search autocomplete="off">
                         </label>
                         <div class="chat-gif-grid" data-gif-grid aria-live="polite"></div>
@@ -2092,13 +2129,35 @@ require __DIR__ . '/../includes/header.php';
                 <p class="chat-composer-note" data-composer-note role="alert" hidden></p>
 
                 <div class="chat-composer-row">
-                    <button class="chat-tool" type="button" data-attach aria-label="Attach files or photos" title="Attach files or photos (up to <?= MENTORA_MESSAGE_MAX_FILES ?>, <?= $h($formatBytes(MENTORA_MESSAGE_MAX_BYTES)) ?> each)" disabled>
-                        <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m20 11.5-8.2 8.2a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l8-8"/></svg>
+                    <button class="chat-tool"
+                        type="button"
+                        data-attach
+                        aria-label="Attach files or photos"
+                        title="Attach files or photos (up to <?= MENTORA_MESSAGE_MAX_FILES ?>, <?= $h($formatBytes(MENTORA_MESSAGE_MAX_BYTES)) ?> each)"
+                        disabled>
+                        <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="m20 11.5-8.2 8.2a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l8-8"/>
+                        </svg>
                     </button>
-                    <button class="chat-tool" type="button" data-picker-toggle aria-label="Emoji and GIFs" aria-expanded="false" title="Emoji and GIFs" disabled>
-                        <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>
+                    <button class="chat-tool"
+                        type="button"
+                        data-picker-toggle
+                        aria-label="Emoji and GIFs"
+                        aria-expanded="false"
+                        title="Emoji and GIFs"
+                        disabled>
+                        <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/>
+                        </svg>
                     </button>
-                    <textarea class="chat-message-input" name="body" rows="1" maxlength="5000" placeholder="Choose a conversation or start a new one" aria-label="Write a message" disabled><?= $h($draftBody) ?></textarea>
+                    <textarea class="chat-message-input"
+                        name="body"
+                        rows="1"
+                        maxlength="5000"
+                        placeholder="Choose a conversation or start a new one"
+                        aria-label="Write a message"
+                        disabled><?= $h($draftBody) ?></textarea>
                     <button class="chat-send-button" type="submit" aria-label="Send message" title="Send (Enter)" disabled>
                         <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12 20 4l-6 16-3-7-7-1Z"/></svg>
                     </button>
@@ -2148,9 +2207,19 @@ require __DIR__ . '/../includes/header.php';
             <div class="chat-contact-list" data-contact-list>
                 <?php if ($isAdmin): ?>
                     <p class="chat-contact-group">Announcement</p>
-                    <button class="chat-contact" type="button" data-contact="all" data-recipient="all" data-name="Everyone" data-role="Announcement" data-email="" data-search="everyone announcement all">
+                    <button class="chat-contact"
+                        type="button"
+                        data-contact="all"
+                        data-recipient="all"
+                        data-name="Everyone"
+                        data-role="Announcement"
+                        data-email=""
+                        data-search="everyone announcement all">
                         <span class="avatar avatar-initials chat-contact-everyone" aria-hidden="true">
-                            <svg class="chat-svg" viewBox="0 0 24 24" focusable="false"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+                            <svg class="chat-svg" viewBox="0 0 24 24" focusable="false">
+                                <path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1Z"/>
+                                <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>
+                            </svg>
                         </span>
                         <span class="chat-contact-copy"><strong>Everyone</strong><small>Send an announcement to all users</small></span>
                     </button>

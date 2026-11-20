@@ -48,7 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$formErrors) {
         try {
-            mentora_save_application($pdo, (int) $formUser['id'], mentora_application_row($answers, $formPathway), $application ? (int) $application['id'] : null);
+            mentora_save_application(
+                $pdo,
+                (int) $formUser['id'],
+                mentora_application_row($answers, $formPathway),
+                $application ? (int) $application['id'] : null
+            );
             if ($application) {
                 $_SESSION['flash_notice'] = 'Your application was updated.';
             } else {

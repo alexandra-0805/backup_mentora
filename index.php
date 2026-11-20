@@ -121,9 +121,13 @@ require __DIR__ . '/includes/header.php';
             <p>Keep these details ready before starting your application.</p>
         </div>
         <div class="preparation-list">
-            <div><span><?= $icon('document') ?></span><strong>Employee VA</strong><small>An updated résumé, experience, skills, and availability.</small></div>
+            <div>
+                <span><?= $icon('document') ?></span><strong>Employee VA</strong><small>An updated résumé, experience, skills, and availability.</small>
+            </div>
             <div><span><?= $icon('calendar') ?></span><strong>Internship</strong><small>School details, required hours, and placement dates.</small></div>
-            <div><span><?= $icon('contact') ?></span><strong>Both pathways</strong><small>A current email address and accurate contact information.</small></div>
+            <div>
+                <span><?= $icon('contact') ?></span><strong>Both pathways</strong><small>A current email address and accurate contact information.</small>
+            </div>
         </div>
     </section>
 
@@ -217,7 +221,12 @@ require __DIR__ . '/includes/header.php';
         <button class="floating-control back-to-top" type="button" aria-label="Back to top" title="Back to top" hidden>
             <span aria-hidden="true">↑</span>
         </button>
-        <button class="floating-control support-chat-toggle" type="button" aria-label="Open Mentora support" title="Open Mentora support" aria-expanded="false" aria-controls="support-chat">
+        <button class="floating-control support-chat-toggle"
+            type="button"
+            aria-label="Open Mentora support"
+            title="Open Mentora support"
+            aria-expanded="false"
+            aria-controls="support-chat">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3-.5L4 20l1.5-4A7.3 7.3 0 0 1 4.5 12 7.5 7.5 0 0 1 12 4.5a7.5 7.5 0 0 1 8 7Z"/>
                 <path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/>

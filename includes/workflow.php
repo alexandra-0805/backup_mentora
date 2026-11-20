@@ -17,13 +17,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/auth_check.php';
+require_once __DIR__ . '/ui_icons.php';
 
-const MENTORA_SHIFT_START = '08:00';
-const MENTORA_SHIFT_END = '17:00';
-const MENTORA_LATE_GRACE_MINUTES = 15;
+// Open shift: no fixed hours and no late check-ins; people time in and out whenever they work.
+const MENTORA_SHIFT_LABEL = 'Open shift · work any time';
 const MENTORA_DEFAULT_INTERN_HOURS = 480;
 const MENTORA_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
-const MENTORA_DOCUMENT_CATEGORIES = ['Training resources', 'Policies', 'Templates', 'Reports', 'Application documents'];
+const MENTORA_DOCUMENT_CATEGORIES = ['Training resources', 'Policies', 'Templates', 'Reports', 'Application documents', 'Certificates'];
 const MENTORA_REVIEW_TYPES = ['Initial assessment', 'Midpoint evaluation', 'Final evaluation', 'Monthly review'];
 
 // Allowed document types: extension => file contents we accept (finfo). Office files are zip/OLE inside.
@@ -64,18 +64,20 @@ function mentora_training_modules(string $pathway): array
     return mentora_pathway_folder($pathway) === 'intern'
         ? [
             'welcome' => ['Welcome to Mentora PH', 1],
-            'remote_work' => ['Remote Work Essentials', 2],
-            'workspace_files' => ['Google Workspace & File Standards', 3],
-            'client_basics' => ['Client Communication Basics', 4],
-            'data_privacy' => ['Data Privacy Essentials', 5],
-            'support_simulation' => ['Client Support Simulation', 6],
+            'remote_work' => ['Remote Work Essentials', 1],
+            'account_optimization' => ['Optimizing Your Accounts', 1],
+            'workspace_files' => ['Google Workspace & File Standards', 1],
+            'client_basics' => ['Client Communication Basics', 1],
+            'data_privacy' => ['Data Privacy Essentials', 1],
+            'support_simulation' => ['Client Support Simulation', 1],
         ]
         : [
             'policies' => ['Welcome & Company Policies', 1],
-            'va_workflow' => ['Executive VA Workflow', 2],
-            'client_standards' => ['Client Communication Standards', 2],
-            'security' => ['Information Security & Privacy', 2],
-            'handoff' => ['Operations Handoff Simulation', 3],
+            'account_optimization' => ['Optimizing Your Accounts', 1],
+            'va_workflow' => ['Executive VA Workflow', 1],
+            'client_standards' => ['Client Communication Standards', 1],
+            'security' => ['Information Security & Privacy', 1],
+            'handoff' => ['Operations Handoff Simulation', 1],
         ];
 }
 
@@ -213,11 +215,13 @@ function mentora_workspace_people(PDO $pdo, string $pathway = 'internship', ?int
                 COALESCE(t.modules_completed, 0) AS completed, t.modules_total, COALESCE(t.hours_logged, 0) AS hours_logged,
                 COALESCE(t.status, 'not_started') AS training_status, t.notes,
                 a.required_hours, a.school, a.course,
-                (SELECT COUNT(*) FROM work_reports r WHERE r.user_id = u.id AND r.status = 'submitted') AS reports_waiting
+                (SELECT COUNT(*) FROM work_reports r WHERE r.user_id = u.id AND r.status = 'submitted') AS reports_waiting,
+                ((COALESCE(s.upwork_url, '') <> '') + (COALESCE(s.linkedin_url, '') <> '') + (COALESCE(s.quora_url, '') <> '') + (COALESCE(s.reddit_url, '') <> '') + (COALESCE(s.instagram_url, '') <> '') + (COALESCE(s.threads_url, '') <> '') + (COALESCE(s.substack_url, '') <> '')) AS social_added
          FROM users u
          LEFT JOIN departments d ON d.id = u.department_id
          LEFT JOIN users ag ON ag.id = u.agent_id
          LEFT JOIN training_records t ON t.user_id = u.id
+         LEFT JOIN social_profiles s ON s.user_id = u.id
          LEFT JOIN applications a ON a.id = (SELECT MAX(id) FROM applications WHERE user_id = u.id)
          WHERE " . implode(' AND ', $where) . '
          ORDER BY u.first_name, u.last_name'
@@ -255,7 +259,8 @@ function mentora_hours(float|string|null $hours): string
 
 function mentora_active_agents(PDO $pdo): array
 {
-    return $pdo->query("SELECT id, first_name, last_name, email FROM users WHERE role = 'agent' AND status = 'active' ORDER BY first_name, last_name")->fetchAll();
+    return $pdo->query("SELECT id, first_name, last_name, email FROM users WHERE role = 'agent' AND status = 'active' ORDER BY first_name, last_name")
+        ->fetchAll();
 }
 
 function mentora_departments(PDO $pdo): array
@@ -310,7 +315,10 @@ function mentora_review_report(PDO $pdo, int $reportId, array $reviewer, string 
     if ($decision === 'return' && $note === '') {
         return [false, 'Add a note so they know what to fix.'];
     }
-    $query = $pdo->prepare("SELECT r.id, r.user_id, r.report_date, r.hours, u.first_name, u.last_name, u.pathway FROM work_reports r JOIN users u ON u.id = r.user_id WHERE r.id = ? AND r.status = 'submitted'");
+    $query = $pdo->prepare("SELECT r.id, r.user_id, r.report_date, r.hours, u.first_name, u.last_name, u.pathway
+        FROM work_reports r
+        JOIN users u ON u.id = r.user_id
+        WHERE r.id = ? AND r.status = 'submitted'");
     $query->execute([$reportId]);
     $report = $query->fetch();
     if (!$report) {
@@ -364,21 +372,51 @@ function mentora_render_review_table(array $reports, string $tableId, string $em
         return;
     }
     ?>
-    <div class="table-toolbar" data-table-filter="<?= mentora_h($tableId) ?>"><input type="search" data-filter="search" placeholder="Search name or work" aria-label="Search reports"><select data-filter="pathway" aria-label="Pathway"><option value="all">Interns &amp; employees</option><option value="intern">Interns</option><option value="employee">Employees</option></select></div>
-    <table class="admin-table review-table" id="<?= mentora_h($tableId) ?>"><thead><tr><th>Person</th><th>Date</th><th>Hours</th><th>Work completed</th><th>Review</th></tr></thead><tbody>
+    <div class="table-toolbar"
+        data-table-filter="<?= mentora_h($tableId) ?>"><input type="search" data-filter="search" placeholder="Search name or work" aria-label="Search reports"><select data-filter="pathway" aria-label="Pathway">
+            <option value="all">Interns &amp; employees</option>
+            <option value="intern">Interns</option>
+            <option value="employee">Employees</option>
+        </select>
+    </div>
+    <table class="admin-table review-table" id="<?= mentora_h($tableId) ?>"><thead>
+            <tr>
+                <th>Person</th>
+                <th>Date</th>
+                <th>Hours</th>
+                <th>Work completed</th>
+                <th>Review</th>
+            </tr>
+        </thead>
+        <tbody>
         <?php foreach ($reports as $report): $name = trim($report['first_name'] . ' ' . $report['last_name']); ?>
             <tr data-pathway="<?= mentora_pathway_folder($report['pathway']) ?>">
                 <td><?= mentora_h($name) ?><br><small><?= mentora_pathway_label($report['pathway']) ?></small></td>
-                <td><?= date('d M Y', strtotime($report['report_date'])) ?><br><small>Sent <?= date('d M, g:i A', strtotime($report['created_at'])) ?></small></td>
+                <td><?= date('d M Y', strtotime($report['report_date'])) ?><br><small>Sent <?= date('d M, g:i A', strtotime($report['created_at'])) ?></small>
+                </td>
                 <td><?= mentora_hours($report['hours']) ?></td>
-                <td><?= nl2br(mentora_h(mb_strimwidth($report['summary'], 0, 400, '…'))) ?><?= $report['notes'] ? '<br><small>Blockers / notes: ' . mentora_h(mb_strimwidth($report['notes'], 0, 200, '…')) . '</small>' : '' ?></td>
+                <td><?= nl2br(mentora_h(mb_strimwidth($report['summary'], 0, 400, '…'))) ?><?= $report['notes']
+                    ? '<br><small>Blockers / notes: ' . mentora_h(mb_strimwidth($report['notes'], 0, 200, '…')) . '</small>'
+                    : '' ?></td>
                 <td>
                     <form method="post" class="review-form">
                         <?= mentora_csrf_field() ?><input type="hidden" name="action" value="review_report"><input type="hidden" name="report_id" value="<?= (int) $report['id'] ?>">
                         <input name="note" maxlength="500" placeholder="Note (required to return)" aria-label="Review note for <?= mentora_h($name) ?>">
                         <span class="row-actions">
-                            <button class="admin-btn primary" type="submit" name="decision" value="approve" data-confirm-title="Approve this report?" data-confirm="<?= mentora_h(mentora_hours($report['hours'])) ?> hrs will be added to <?= mentora_h($report['first_name']) ?>’s approved hours." data-confirm-action="Approve">Approve</button>
-                            <button class="admin-btn" type="submit" name="decision" value="return" data-confirm-title="Return this report?" data-confirm="<?= mentora_h($report['first_name']) ?> will see your note and can fix and resend it." data-confirm-action="Return">Return</button>
+                            <button class="admin-btn primary"
+                                type="submit"
+                                name="decision"
+                                value="approve"
+                                data-confirm-title="Approve this report?"
+                                data-confirm="<?= mentora_h(mentora_hours($report['hours'])) ?> hrs will be added to <?= mentora_h($report['first_name']) ?>’s approved hours."
+                                data-confirm-action="Approve">Approve</button>
+                            <button class="admin-btn"
+                                type="submit"
+                                name="decision"
+                                value="return"
+                                data-confirm-title="Return this report?"
+                                data-confirm="<?= mentora_h($report['first_name']) ?> will see your note and can fix and resend it."
+                                data-confirm-action="Return">Return</button>
                         </span>
                     </form>
                 </td>
@@ -392,31 +430,21 @@ function mentora_render_review_table(array $reports, string $tableId, string $em
 
 /**
  * Attendance state for one person on one day: [label, badge class, worked hours or null].
- * Weekends are rest days; no time in on a past working day (or after the shift today) is "Absent".
+ * Open shift: people time in and out whenever they work (any day, any hour), so nobody is ever
+ * late or absent. "Working" = timed in, not out yet; "Present" = timed in and out; otherwise
+ * "Not checked in" (today) or "No time-in" (another day).
  */
 function mentora_attendance_state(?array $row, string $date): array
 {
-    $day = (int) date('N', strtotime($date));
-    $today = date('Y-m-d');
     if (!$row || empty($row['time_in'])) {
-        if ($day >= 6) {
-            return ['Rest day', 'info', null];
-        }
-        if ($date > $today || ($date === $today && date('H:i') < MENTORA_SHIFT_END)) {
-            return ['Not checked in', 'info', null];
-        }
-        return ['Absent', 'warn', null];
+        return [$date >= date('Y-m-d') ? 'Not checked in' : 'No time-in', 'info', null];
     }
-    $worked = null;
-    if (!empty($row['time_out'])) {
-        $worked = round(max(0, strtotime($row['time_out']) - strtotime($row['time_in'])) / 3600, 1);
+    if (empty($row['time_out'])) {
+        return ['Working', 'info', null];
     }
-    $lateAfter = strtotime($date . ' ' . MENTORA_SHIFT_START) + MENTORA_LATE_GRACE_MINUTES * 60;
-    if (strtotime($row['time_in']) > $lateAfter && $day < 6) {
-        return ['Late', 'warn', $worked];
-    }
+    $worked = round(max(0, strtotime($row['time_out']) - strtotime($row['time_in'])) / 3600, 1);
 
-    return [empty($row['time_out']) ? 'Checked in' : 'Present', '', $worked];
+    return ['Present', '', $worked];
 }
 
 /* ---------- Documents ---------- */
@@ -460,6 +488,35 @@ function mentora_store_document(string $field): array
         'mime' => $mime,
         'size' => (int) $file['size'],
     ];
+}
+
+/**
+ * Check a document link (e.g. a Google Drive portfolio). Returns [clean URL, null] or [null, error].
+ * Adds https:// when it's missing; only http(s) web addresses up to 500 characters.
+ */
+function mentora_clean_document_link(string $value): array
+{
+    $value = trim($value);
+    if ($value === '') {
+        return [null, 'Please paste the link.'];
+    }
+    if (!preg_match('~^https?://~i', $value)) {
+        $value = 'https://' . ltrim($value, '/');
+    }
+    $scheme = strtolower((string) parse_url($value, PHP_URL_SCHEME));
+    if (!filter_var($value, FILTER_VALIDATE_URL) || !in_array($scheme, ['http', 'https'], true) || mb_strlen($value) > 500) {
+        return [null, 'That doesn’t look like a web link. Copy the full link from your browser or the Share button in Google Drive.'];
+    }
+
+    return [$value, null];
+}
+
+/** True for Google Drive / Docs / Sheets / Slides links. */
+function mentora_is_drive_link(?string $url): bool
+{
+    $host = strtolower((string) parse_url((string) $url, PHP_URL_HOST));
+
+    return in_array($host, ['drive.google.com', 'docs.google.com'], true);
 }
 
 function mentora_delete_document_file(?string $storedName): void
