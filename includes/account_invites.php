@@ -13,7 +13,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/auth_check.php';
+require_once __DIR__ . '/workflow.php';
 require_once __DIR__ . '/application_fields.php';
 require_once __DIR__ . '/mailer.php';
 
@@ -52,8 +52,9 @@ function mentora_create_pending_applicant(PDO $pdo, string $firstName, string $l
     if ($row) {
         return match ($row['status']) {
             'active' => ['ok' => false, 'error' => 'An account with this email already exists. Please sign in instead.'],
-            'pending' => ['ok' => false, 'error' => 'An application with this email is already waiting for confirmation.'],
-            'approved' => ['ok' => false, 'error' => 'This application was approved. Check your email for the link to create your username and password.'],
+            // 'track': the sign-up page offers auth/track.php to follow the application.
+            'pending' => ['ok' => false, 'track' => true, 'error' => 'An application with this email is already waiting for confirmation.'],
+            'approved' => ['ok' => false, 'track' => true, 'error' => 'This application was approved. Check your email for the link to create your username and password.'],
             default => (function () use ($pdo, $row, $firstName, $lastName, $pathway): array {
                 // Declined before: a new application starts over.
                 $pdo->prepare("UPDATE users SET first_name = ?, last_name = ?, pathway = ?, status = 'pending', created_at = NOW() WHERE id = ?")
@@ -70,28 +71,84 @@ function mentora_create_pending_applicant(PDO $pdo, string $firstName, string $l
     return ['ok' => true, 'id' => (int) $pdo->lastInsertId()];
 }
 
-/** Tell every HR admin (workspace notification, plus email when MENTORA_APPROVAL_EMAIL is set). */
+/**
+ * Tell every HR admin: a workspace notification, plus an email to MENTORA_APPROVAL_EMAIL or, when that isn't
+ * set, to the HR mailbox that sends Mentora's emails (config/mail.local.php), so they can approve it quickly.
+ */
 function mentora_notify_admins_new_applicant(PDO $pdo, string $name, string $email, string $pathway): void
 {
-    $label = $pathway === 'internship' ? 'Intern' : 'Employee VA';
-    $admins = $pdo->query("SELECT id FROM users WHERE role = 'admin' AND status = 'active'")->fetchAll(PDO::FETCH_COLUMN);
-    $notify = $pdo->prepare('INSERT INTO notifications (user_id, title, body, link) VALUES (?, ?, ?, ?)');
-    foreach ($admins as $adminId) {
-        $notify->execute([
-            (int) $adminId,
-            'New application: ' . $name,
-            $label . ' · ' . $email . ' is waiting for confirmation in Applications.',
-            'admin/applications.php?view=pending'
-        ]);
-    }
-    // Optional email alert to MENTORA_APPROVAL_EMAIL (sent through the mail account when one is set up).
-    $alertTo = getenv('MENTORA_APPROVAL_EMAIL') ?: '';
+    $label = mentora_pathway_label($pathway);
+    mentora_notify_roles($pdo, ['admin'], 'New application: ' . $name, $label . ' · ' . $email . ' is waiting for confirmation in Applications.', 'admin/applications.php?view=pending');
+    $alertTo = getenv('MENTORA_APPROVAL_EMAIL') ?: (mentora_mail_enabled() ? mentora_mail_config()['from_email'] : '');
     if (filter_var($alertTo, FILTER_VALIDATE_EMAIL)) {
         mentora_deliver_mail($alertTo, 'Mentora application pending approval: ' . $name, implode("\n", [
             'A new Mentora application is waiting for confirmation.', '', 'Applicant: ' . $name, 'Email: ' . $email,
-            'Pathway: ' . $label, '', 'Review it in the Mentora admin workspace: ' . mentora_app_url('admin/applications.php'),
+            'Pathway: ' . $label, '', 'Approve it so they get their confirmation link: ' . mentora_app_url('admin/applications.php?view=pending'),
         ]));
     }
+}
+
+/**
+ * Email the applicant right after they apply: their application was received, what happens next, and
+ * where to track it. The confirmation link itself comes later, when HR approves (mentora_send_invite_email).
+ * Returns true when the email was sent.
+ */
+function mentora_send_application_received_email(string $email, string $firstName, string $lastName, string $pathway): bool
+{
+    if (!mentora_mail_enabled()) {
+        return false;
+    }
+    $label = mentora_pathway_label($pathway);
+    $trackUrl = mentora_app_url('auth/track.php');
+    $subject = 'We received your Mentora application';
+    $text = "Hi {$firstName},\n\n"
+        . "Thank you for applying to Mentora as {$label}. Your application is now waiting for the HR team to confirm it.\n\n"
+        . "What happens next:\n"
+        . "1. An HR admin reviews your application (usually within 1-3 working days).\n"
+        . "2. Once it's approved, we email you a link to create your username and password.\n\n"
+        . "Track your application any time: {$trackUrl}\n\n"
+        . "Please also check your Spam or Promotions folder for our emails.\n\nMentora HR";
+    $e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $html = mentora_email_html(
+        'Application received',
+        'Hi ' . $e($firstName) . ', thanks for applying!',
+        '<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#3a3a3c;">Your <strong>' . $e($label) . '</strong> application is now waiting for the Mentora HR team to confirm it.</p>'
+            . '<ol style="margin:0 0 22px;padding-left:20px;font-size:14px;line-height:1.7;color:#3a3a3c;">'
+            . '<li>An HR admin reviews your application (usually within 1–3 working days).</li>'
+            . '<li>Once it’s approved, we email you a link to create your username and password.</li></ol>',
+        'Track my application',
+        $trackUrl,
+        'Can’t find our emails? Check your Spam or Promotions folder.',
+        'Mentora HR'
+    );
+    $result = mentora_send_mail($email, trim($firstName . ' ' . $lastName), $subject, $text, $html);
+    if (!$result['ok']) {
+        error_log('Mentora application-received email to ' . $email . ' failed: ' . $result['error']);
+    }
+
+    return $result['ok'];
+}
+
+/** Mentora's branded email layout: header bar, eyebrow, heading, body HTML, one button, a small note and footer. */
+function mentora_email_html(string $eyebrow, string $headingHtml, string $bodyHtml, string $buttonText, string $buttonUrl, string $note, string $footer): string
+{
+    $e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+    return '<!doctype html><html><body style="margin:0;padding:0;background:#f4f8f7;font-family:Arial,Helvetica,sans-serif;color:#1d1d1f;">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f8f7;padding:28px 12px;"><tr><td align="center">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #d5e4e2;">'
+        . '<tr><td style="background:#0b625d;background-image:linear-gradient(135deg,#063d3b,#0b625d 55%,#147b71);padding:22px 28px;color:#ffffff;font-size:20px;font-weight:bold;">Mentora</td></tr>'
+        . '<tr><td style="padding:28px;">'
+        . '<p style="margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#0b625d;font-weight:bold;">' . $e($eyebrow) . '</p>'
+        . '<h1 style="margin:0 0 14px;font-family:Georgia,serif;font-size:26px;font-weight:normal;">' . $headingHtml . '</h1>'
+        . $bodyHtml
+        . '<p style="margin:0 0 22px;"><a href="' . $e($buttonUrl) . '" style="display:inline-block;background:#0b625d;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;padding:13px 26px;border-radius:999px;">' . $e($buttonText) . '</a></p>'
+        . '<p style="margin:0 0 6px;font-size:12px;color:#6e6e73;">Button not working? Copy this link into your browser:</p>'
+        . '<p style="margin:0 0 22px;font-size:12px;word-break:break-all;"><a href="' . $e($buttonUrl) . '" style="color:#0b625d;">' . $e($buttonUrl) . '</a></p>'
+        . '<p style="margin:0;font-size:12px;color:#6e6e73;">' . $e($note) . '</p>'
+        . '</td></tr>'
+        . '<tr><td style="padding:18px 28px;border-top:1px solid #e5eeec;font-size:12px;color:#6e6e73;">' . $e($footer) . '</td></tr>'
+        . '</table></td></tr></table></body></html>';
 }
 
 /**
@@ -134,21 +191,17 @@ function mentora_invite_email(string $firstName, string $pathway, string $link, 
         . "Welcome to Mentora,\n{$adminName}\nMentora HR";
 
     $e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-    $html = '<!doctype html><html><body style="margin:0;padding:0;background:#f4f8f7;font-family:Arial,Helvetica,sans-serif;color:#1d1d1f;">'
-        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f8f7;padding:28px 12px;"><tr><td align="center">'
-        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #d5e4e2;">'
-        . '<tr><td style="background:#0b625d;background-image:linear-gradient(135deg,#063d3b,#0b625d 55%,#147b71);padding:22px 28px;color:#ffffff;font-size:20px;font-weight:bold;">Mentora</td></tr>'
-        . '<tr><td style="padding:28px;">'
-        . '<p style="margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#0b625d;font-weight:bold;">' . ($staff ? 'You’re invited' : 'Application approved') . '</p>'
-        . '<h1 style="margin:0 0 14px;font-family:Georgia,serif;font-size:26px;font-weight:normal;">Hi ' . $e($firstName) . ', welcome to Mentora!</h1>'
-        . '<p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#3a3a3c;">' . ($staff ? 'You’ve been invited to join Mentora as <strong>' . $e($pathwayLabel) . '</strong>. Create your username and password to open your workspace.' : 'Your <strong>' . $e($pathwayLabel) . '</strong> application has been approved. Create your username and password to open your applicant workspace.') . '</p>'
-        . '<p style="margin:0 0 22px;"><a href="' . $e($link) . '" style="display:inline-block;background:#0b625d;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;padding:13px 26px;border-radius:999px;">Create my account</a></p>'
-        . '<p style="margin:0 0 6px;font-size:12px;color:#6e6e73;">Button not working? Copy this link into your browser:</p>'
-        . '<p style="margin:0 0 22px;font-size:12px;word-break:break-all;"><a href="' . $e($link) . '" style="color:#0b625d;">' . $e($link) . '</a></p>'
-        . '<p style="margin:0;font-size:12px;color:#6e6e73;">This link works once and expires in ' . $days . ' days.</p>'
-        . '</td></tr>'
-        . '<tr><td style="padding:18px 28px;border-top:1px solid #e5eeec;font-size:12px;color:#6e6e73;">' . $e($adminName) . ' · Mentora HR</td></tr>'
-        . '</table></td></tr></table></body></html>';
+    $html = mentora_email_html(
+        $staff ? 'You’re invited' : 'Application approved',
+        'Hi ' . $e($firstName) . ', welcome to Mentora!',
+        '<p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#3a3a3c;">' . ($staff
+            ? 'You’ve been invited to join Mentora as <strong>' . $e($pathwayLabel) . '</strong>. Create your username and password to open your workspace.'
+            : 'Your <strong>' . $e($pathwayLabel) . '</strong> application has been approved. Create your username and password to open your applicant workspace.') . '</p>',
+        'Create my account',
+        $link,
+        'This link works once and expires in ' . $days . ' days. Check your Spam or Promotions folder if you can’t find our emails.',
+        $adminName . ' · Mentora HR'
+    );
 
     return [$subject, $text, $html];
 }

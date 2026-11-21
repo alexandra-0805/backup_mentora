@@ -4,13 +4,17 @@
  * Hiring progress for the signed-in applicant (applicant/employee/overview.php and
  * applicant/intern/overview.php), worked out from their own records:
  *
- *   Application       applications row (the qualifications form) for an approved account
+ *   Application       applications row (the qualifications form or resume)
+ *   Screening         employees: the AI-supported review + HR's decision (applications.status "approved")
  *   Evaluation        latest evaluations row: "published" = complete, otherwise in review
  *   Interview & offer complete once the evaluation is published and training or a department has started
  *   Training          training_records: modules completed / total, or status "completed"
+ *   AI assessment     interns: ai_assessments after training (their agent handles them from here)
  *   Department/Team   users.department_id
  *   Task reporting    training_records.hours_logged against the required internship hours
  *
+ * Interns: Application -> Core training -> AI assessment -> Evaluation -> Team assignment -> Task reporting.
+ * Employees: Application -> Screening -> Evaluation -> Interview & offer -> Training -> Department.
  * Each step is "done", "current" (the first step not done yet) or "upcoming".
  */
 
@@ -27,11 +31,20 @@ function mentora_hiring_progress(PDO $pdo, array $user, string $pathway): array
     $userId = (int) ($user['id'] ?? 0);
     $isIntern = $pathway === 'intern';
 
-    $application = $evaluation = $training = $department = null;
+    $application = $evaluation = $training = $department = $assessment = null;
+    $screened = false;
     if ($userId > 0) {
-        $query = $pdo->prepare('SELECT required_hours, created_at FROM applications WHERE user_id = ? ORDER BY id DESC LIMIT 1');
+        $query = $pdo->prepare('SELECT required_hours, status, created_at FROM applications WHERE user_id = ? ORDER BY id DESC LIMIT 1');
         $query->execute([$userId]);
         $application = $query->fetch() ?: null;
+
+        $query = $pdo->prepare('SELECT EXISTS (SELECT 1 FROM ai_reviews WHERE user_id = ?)');
+        $query->execute([$userId]);
+        $screened = (bool) $query->fetchColumn();
+
+        $query = $pdo->prepare('SELECT tier, ready FROM ai_assessments WHERE user_id = ? ORDER BY id DESC LIMIT 1');
+        $query->execute([$userId]);
+        $assessment = $query->fetch() ?: null;
 
         $query = $pdo->prepare('SELECT score, status, updated_at FROM evaluations WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1');
         $query->execute([$userId]);
@@ -82,13 +95,20 @@ function mentora_hiring_progress(PDO $pdo, array $user, string $pathway): array
 
     $steps = [];
     $steps[] = ['label' => 'Application', 'done' => $applicationDone, 'detail' => $applicationDetail, 'href' => $applicationDone ? 'profile.php' : 'form.php'];
-    $steps[] = ['label' => 'Evaluation', 'done' => $evaluationDone, 'detail' => $evaluationDetail, 'href' => 'evaluation.php'];
 
     if ($isIntern) {
+        // Interns go straight from the form to training; the AI assessment follows, then the agent takes over.
         $requiredHours = max(1, (int) ($application['required_hours'] ?? 480));
         $hours = (float) ($training['hours_logged'] ?? 0);
         $hoursText = rtrim(rtrim(number_format($hours, 1, '.', ''), '0'), '.');
         $steps[] = ['label' => 'Core training', 'done' => $trainingDone, 'detail' => $trainingDetail, 'href' => 'training.php'];
+        $steps[] = [
+            'label' => 'AI assessment',
+            'done' => $assessment !== null,
+            'detail' => $assessment !== null ? 'Reviewed with your agent' : ($trainingDone ? 'Being prepared' : 'After training'),
+            'href' => 'training.php',
+        ];
+        $steps[] = ['label' => 'Evaluation', 'done' => $evaluationDone, 'detail' => $evaluationDetail, 'href' => 'evaluation.php'];
         $steps[] = ['label' => 'Team assignment', 'done' => $departmentDone, 'detail' => $departmentDetail, 'href' => 'team-agent.php'];
         $steps[] = [
             'label' => 'Task reporting',
@@ -97,6 +117,20 @@ function mentora_hiring_progress(PDO $pdo, array $user, string $pathway): array
             'href' => 'reporting.php',
         ];
     } else {
+        $decision = (string) ($application['status'] ?? '');
+        $steps[] = [
+            'label' => 'Screening',
+            'done' => $decision === 'approved',
+            'detail' => match (true) {
+                $decision === 'approved' => 'Accepted by HR',
+                $decision === 'rejected' => 'Not selected this time',
+                $screened => 'Reviewed · with HR',
+                $applicationDone => 'AI review in progress',
+                default => 'After your application',
+            },
+            'href' => 'overview.php',
+        ];
+        $steps[] = ['label' => 'Evaluation', 'done' => $evaluationDone, 'detail' => $evaluationDetail, 'href' => 'evaluation.php'];
         // There is no separate interview record: the offer counts as made once the published
         // evaluation is followed by training or a department assignment.
         $offerDone = $evaluationDone && ($trainingStarted || $departmentDone);
@@ -161,11 +195,16 @@ function mentora_render_hiring_progress(array $progress, string $title): void
                 $stateText = ['done' => 'Complete', 'current' => 'In progress', 'upcoming' => 'Upcoming'][$state];
             ?>
                 <li class="timeline-step is-<?= $state ?><?= $state === 'done' ? '' : ' pending' ?>">
-                    <a class="timeline-link" href="<?= $e($step['href']) ?>"<?= $state === 'current' ? ' aria-current="step"' : '' ?>>
+                    <?php // Only steps the applicant has reached (done or current) open their page; upcoming ones are plain text. ?>
+                    <?php if ($state === 'upcoming'): ?>
+                        <span class="timeline-link is-locked" title="Opens when you reach this step">
+                    <?php else: ?>
+                        <a class="timeline-link" href="<?= $e($step['href']) ?>"<?= $state === 'current' ? ' aria-current="step"' : '' ?>>
+                    <?php endif; ?>
                         <span class="timeline-dot" aria-hidden="true"><?= $state === 'done' ? '✓' : $index + 1 ?></span>
                         <strong><?= $e($step['label']) ?></strong>
                         <small><span class="sr-only"><?= $e($stateText) ?>: </span><?= $e($step['detail']) ?></small>
-                    </a>
+                    <?= $state === 'upcoming' ? '</span>' : '</a>' ?>
                 </li>
             <?php endforeach; ?>
         </ol>

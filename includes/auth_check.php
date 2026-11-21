@@ -81,15 +81,21 @@ function mentora_form_path(array $user): string
 }
 
 /**
- * Where to send a user after signing in: applicants who have not submitted their
- * application form yet go to the form first; everyone else goes to their workspace.
+ * Where to send a user after signing in: applicants who haven't chosen Intern or Employee VA yet
+ * (joined with a recruitment link) choose first; those without a submitted application form go to
+ * the form; everyone else goes to their workspace.
  */
 function mentora_after_sign_in_path(PDO $pdo, array $user): string
 {
     if (($user['role'] ?? '') === 'applicant') {
-        $query = $pdo->prepare('SELECT 1 FROM applications WHERE user_id = ? LIMIT 1');
+        $query = $pdo->prepare('SELECT u.pathway_chosen_at IS NULL AS choosing, EXISTS (SELECT 1 FROM applications a WHERE a.user_id = u.id) AS applied
+            FROM users u WHERE u.id = ?');
         $query->execute([(int) $user['id']]);
-        if (!$query->fetchColumn()) {
+        $state = $query->fetch() ?: ['choosing' => 0, 'applied' => 1];
+        if ((int) $state['choosing'] === 1 && (int) $state['applied'] === 0) {
+            return 'auth/pathway.php';
+        }
+        if ((int) $state['applied'] === 0) {
             return mentora_form_path($user);
         }
     }
@@ -149,8 +155,37 @@ function mentora_current_user(): ?array
     }
 
     $_SESSION['user'] = mentora_session_user($row);
+    mentora_touch_presence($pdo, (int) $row['id']);
 
     return $_SESSION['user'];
+}
+
+/* ---------- Presence (Active / Busy / Offline) ---------- */
+
+/** Minutes without any page or heartbeat (includes/presence_heartbeat.php) before someone shows as Offline. */
+const MENTORA_ONLINE_MINUTES = 5;
+
+/** Record that the signed-in person is here (users.last_seen_at), at most once a minute per session. */
+function mentora_touch_presence(PDO $pdo, int $userId): void
+{
+    if (time() - (int) ($_SESSION['presence_touched_at'] ?? 0) < 60) {
+        return;
+    }
+    $_SESSION['presence_touched_at'] = time();
+    $pdo->prepare('UPDATE users SET last_seen_at = NOW() WHERE id = ?')->execute([$userId]);
+}
+
+/**
+ * The status others see: the one the person chose (users.presence), or Offline when they signed out
+ * or haven't been seen for MENTORA_ONLINE_MINUTES.
+ */
+function mentora_effective_presence(?string $chosen, ?string $lastSeen): string
+{
+    if ($lastSeen === null || $lastSeen === '' || strtotime($lastSeen) < time() - MENTORA_ONLINE_MINUTES * 60) {
+        return 'offline';
+    }
+
+    return in_array($chosen, ['active', 'busy', 'offline'], true) ? $chosen : 'active';
 }
 
 /**
@@ -160,7 +195,12 @@ function mentora_sign_in(array $row): void
 {
     mentora_session_start();
     session_regenerate_id(true);
+    unset($_SESSION['presence_touched_at']);
     $_SESSION['user'] = mentora_session_user($row);
+    global $pdo;
+    if ($pdo instanceof PDO) {
+        mentora_touch_presence($pdo, (int) $row['id']); // online from the moment they sign in
+    }
     $_SESSION['auth_fingerprint'] = mentora_password_fingerprint($row['password_hash']);
 }
 

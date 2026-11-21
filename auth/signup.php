@@ -80,14 +80,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$result['ok']) {
             $fieldErrors['email'] = $result['error'];
             $errors[] = $result['error'];
+            if (!empty($result['track']) && !$isStaff) {
+                $_SESSION['applied'] = ['name' => $account['first_name'], 'email' => $account['email'], 'pathway' => $account['pathway']];
+                $showTrack = true; // so the tracking page opens with this email filled in
+            }
         } else {
             mentora_notify_admins_new_applicant($pdo, $account['first_name'] . ' ' . $account['last_name'], $account['email'], $account['pathway']);
+            $receivedEmailed = mentora_send_application_received_email($account['email'], $account['first_name'], $account['last_name'], $account['pathway']);
             if ($isStaff) {
                 // Staff adding someone: it joins the same approval queue; clear the form for the next one.
                 $created = $account;
                 $account = ['first_name' => '', 'last_name' => '', 'email' => '', 'pathway' => $created['pathway']];
             } else {
-                $_SESSION['applied'] = ['name' => $account['first_name'], 'email' => $account['email'], 'pathway' => $account['pathway']];
+                $_SESSION['applied'] = ['name' => $account['first_name'], 'email' => $account['email'], 'pathway' => $account['pathway'], 'emailed' => $receivedEmailed];
                 mentora_redirect('auth/signup.php?applied=1');
             }
         }
@@ -137,9 +142,15 @@ require __DIR__ . '/../includes/header.php';
                 </li>
             </ol>
             <div class="notice">
-                <strong>Keep an eye on your inbox.</strong><br>
-                The link comes from the Mentora HR team’s email. If you can’t find it, check your Spam or Promotions folder.
+                <?php if (!empty($applied['emailed'])): ?>
+                    <strong>We emailed you a confirmation of your application.</strong><br>
+                    Your link to create your account comes in a second email once HR approves it. If you can’t find our emails, check your Spam or Promotions folder.
+                <?php else: ?>
+                    <strong>Keep an eye on your inbox.</strong><br>
+                    Your link to create your account is emailed once HR approves your application. If you can’t find it, check your Spam or Promotions folder.
+                <?php endif; ?>
             </div>
+            <div class="form-actions"><a class="button button-primary" href="track.php">Track your application</a></div>
             <div class="auth-links">
                 Used the wrong email? <a href="signup.php?new=1">Start a new application</a><br><br>
                 <a href="../index.php">Back to home</a>
@@ -165,7 +176,7 @@ require __DIR__ . '/../includes/header.php';
                 </div>
             <?php endif; ?>
             <?php if ($errors): ?>
-                <div class="alert"><?= $h(implode(' ', array_unique($errors))) ?></div>
+                <div class="alert"><?= $h(implode(' ', array_unique($errors))) ?><?php if (!empty($showTrack)): ?> <a href="track.php">Track your application</a><?php endif; ?></div>
             <?php endif; ?>
 
             <form method="post" id="signup-form" data-validate>

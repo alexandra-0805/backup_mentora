@@ -21,6 +21,15 @@ if (mentora_is_post()) {
     $userId = (int) $me['id'];
     $action = (string) ($_POST['action'] ?? '');
 
+    if ($action === 'set_presence') {
+        $presence = (string) ($_POST['presence'] ?? '');
+        if (in_array($presence, ['active', 'busy', 'offline'], true)) {
+            $pdo->prepare('UPDATE users SET presence = ? WHERE id = ?')->execute([$presence, $userId]);
+            mentora_flash('Your status is now ' . ucfirst($presence) . '.');
+        }
+        mentora_redirect($self);
+    }
+
     if ($action === 'save_social') {
         // Social profile monitoring: Upwork, LinkedIn, Quora, Reddit, Instagram, Threads, Substack.
         $clean = [];
@@ -168,10 +177,23 @@ $docStatus = ['in_review' => ['info', 'In review'], 'published' => ['', 'Verifie
 </div>
 <?= mentora_flash_html() ?>
 <?php if (!$signedIn): ?><div class="notice">You’re viewing a preview. <a href="../../auth/signin.php">Sign in</a> to edit your profile.</div><?php endif; ?>
-<section class="pathway-card profile-hero"><?= mentora_avatar($avatarUrl, $initials, $fullName, 'avatar-xl') ?><div class="profile-hero-copy">
+<section class="pathway-card profile-hero">
+    <span class="presence-wrap presence-wrap-xl"><?= mentora_avatar($avatarUrl, $initials, $fullName, 'avatar-xl') ?><i class="presence-dot is-<?= mentora_h($presence) ?>" title="<?= mentora_h($presenceLabels[$presence]) ?>"></i></span>
+    <div class="profile-hero-copy">
         <h2><?= mentora_h($fullName) ?></h2>
         <p><?= mentora_h(($person['desired_role'] ?? '') !== '' ? $person['desired_role'] : ($isIntern ? 'Virtual Assistant Intern' : 'Employee VA')) ?> · <?= mentora_h($currentUser['email']) ?></p>
         <span class="badge"><?= mentora_h($currentUser['user_code'] ?? '') ?: 'Profile' ?></span>
+        <form method="post" class="presence-picker" aria-label="Your status">
+            <?= mentora_csrf_field() ?><input type="hidden" name="action" value="set_presence">
+            <?php foreach ($presenceLabels as $option => $label): ?>
+                <button type="submit"
+                    name="presence"
+                    value="<?= $option ?>"
+                    class="presence-option is-<?= $option ?>"
+                    aria-pressed="<?= $chosenPresence === $option ? 'true' : 'false' ?>"<?= $signedIn ? '' : ' disabled' ?>><i class="presence-dot is-<?= $option ?>" aria-hidden="true"></i><?= $label ?></button>
+            <?php endforeach; ?>
+        </form>
+        <small class="presence-hint">You show as Offline automatically when you sign out or are away for <?= MENTORA_ONLINE_MINUTES ?> minutes, and as <?= mentora_h($presenceLabels[$chosenPresence]) ?> again when you’re back.</small>
     </div>
     <a class="admin-btn" href="settings.php#profile"><?= $avatarUrl ? 'Change photo' : 'Add photo' ?></a>
 </section>

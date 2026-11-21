@@ -1,0 +1,11 @@
+# AI model folder: never served directly over the web (model files, keys and prompts stay private).
+# Onboarding pages load what they need from here with PHP (require), which this doesn't block.
+Options -Indexes -ExecCGI
+Require all denied
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>

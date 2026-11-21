@@ -57,15 +57,31 @@ $now = new DateTimeImmutable(
 
 $agentNav = [
     'dashboard.php'             => 'Dashboard',
+    'recruitment.php'           => 'Recruitment links',
+    'candidates.php'            => 'Department candidates',
     'intern_directory.php'      => 'Intern directory',
     'edit_intern.php'           => 'Edit intern',
     'training_tracker.php'      => 'Training tracker',
+    'intern_assessments.php'    => 'AI assessments',
     'individual_evaluation.php' => 'Individual evaluation',
     'evaluation_list.php'       => 'Evaluation list',
+    'agent_reports.php'         => 'Employability reports',
     'reporting_overview.php'    => 'Reporting overview',
     'documents.php'             => 'Documents',
     'settings.php'              => 'Settings',
 ];
+
+/* Suitable candidates the AI matched to this agent's department, not decided by HR yet (sidebar badge) */
+$candidateCountQuery = $pdo->prepare(
+    "SELECT COUNT(*) FROM ai_reviews r
+     JOIN (SELECT user_id, MAX(id) AS id FROM ai_reviews GROUP BY user_id) l ON l.id = r.id
+     JOIN users u ON u.id = r.user_id AND u.status = 'active'
+     JOIN applications a ON a.id = (SELECT MAX(id) FROM applications WHERE user_id = u.id)
+     WHERE r.category = 'suitable' AND a.status = 'pending' AND r.dept_verdict IS NULL
+       AND r.department_id = (SELECT department_id FROM users WHERE id = ?)"
+);
+$candidateCountQuery->execute([(int) ($agentUser['id'] ?? 0)]);
+$navCounts = ['candidates.php' => (int) $candidateCountQuery->fetchColumn()];
 
 ?>
 
@@ -89,19 +105,19 @@ $agentNav = [
 
     <link
         rel="stylesheet"
-        href="../assets/css/admin.css?v=5">
+        href="../assets/css/admin.css?v=6">
 
     <link
         rel="stylesheet"
-        href="../assets/css/settings.css?v=29">
+        href="../assets/css/settings.css?v=31">
 
     <link
         rel="stylesheet"
-        href="../assets/css/theme.css?v=8">
+        href="../assets/css/theme.css?v=9">
 
     <link
         rel="stylesheet"
-        href="../assets/css/dialog.css?v=1">
+        href="../assets/css/dialog.css?v=2">
 
     <?php require __DIR__ . '/theme_boot.php'; ?>
 </head>
@@ -151,6 +167,9 @@ $agentNav = [
                     <?= $activePage === $file ? 'aria-current="page"' : '' ?>>
                     <span aria-hidden="true"></span>
                     <?= $e($label) ?>
+                    <?php if (($navCounts[$file] ?? 0) > 0): ?>
+                        <b class="nav-count" aria-label="<?= $navCounts[$file] ?> waiting"><?= $navCounts[$file] ?></b>
+                    <?php endif; ?>
                 </a>
 
             <?php endforeach; ?>

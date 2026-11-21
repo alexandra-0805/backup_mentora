@@ -1,8 +1,9 @@
 <?php
-// HR dashboard: people, departments, your latest notifications, today's attendance and what's waiting.
+// HR dashboard: people, departments, your latest notifications, today's attendance, AI onboarding and what's waiting.
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/workflow.php';
 require_once __DIR__ . '/../includes/report_summary.php';
+require_once __DIR__ . '/../includes/screening.php';
 $pageTitle = 'Dashboard';
 $activePage = 'dashboard.php';
 require __DIR__ . '/../includes/admin_layout.php';
@@ -36,6 +37,11 @@ $pendingApplications = $count("SELECT COUNT(*) FROM users WHERE role = 'applican
 $reportsWaiting = $count("SELECT COUNT(*) FROM work_reports r JOIN users u ON u.id = r.user_id AND u.status = 'active' WHERE r.status = 'submitted'");
 $evaluationsOpen = $count("SELECT COUNT(*) FROM evaluations e JOIN users u ON u.id = e.user_id AND u.status = 'active' WHERE e.status <> 'published'");
 $month = mentora_report_summary($pdo, date('Y-m-01'), $today);
+$screening = mentora_screening_counts($pdo);
+$agentReportsWaiting = $count("SELECT COUNT(*) FROM agent_reports WHERE status = 'submitted'");
+$readyInterns = $count("SELECT COUNT(*) FROM ai_assessments a JOIN (SELECT user_id, MAX(id) AS id FROM ai_assessments GROUP BY user_id) l ON l.id = a.id
+    JOIN users u ON u.id = a.user_id AND u.status = 'active' WHERE a.ready = 1");
+$gaps = array_filter(mentora_department_skill_map($pdo), static fn($d) => $d['lacking']);
 $hour = (int) date('G');
 $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
 ?>
@@ -87,6 +93,15 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
             <span><a href="applications.php?view=pending">Applications to confirm</a></span><b class="badge <?= $pendingApplications ? 'warn' : '' ?>"><?= $pendingApplications ?></b>
         </div>
         <div class="notice-row">
+            <span><a href="screening.php?view=suitable">Suitable candidates to assess</a><br><small>AI found skills a department is lacking</small></span><b class="badge <?= $screening['suitable'] ? 'warn' : '' ?>"><?= $screening['suitable'] ?></b>
+        </div>
+        <div class="notice-row">
+            <span><a href="screening.php?view=review">Applications for HR review</a><br><small><?= $screening['flagged'] ?> flagged unsuitable</small></span><b class="badge <?= $screening['review'] ? 'info' : '' ?>"><?= $screening['review'] ?></b>
+        </div>
+        <div class="notice-row">
+            <span><a href="intern_reports.php">Agent reports · interns ready to employ</a></span><b class="badge <?= $agentReportsWaiting ? 'warn' : '' ?>"><?= $agentReportsWaiting ?> · <?= $readyInterns ?></b>
+        </div>
+        <div class="notice-row">
             <span><a href="monitoring.php#reports">Daily reports to approve</a></span><b class="badge <?= $reportsWaiting ? 'warn' : '' ?>"><?= $reportsWaiting ?></b>
         </div>
         <div class="notice-row">
@@ -97,4 +112,12 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
         </div>
     </section>
 </div>
+<section class="admin-panel" style="margin-top:16px">
+    <h2>Departments lacking skills</h2>
+    <p class="panel-subtitle">The AI screening notifies you and the department when an applicant has these skills.</p>
+    <?php if (!$gaps): ?><p class="panel-subtitle">No skill gaps right now, or no required skills set yet in <a href="department.php">Departments</a>.</p><?php endif; ?>
+    <?php foreach ($gaps as $gap): ?>
+        <div class="notice-row"><span><?= mentora_h($gap['name']) ?><br><small><?= (int) $gap['people'] ?> people</small></span><?= mentora_skill_chips($gap['lacking'], $gap['lacking']) ?></div>
+    <?php endforeach; ?>
+</section>
 <?php require __DIR__ . '/../includes/admin_footer.php'; ?>

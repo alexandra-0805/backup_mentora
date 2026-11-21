@@ -15,7 +15,7 @@ $settingsSignOutUrl = str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/applicant/')
 
         const defaults = {
             theme: 'system',
-            themeRev: 2, // see THEME_REV in theme_boot.php
+            themeRev: 3, // see THEME_REV in theme_boot.php
             accent: 'teal',
             textSize: 'default',
             uiStyle: 'rounded',
@@ -59,7 +59,9 @@ $settingsSignOutUrl = str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/applicant/')
                 // Storage blocked (private mode): settings still apply for this page view.
             }
             if (window.MentoraTheme) {
-                window.MentoraTheme.set(settings.theme, { save: false, animate: false });
+                // Saves the theme again so a Light / Dark choice also records the device's mode
+                // (settings.theme is already stored above; this only adds that detail).
+                window.MentoraTheme.set(settings.theme, { animate: false });
             }
         };
 
@@ -116,3 +118,4 @@ $settingsSignOutUrl = str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/applicant/')
         return { defaults, read, write, apply, watchIdle };
     })();
 </script>
+<?php require __DIR__ . '/presence_heartbeat.php'; ?>

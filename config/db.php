@@ -236,6 +236,15 @@ try {
     if (!in_array('agent_id', $userColumns, true)) {
         $pdo->exec('ALTER TABLE users ADD COLUMN agent_id INT UNSIGNED NULL AFTER department_id');
     }
+    // Availability the person sets on their profile (Active / Busy / Offline). Separate from the account status.
+    if (!in_array('presence', $userColumns, true)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN presence ENUM('active', 'busy', 'offline') NOT NULL DEFAULT 'active' AFTER status");
+    }
+    // Last time the person was seen in Mentora (any signed-in page, or the heartbeat while a page is open).
+    // Someone not seen for MENTORA_ONLINE_MINUTES shows as Offline whatever status they chose; signing out clears it.
+    if (!in_array('last_seen_at', $pdo->query('SHOW COLUMNS FROM users')->fetchAll(PDO::FETCH_COLUMN), true)) {
+        $pdo->exec('ALTER TABLE users ADD COLUMN last_seen_at DATETIME NULL AFTER presence');
+    }
     // "disabled": HR turned off an account's access (Users & access). Like pending/rejected, it can't sign in.
     $statusType = (string) ($pdo->query("SHOW COLUMNS FROM users LIKE 'status'")->fetch()['Type'] ?? '');
     if ($statusType !== '' && !str_contains($statusType, "'disabled'")) {
@@ -339,6 +348,125 @@ try {
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             UNIQUE KEY uq_attendance_day (user_id, work_date),
             CONSTRAINT fk_attendance_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+
+    // ---------- Recruitment & AI onboarding (includes/recruitment.php, ai/) ----------
+    $userColumns = $pdo->query('SHOW COLUMNS FROM users')->fetchAll(PDO::FETCH_COLUMN);
+    // The agent whose recruitment link the person joined with (agent/recruitment.php).
+    if (!in_array('referred_by', $userColumns, true)) {
+        $pdo->exec('ALTER TABLE users ADD COLUMN referred_by INT UNSIGNED NULL AFTER agent_id');
+    }
+    // When the applicant chose Intern or Employee VA. People who join with a recruitment link create their
+    // account first and choose afterwards (auth/pathway.php), so it starts NULL for them only.
+    if (!in_array('pathway_chosen_at', $userColumns, true)) {
+        $pdo->exec('ALTER TABLE users ADD COLUMN pathway_chosen_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP AFTER pathway');
+        $pdo->exec('UPDATE users SET pathway_chosen_at = created_at');
+    }
+    // Skills a department needs (comma-separated, set by HR in admin/department.php). Used to find
+    // the skills a team is lacking and to match applicants to the team that needs them.
+    $departmentColumns = $pdo->query('SHOW COLUMNS FROM departments')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('required_skills', $departmentColumns, true)) {
+        $pdo->exec('ALTER TABLE departments ADD COLUMN required_skills TEXT NULL AFTER description');
+        $starterSkills = [
+            'Web Developer' => 'HTML, CSS, JavaScript, PHP, WordPress, Responsive design, Git, SEO',
+            'Marketing Services' => 'Social media management, Content writing, Copywriting, Canva, Email marketing, SEO, Facebook ads',
+            'Accounting' => 'Bookkeeping, QuickBooks, Xero, Microsoft Excel, Invoicing, Payroll, Financial reporting',
+            'Psychotherapist' => 'Client intake, Calendar management, Email management, Customer service, Data privacy, Medical records',
+        ];
+        $setSkills = $pdo->prepare('UPDATE departments SET required_skills = ? WHERE name = ? AND required_skills IS NULL');
+        foreach ($starterSkills as $departmentName => $skills) {
+            $setSkills->execute([$skills, $departmentName]);
+        }
+    }
+    // Employee VA form: fill in the form or upload a resume; education and experience feed the AI review.
+    $applicationColumns = $pdo->query('SHOW COLUMNS FROM applications')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('submission_mode', $applicationColumns, true)) {
+        $pdo->exec("ALTER TABLE applications
+            ADD COLUMN submission_mode ENUM('form', 'resume') NOT NULL DEFAULT 'form' AFTER user_id,
+            ADD COLUMN education VARCHAR(60) NULL AFTER interest,
+            ADD COLUMN experience_years TINYINT UNSIGNED NULL AFTER education,
+            ADD COLUMN resume_document_id INT UNSIGNED NULL AFTER skills");
+    }
+    // Shareable recruitment links an agent sends to applicants (like a form link): opening one leads to
+    // sign in / create an account, then the Intern or Employee VA choice (auth/join.php).
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS recruitment_links (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            code CHAR(16) NOT NULL UNIQUE,
+            agent_id INT UNSIGNED NOT NULL,
+            label VARCHAR(120) NOT NULL DEFAULT "",
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            expires_at DATETIME NULL,
+            uses INT UNSIGNED NOT NULL DEFAULT 0,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_recruitment_links_agent FOREIGN KEY (agent_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // AI-supported resume review of an Employee VA application (ai/resume_review.php). One row per run;
+    // the newest is current. category: suitable (fills a department's lacking skills) / for_review /
+    // unsuitable (shown under For review, flagged). The department's own assessment is stored with it.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS ai_reviews (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            application_id BIGINT UNSIGNED NULL,
+            category ENUM("suitable", "for_review", "unsuitable") NOT NULL,
+            score TINYINT UNSIGNED NOT NULL DEFAULT 0,
+            department_id INT UNSIGNED NULL,
+            skills TEXT NULL,
+            matched_skills TEXT NULL,
+            gap_skills TEXT NULL,
+            summary TEXT NULL,
+            strengths TEXT NULL,
+            concerns TEXT NULL,
+            engine VARCHAR(120) NOT NULL DEFAULT "",
+            dept_verdict ENUM("endorsed", "not_endorsed") NULL,
+            dept_note VARCHAR(1000) NULL,
+            dept_reviewer_id INT UNSIGNED NULL,
+            dept_reviewed_at DATETIME NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_ai_reviews_user (user_id, id),
+            CONSTRAINT fk_ai_reviews_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            CONSTRAINT fk_ai_reviews_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
+            CONSTRAINT fk_ai_reviews_dept_reviewer FOREIGN KEY (dept_reviewer_id) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // AI assessment and ranking of an intern after training (ai/intern_assessment.php). Newest is current.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS ai_assessments (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            score TINYINT UNSIGNED NOT NULL DEFAULT 0,
+            tier VARCHAR(30) NOT NULL DEFAULT "",
+            ready TINYINT(1) NOT NULL DEFAULT 0,
+            summary TEXT NULL,
+            metrics TEXT NULL,
+            engine VARCHAR(120) NOT NULL DEFAULT "",
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_ai_assessments_user (user_id, id),
+            CONSTRAINT fk_ai_assessments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // Employability reports agents send about the interns they handle; AI summarizes them for HR
+    // (agent/agent_reports.php -> admin/intern_reports.php). recommended / ai_findings are JSON.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS agent_reports (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            agent_id INT UNSIGNED NULL,
+            title VARCHAR(190) NOT NULL,
+            body TEXT NOT NULL,
+            recommended TEXT NULL,
+            ai_summary TEXT NULL,
+            ai_findings TEXT NULL,
+            engine VARCHAR(120) NOT NULL DEFAULT "",
+            status ENUM("submitted", "reviewed") NOT NULL DEFAULT "submitted",
+            reviewed_by INT UNSIGNED NULL,
+            review_note VARCHAR(500) NULL,
+            reviewed_at DATETIME NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_agent_reports_agent FOREIGN KEY (agent_id) REFERENCES users(id) ON DELETE SET NULL,
+            CONSTRAINT fk_agent_reports_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
 } catch (PDOException $exception) {

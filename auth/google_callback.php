@@ -4,24 +4,27 @@
  * - The Google email already has a Mentora account: sign in to it.
  * - No account yet and they came from sign-up: send an application with the chosen pathway; it waits
  *   for HR to confirm it, like any application (includes/account_invites.php).
+ * - No account yet and they came from an agent's recruitment link (auth/join.php): the account is
+ *   created active right away and they choose Intern or Employee VA next (includes/recruitment.php).
  * - No account yet and they came from sign-in: send them to sign-up to choose a pathway.
  */
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/google_auth.php';
 require_once __DIR__ . '/../includes/account_invites.php';
+require_once __DIR__ . '/../includes/recruitment.php';
 
 mentora_session_start();
 
 $saved = $_SESSION['google_oauth'] ?? null;
 unset($_SESSION['google_oauth']);   // each Google round trip can be used once
 
-$intent = is_array($saved) && ($saved['intent'] ?? '') === 'signup' ? 'signup' : 'signin';
+$intent = is_array($saved) && in_array($saved['intent'] ?? '', ['signup', 'join'], true) ? $saved['intent'] : 'signin';
 $fail = static function (string $message, string $page) {
     $_SESSION['flash_error'] = $message;
     mentora_redirect($page);
 };
-$backTo = $intent === 'signup' ? 'auth/signup.php' : 'auth/signin.php';
+$backTo = ['signup' => 'auth/signup.php', 'join' => 'auth/join.php'][$intent] ?? 'auth/signin.php';
 
 $state = is_string($_GET['state'] ?? null) ? $_GET['state'] : '';
 if (!is_array($saved) || !is_string($saved['state'] ?? null) || !hash_equals($saved['state'], $state)
@@ -72,6 +75,22 @@ if ($user) {
     mentora_redirect(mentora_after_sign_in_path($pdo, $_SESSION['user']));
 }
 
+if ($intent === 'join') {
+    $link = mentora_session_recruitment_link($pdo);
+    if (!$link) {
+        $fail('That recruitment link isn’t active anymore. Ask your agent for a new one.', 'auth/join.php');
+    }
+    $first = mb_substr(trim((string) ($profile['given_name'] ?? '')) ?: (trim((string) ($profile['name'] ?? '')) ?: (string) strstr($email, '@', true)), 0, 80);
+    $result = mentora_join_create_account($pdo, $link, $first, mb_substr(trim((string) ($profile['family_name'] ?? '')), 0, 80), $email, null, null);
+    if (!$result['ok']) {
+        $fail($result['error'], 'auth/join.php');
+    }
+    $query->execute([$email]);
+    mentora_sign_in($query->fetch());
+    $_SESSION['flash_notice'] = 'Welcome to Mentora, ' . $first . '! Your account is ready.';
+    mentora_redirect('auth/pathway.php');
+}
+
 $pathway = $saved['pathway'] ?? null;
 if ($intent !== 'signup' || !in_array($pathway, ['employee_va', 'internship'], true)) {
     $fail('There’s no Mentora account for ' . $email . ' yet. Choose Employee VA or Intern, then apply with Google.', 'auth/signup.php');
@@ -97,5 +116,6 @@ if (!$result['ok']) {
 }
 
 mentora_notify_admins_new_applicant($pdo, trim($firstName . ' ' . $lastName), $email, $pathway);
-$_SESSION['applied'] = ['name' => $firstName, 'email' => $email, 'pathway' => $pathway];
+$receivedEmailed = mentora_send_application_received_email($email, $firstName, $lastName, $pathway);
+$_SESSION['applied'] = ['name' => $firstName, 'email' => $email, 'pathway' => $pathway, 'emailed' => $receivedEmailed];
 mentora_redirect('auth/signup.php?applied=1');

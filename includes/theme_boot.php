@@ -17,16 +17,37 @@ $themeFollowsDeviceJs = !empty($themeFollowsDevice) ? 'true' : 'false';
         const listeners = [];
         const FOLLOW_DEVICE = <?= $themeFollowsDeviceJs ?>;
 
-        // Choices saved before the button became "smart" (it could leave people stuck on a fixed
-        // mode) are reset to Auto once. THEME_REV marks settings that already went through this.
-        const THEME_REV = 2;
+        // Choices saved before a fixed Light / Dark choice started ending when the device switches
+        // modes (they could leave people stuck, e.g. a light page on a dark device) are reset to Auto
+        // once. THEME_REV marks settings that already went through this.
+        const THEME_REV = 3;
+        const deviceMode = () => (deviceDark.matches ? 'dark' : 'light');
         try {
             const saved = JSON.parse(window.localStorage.getItem(KEY) || '{}') || {};
+            let changed = false;
             if (saved.themeRev !== THEME_REV) {
                 saved.theme = 'system';
                 saved.themeRev = THEME_REV;
+                changed = true;
+            }
+            // A fixed choice remembers which mode the device was in when it was made (themeDevice).
+            // Once the device has switched modes since then, follow the device again (Auto).
+            if (saved.theme === 'light' || saved.theme === 'dark') {
+                if (!saved.themeDevice) {
+                    saved.themeDevice = deviceMode();
+                    changed = true;
+                } else if (saved.themeDevice !== deviceMode()) {
+                    saved.theme = 'system';
+                    changed = true;
+                }
+            }
+            if (saved.theme === 'system' && 'themeDevice' in saved) {
+                delete saved.themeDevice;
+                changed = true;
+            }
+            if (changed) {
                 window.localStorage.setItem(KEY, JSON.stringify(saved));
-                window.localStorage.setItem(LEGACY_KEY, 'system');
+                window.localStorage.setItem(LEGACY_KEY, saved.theme);
             }
         } catch (error) {
             // Storage unavailable: nothing to reset.
@@ -93,6 +114,11 @@ $themeFollowsDeviceJs = !empty($themeFollowsDevice) ? 'true' : 'false';
                     const saved = JSON.parse(window.localStorage.getItem(KEY) || '{}') || {};
                     saved.theme = preference;
                     saved.themeRev = THEME_REV;
+                    if (preference === 'system') {
+                        delete saved.themeDevice;
+                    } else {
+                        saved.themeDevice = deviceMode(); // ends when the device switches modes
+                    }
                     window.localStorage.setItem(KEY, JSON.stringify(saved));
                     window.localStorage.setItem(LEGACY_KEY, preference);
                 } catch (error) {
@@ -106,13 +132,15 @@ $themeFollowsDeviceJs = !empty($themeFollowsDevice) ? 'true' : 'false';
         // instead of saving a fixed choice, so changing the device's setting keeps working.
         const toggle = () => {
             const next = resolve(preference) === 'dark' ? 'light' : 'dark';
-            const deviceMode = deviceDark.matches ? 'dark' : 'light';
-            return set(next === deviceMode ? 'system' : next);
+            return set(next === deviceMode() ? 'system' : next);
         };
 
-        // Follow the device while on Auto, and keep other open tabs in sync.
+        // The device switched light / dark: follow it (a fixed choice ends here, back to Auto).
+        // Also keep other open tabs in sync.
         deviceDark.addEventListener('change', () => {
-            if (preference === 'system') {
+            if (preference !== 'system' && !FOLLOW_DEVICE) {
+                set('system');
+            } else if (preference === 'system') {
                 paint(preference, true, true);
             }
         });

@@ -105,7 +105,7 @@ html[data-theme-preference="system"] .theme-toggle::after {
 
 html[data-theme="dark"][data-theme-preference="system"] .theme-toggle::after {
     background: var(--mentora-mint);
-    border-color: #0b1a19;
+    border-color: #1f3130;
     color: #063d3b;
 }
 
@@ -328,11 +328,11 @@ html[data-theme="dark"] .application-steps li:not(:last-child)::after {
    ========================================================================== */
 /* Same palette as the workspace / Settings dark theme (settings.css). */
 html[data-theme="dark"] {
-    --dark-bg: #0b1a19;
-    --dark-section: #0e2120;
-    --dark-surface: rgba(19, 42, 41, 0.92);
-    --dark-surface-solid: #132a29;
-    --dark-input: #0f2221;
+    --dark-bg: #1f3130;
+    --dark-section: #233635;
+    --dark-surface: rgba(43, 63, 62, 0.92);
+    --dark-surface-solid: #2b3f3e;
+    --dark-input: #253837;
     --dark-line: rgba(255, 255, 255, 0.1);
     --dark-text: #e4f1ef;
     --dark-heading: #eef6f5;
@@ -387,7 +387,7 @@ html[data-theme="dark"] .landing-page .mini-card {
 html[data-theme="dark"] .landing-page #pathways .feature-card:hover,
 html[data-theme="dark"] .landing-page .mini-card:hover,
 html[data-theme="dark"] .about-page .about-card:hover {
-    background: #163432;
+    background: #34504e;
     border-color: rgba(143, 239, 218, 0.3);
     box-shadow: 0 22px 44px rgba(0, 0, 0, 0.4);
 }
@@ -445,7 +445,7 @@ html[data-theme="dark"] .landing-page .preparation-list div {
 }
 
 html[data-theme="dark"] .landing-page .about-teaser-journey li {
-    background: rgba(6, 40, 38, 0.88);
+    background: rgba(43, 63, 62, 0.9);
 }
 
 html[data-theme="dark"] .landing-page .about-teaser-journey strong {
@@ -471,7 +471,7 @@ html[data-theme="dark"] .landing-page .faq-list summary::after {
 }
 
 html[data-theme="dark"] .landing-notice {
-    background: #10342a;
+    background: #24443b;
     border-bottom-color: #1e5a44;
     color: #a7e8c4;
 }
@@ -493,7 +493,7 @@ html[data-theme="dark"] .support-chat-answer {
 }
 
 html[data-theme="dark"] .support-message-bot {
-    background: #183533;
+    background: #34504e;
     border-color: var(--dark-line);
     color: var(--dark-text);
 }
@@ -742,7 +742,7 @@ html[data-theme="dark"] .account-page :is(.chat-conversation:hover, .chat-conver
 }
 
 html[data-theme="dark"] .account-page .chat-message-bubble {
-    background: #183533;
+    background: #34504e;
     border-color: var(--dark-line);
 }
 

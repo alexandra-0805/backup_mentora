@@ -37,17 +37,29 @@ $avatarUrl = mentora_avatar_url($adminUser['avatar_path'] ?? null, '../');
 
 $now = new DateTimeImmutable('now', new DateTimeZone('Asia/Manila'));
 
-// Applications waiting for an HR decision (badge on "Applications").
-$pendingApplications = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'applicant' AND status = 'pending'")->fetchColumn();
+// Waiting for HR: applications to confirm, suitable AI-screened candidates, agents' reports (sidebar badges).
+$navCounts = [
+    'applications.php' => (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'applicant' AND status = 'pending'")->fetchColumn(),
+    'screening.php' => (int) $pdo->query(
+        "SELECT COUNT(*) FROM ai_reviews r
+         JOIN (SELECT user_id, MAX(id) AS id FROM ai_reviews GROUP BY user_id) l ON l.id = r.id
+         JOIN users u ON u.id = r.user_id AND u.status = 'active'
+         JOIN applications a ON a.id = (SELECT MAX(id) FROM applications WHERE user_id = u.id)
+         WHERE r.category = 'suitable' AND a.status = 'pending'"
+    )->fetchColumn(),
+    'intern_reports.php' => (int) $pdo->query("SELECT COUNT(*) FROM agent_reports WHERE status = 'submitted'")->fetchColumn(),
+];
 
 $adminNav = [
     'dashboard.php'              => 'Dashboard',
     'applications.php'           => 'Applications',
+    'screening.php'              => 'AI screening',
     'employee_list.php'          => 'Employee list',
     'intern_list.php'            => 'Intern list',
     'agent_list.php'             => 'Agent list',
     'department.php'             => 'Departments',
     'monitoring.php'             => 'Monitoring',
+    'intern_reports.php'         => 'Intern reports',
     'consolidated_report.php'    => 'Reports',
     'user&access_management.php' => 'Users & access',
     'settings.php'               => 'Settings',
@@ -62,10 +74,10 @@ $adminNav = [
     <title><?= $e($pageTitle) ?></title>
     <link rel="icon" type="image/png" href="../assets/images/mentora-logo.png?v=1">
     <link rel="stylesheet" href="../assets/css/style.css?v=36">
-    <link rel="stylesheet" href="../assets/css/admin.css?v=5">
-    <link rel="stylesheet" href="../assets/css/settings.css?v=29">
-    <link rel="stylesheet" href="../assets/css/theme.css?v=8">
-    <link rel="stylesheet" href="../assets/css/dialog.css?v=1">
+    <link rel="stylesheet" href="../assets/css/admin.css?v=6">
+    <link rel="stylesheet" href="../assets/css/settings.css?v=31">
+    <link rel="stylesheet" href="../assets/css/theme.css?v=9">
+    <link rel="stylesheet" href="../assets/css/dialog.css?v=2">
     <?php require __DIR__ . '/theme_boot.php'; ?>
 </head>
 
@@ -89,8 +101,8 @@ $adminNav = [
                     href="<?= $e($file) ?>"
                     <?= $activePage === $file ? 'aria-current="page"' : '' ?>>
                     <span aria-hidden="true"></span><?= $e($label) ?>
-                    <?php if ($file === 'applications.php' && $pendingApplications > 0): ?>
-                        <b class="nav-count" aria-label="<?= $pendingApplications ?> waiting"><?= $pendingApplications ?></b>
+                    <?php if (($navCounts[$file] ?? 0) > 0): ?>
+                        <b class="nav-count" aria-label="<?= $navCounts[$file] ?> waiting"><?= $navCounts[$file] ?></b>
                     <?php endif; ?>
                 </a>
             <?php endforeach; ?>

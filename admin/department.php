@@ -1,13 +1,15 @@
 <?php
-// Departments (HR): add, rename / describe, delete (people in it become unassigned), and see who's in each.
+// Departments (HR): add, rename / describe, set required skills, delete (people in it become unassigned),
+// and see who's in each and which skills the team is lacking (used by the AI screening, ai/skills.php).
 declare(strict_types=1);
-require_once __DIR__ . '/../includes/workflow.php';
+require_once __DIR__ . '/../includes/screening.php';
 
 if (mentora_is_post()) {
     mentora_post_user(['admin'], 'admin/department.php');
     $action = (string) ($_POST['action'] ?? 'add');
     $name = mb_substr(trim((string) ($_POST['name'] ?? '')), 0, 120);
     $description = mb_substr(trim((string) ($_POST['description'] ?? '')), 0, 255);
+    $requiredSkills = implode(', ', mentora_parse_skill_list((string) ($_POST['required_skills'] ?? '')));
     $id = (int) ($_POST['id'] ?? 0);
     $taken = static function (PDO $pdo, string $name, int $exceptId): bool {
         $query = $pdo->prepare('SELECT COUNT(*) FROM departments WHERE name = ? AND id <> ?');
@@ -24,12 +26,12 @@ if (mentora_is_post()) {
         mentora_flash('A department called “' . $name . '” already exists.', 'error');
         $next = $formAgain;
     } elseif ($action === 'add') {
-        $pdo->prepare('INSERT INTO departments (name, description) VALUES (?, ?)')->execute([$name, $description]);
+        $pdo->prepare('INSERT INTO departments (name, description, required_skills) VALUES (?, ?, ?)')->execute([$name, $description, $requiredSkills]);
         $another = ($_POST['then'] ?? '') === 'another';
         mentora_flash('“' . $name . '” was added.' . ($another ? ' Add the next one.' : ''));
         $next = $another ? 'admin/department.php?add=1' : 'admin/department.php';
     } elseif ($action === 'update') {
-        $pdo->prepare('UPDATE departments SET name = ?, description = ? WHERE id = ?')->execute([$name, $description, $id]);
+        $pdo->prepare('UPDATE departments SET name = ?, description = ?, required_skills = ? WHERE id = ?')->execute([$name, $description, $requiredSkills, $id]);
         mentora_flash('“' . $name . '” was updated.');
     } elseif ($action === 'delete') {
         $pdo->prepare('UPDATE users SET department_id = NULL WHERE department_id = ?')->execute([$id]);
@@ -46,6 +48,7 @@ require __DIR__ . '/../includes/admin_layout.php';
 $departments = $pdo->query("SELECT d.id,
         d.name,
         d.description,
+        d.required_skills,
         COUNT(u.id) AS people,
         SUM(u.role = 'agent') AS agents,
         SUM(u.role = 'applicant' AND u.pathway = 'internship') AS interns,
@@ -62,6 +65,8 @@ $unassigned = $pdo->query("SELECT id, first_name, last_name, role, pathway
     ->fetchAll();
 // Reopen the form after "Save & add another" (?add=1) or after an error (?add=1 / ?edit=ID).
 $reopen = isset($_GET['add']) ? 'add' : ((int) ($_GET['edit'] ?? 0) > 0 ? 'edit-' . (int) $_GET['edit'] : '');
+$skillMap = mentora_department_skill_map($pdo);
+$lackingCount = count(array_filter($skillMap, static fn($d) => $d['lacking']));
 ?>
 <div class="admin-heading">
     <div>
@@ -85,7 +90,7 @@ $reopen = isset($_GET['add']) ? 'add' : ((int) ($_GET['edit'] ?? 0) > 0 ? 'edit-
         <small>Total people</small><strong><?= array_sum(array_column($departments, 'people')) ?></strong><span>Employees, interns and agents</span>
     </div>
     <div class="metric-card">
-        <small>Teams with people</small><strong><?= count(array_filter($departments, static fn($d) => (int) $d['people'] > 0)) ?></strong><span>Of <?= count($departments) ?> departments</span>
+        <small>Teams lacking skills</small><strong><?= $lackingCount ?></strong><span>Of <?= count($departments) ?> departments · see AI screening</span>
     </div>
     <div class="metric-card">
         <small>Unassigned people</small><strong><?= count($unassigned) ?></strong><span><?= $unassigned ? 'Assign them below' : 'Every person has a team' ?></span>
@@ -98,14 +103,18 @@ $reopen = isset($_GET['add']) ? 'add' : ((int) ($_GET['edit'] ?? 0) > 0 ? 'edit-
                 <th>Department</th>
                 <th>Description</th>
                 <th>People assigned</th>
+                <th>Lacking skills</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-    <?php foreach ($departments as $department): ?>
+    <?php foreach ($departments as $department): $skills = $skillMap[(int) $department['id']] ?? ['required' => [], 'lacking' => []]; ?>
         <tr><td><?= mentora_h($department['name']) ?></td><td><?= mentora_h($department['description']) ?></td>
             <td><?= (int) $department['people'] ?><br><small><?= (int) $department['employees'] ?> employees · <?= (int) $department['interns'] ?> interns · <?= (int) $department['agents'] ?> agents</small>
             </td>
+            <td><?= $skills['required']
+                ? mentora_skill_chips($skills['lacking'], $skills['lacking'], 'No gaps') . '<br><small>' . count($skills['required']) . ' required skills</small>'
+                : '<small class="panel-subtitle">Add required skills to find gaps</small>' ?></td>
             <td class="row-actions">
                 <button class="admin-btn"
                     type="button"
@@ -114,7 +123,8 @@ $reopen = isset($_GET['add']) ? 'add' : ((int) ($_GET['edit'] ?? 0) > 0 ? 'edit-
                     data-dept-open="edit-<?= (int) $department['id'] ?>"
                     data-dept-id="<?= (int) $department['id'] ?>"
                     data-dept-name="<?= mentora_h($department['name']) ?>"
-                    data-dept-description="<?= mentora_h($department['description']) ?>">Edit</button>
+                    data-dept-description="<?= mentora_h($department['description']) ?>"
+                    data-dept-skills="<?= mentora_h($department['required_skills'] ?? '') ?>">Edit</button>
                 <form method="post"><?= mentora_csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int) $department['id'] ?>"><button class="admin-btn" type="submit" data-confirm-title="Delete <?= mentora_h($department['name']) ?>?" data-confirm="<?= (int) $department['people'] ?> people will become unassigned. You can assign them to another department." data-confirm-tone="danger" data-confirm-action="Delete">Delete</button>
                 </form>
             </td></tr>
@@ -124,6 +134,7 @@ $reopen = isset($_GET['add']) ? 'add' : ((int) ($_GET['edit'] ?? 0) > 0 ? 'edit-
     <button class="admin-btn" type="button" data-bs-toggle="dialog" data-bs-target="#department-dialog" data-dept-open="add">+ Add another department</button>
 </div>
 </section>
+<?php mentora_render_skill_gaps($skillMap); ?>
 <section class="admin-panel" style="margin-top:16px"><h2>Unassigned people</h2><p class="panel-subtitle">Open someone to choose their department.</p>
     <?php if (!$unassigned): ?><p class="panel-subtitle">Everyone has a department.</p><?php endif; ?>
     <?php foreach (array_slice($unassigned, 0, 8) as $person): ?>
@@ -149,6 +160,10 @@ $reopen = isset($_GET['add']) ? 'add' : ((int) ($_GET['edit'] ?? 0) > 0 ? 'edit-
             <div class="field">
                 <label for="dept-description">Description</label><textarea id="dept-description" name="description" rows="3" maxlength="255" placeholder="What this department does for clients" data-dept-field="description"></textarea>
             </div>
+            <div class="field">
+                <label for="dept-skills">Required skills</label><textarea id="dept-skills" name="required_skills" rows="3" maxlength="2000" placeholder="e.g. Bookkeeping, QuickBooks, Microsoft Excel, Payroll" data-dept-field="required_skills"></textarea>
+                <small>Separate with commas. The AI screening finds which of these the team is lacking and notifies you and the department when an applicant has them.</small>
+            </div>
         </div>
         <div class="dialog-footer">
             <button type="button" class="btn-solid theme-secondary" data-bs-dismiss="dialog">Cancel</button>
@@ -172,6 +187,7 @@ $reopen = isset($_GET['add']) ? 'add' : ((int) ($_GET['edit'] ?? 0) > 0 ? 'edit-
             field('id').value = editing ? button.dataset.deptId : '';
             field('name').value = editing ? button.dataset.deptName : '';
             field('description').value = editing ? button.dataset.deptDescription : '';
+            field('required_skills').value = editing ? button.dataset.deptSkills : '';
             title.textContent = editing ? 'Edit ' + button.dataset.deptName : 'Add a department';
             save.textContent = editing ? 'Save changes' : 'Add department';
             another.hidden = editing;

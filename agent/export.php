@@ -1,8 +1,9 @@
 <?php
-// CSV downloads for the agent workspace: ?type=interns | training | evaluations | reports | social (agents and HR).
+// CSV downloads for the agent workspace: ?type=interns | training | assessments | evaluations | reports | social (agents and HR).
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/workflow.php';
 require_once __DIR__ . '/../includes/social_profiles.php';
+require_once __DIR__ . '/../ai/intern_assessment.php';
 mentora_require_login(['agent', 'admin']);
 
 $type = (string) ($_GET['type'] ?? '');
@@ -19,6 +20,19 @@ switch ($type) {
         mentora_csv(
             "mentora-{$type}-{$stamp}.csv",
             ['User ID', 'Name', 'Email', 'Team', 'Agent', 'School', 'Modules', 'Completion', 'Approved hours', 'Required hours', 'Training status', 'Joined'],
+            $rows
+        );
+    case 'assessments':
+        // AI ranking of interns after training.
+        $rows = array_map(static fn($i) => [
+            $i['rank'] ?? '', $i['user_code'], $i['name'], $i['email'], $i['department_name'] ?? '', $i['agent_name'] ?? '',
+            $i['percent'] . '%', $i['ai']['metrics']['quiz_average'] ?? '', mentora_hours($i['hours_logged']) . ' / ' . mentora_required_hours($i),
+            $i['ai']['score'] ?? '', $i['ai']['tier'] ?? 'Not assessed', isset($i['ai']) ? ((int) $i['ai']['ready'] === 1 ? 'Yes' : 'No') : '',
+            $i['ai']['summary'] ?? '', isset($i['ai']) ? date('Y-m-d', strtotime($i['ai']['assessed_at'])) : '',
+        ], mentora_intern_rankings($pdo));
+        mentora_csv(
+            "mentora-intern-ranking-{$stamp}.csv",
+            ['Rank', 'User ID', 'Name', 'Email', 'Team', 'Agent', 'Training', 'Quiz average (%)', 'Approved / required hours', 'AI score', 'Tier', 'Ready to employ', 'AI summary', 'Assessed'],
             $rows
         );
     case 'evaluations':

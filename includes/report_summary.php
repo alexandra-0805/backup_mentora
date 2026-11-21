@@ -85,6 +85,23 @@ function mentora_report_summary(PDO $pdo, string $from, string $to, string $scop
     ];
     $summary['average_score'] = $summary['average_score'] !== null && $summary['average_score'] !== false ? (float) $summary['average_score'] : null;
 
+    // AI onboarding in the range: screened Employee VAs (latest review each), assessed interns, agent reports.
+    $screening = $pdo->prepare("SELECT COUNT(*) AS screened, COALESCE(SUM(r.category = 'suitable'), 0) AS suitable,
+            COALESCE(SUM(r.category = 'for_review'), 0) AS for_review, COALESCE(SUM(r.category = 'unsuitable'), 0) AS unsuitable,
+            AVG(r.score) AS average
+        FROM ai_reviews r JOIN (SELECT user_id, MAX(id) AS id FROM ai_reviews GROUP BY user_id) l ON l.id = r.id
+        JOIN users u ON u.id = r.user_id
+        WHERE r.created_at BETWEEN ? AND ?$pathwaySql");
+    $screening->execute($range);
+    $summary['screening'] = $screening->fetch();
+    $assessments = $pdo->prepare("SELECT COUNT(*) AS assessed, COALESCE(SUM(a.ready), 0) AS ready, AVG(a.score) AS average
+        FROM ai_assessments a JOIN (SELECT user_id, MAX(id) AS id FROM ai_assessments GROUP BY user_id) l ON l.id = a.id
+        JOIN users u ON u.id = a.user_id
+        WHERE a.created_at BETWEEN ? AND ?$pathwaySql");
+    $assessments->execute($range);
+    $summary['assessments'] = $assessments->fetch();
+    $summary['agent_reports'] = (int) $one('SELECT COUNT(*) FROM agent_reports WHERE created_at BETWEEN ? AND ?', $range);
+
     $departments = $pdo->prepare(
         "SELECT COALESCE(d.name, 'Not assigned') AS name, COUNT(DISTINCT u.id) AS people,
                 COALESCE((SELECT SUM(r.hours) FROM work_reports r JOIN users ru ON ru.id = r.user_id

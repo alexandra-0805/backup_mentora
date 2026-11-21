@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user && $user['status'] !== 'active') {
             // Applied but not confirmed yet (or declined): say where they are instead of "wrong password".
             $error = mentora_account_status_message($user['status']);
+            $showTrack = in_array($user['status'], ['pending', 'approved'], true);
         } elseif (!$user || !$passwordOk) {
             $error = 'The username, email or password you entered is incorrect.';
         } else {
@@ -63,7 +64,7 @@ require __DIR__ . '/../includes/header.php';
         <h1>Welcome back.</h1>
         <p class="intro">Sign in to continue your application, connect with your team, and keep your next steps in view.</p>
         <?php if (isset($_GET['registered'])): ?><div class="alert success">Your account is ready. Sign in to continue.</div><?php endif; ?>
-        <?php if ($error): ?><div class="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
+        <?php if ($error): ?><div class="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?><?= !empty($showTrack) ? ' <a href="track.php">Track your application</a>' : '' ?></div><?php endif; ?>
         <form method="post">
             <?= mentora_csrf_field() ?>
             <div class="field">
@@ -82,7 +83,7 @@ require __DIR__ . '/../includes/header.php';
         </form>
         <div class="notice">
             <strong>One sign-in. The right workspace for you.</strong><br>Your account opens your application, team, or HR workspace with private, role-based access.</div>
-        <div class="auth-links"><a href="forgot_password.php">Forgot your password? </a><br><br>New to Mentora? <a href="signup.php">Apply now</a></div>
+        <div class="auth-links"><a href="forgot_password.php">Forgot your password? </a><br><br>New to Mentora? <a href="signup.php">Apply now</a><br><br><a href="track.php">Track your application</a></div>
     </section>
 </main>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

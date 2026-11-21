@@ -106,7 +106,7 @@ function mentora_google_request(string $url, ?array $form = null, ?string $acces
 function mentora_google_button(string $intent): void
 {
     ?>
-    <button class="google-button" type="submit" formaction="google.php" formnovalidate name="intent" value="<?= $intent === 'signup' ? 'signup' : 'signin' ?>">
+    <button class="google-button" type="submit" formaction="google.php" formnovalidate name="intent" value="<?= in_array($intent, ['signup', 'join'], true) ? $intent : 'signin' ?>">
         <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
             <path fill="#EA4335"
                 d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>

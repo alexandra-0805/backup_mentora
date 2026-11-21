@@ -1458,6 +1458,113 @@ require __DIR__ . '/../includes/header.php';
         transform: rotate(-90deg);
     }
 
+    .account-page .chat-collapse-content[hidden],
+    .chat-shared-group[hidden] {
+        display: none;
+    }
+
+    /* Shared photos & files (details panel) */
+    .chat-shared-count {
+        background: var(--teal);
+        border-radius: 999px;
+        color: #fff;
+        font-size: 10px;
+        font-style: normal;
+        font-weight: 800;
+        margin-left: 6px;
+        padding: 2px 7px;
+        vertical-align: 1px;
+    }
+
+    .chat-shared-count:empty {
+        display: none;
+    }
+
+    .chat-shared-empty {
+        color: var(--muted);
+        font-size: 12px;
+        margin: 0;
+    }
+
+    .chat-shared-media {
+        display: grid;
+        gap: 4px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .chat-shared-media a {
+        aspect-ratio: 1;
+        background: var(--white);
+        border-radius: 8px;
+        display: block;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .chat-shared-media img {
+        display: block;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 200ms ease;
+        width: 100%;
+    }
+
+    .chat-shared-media a:hover img {
+        transform: scale(1.06);
+    }
+
+    .chat-shared-media a:focus-visible,
+    .chat-shared-file:focus-visible {
+        outline: 2px solid var(--teal);
+        outline-offset: 1px;
+    }
+
+    .chat-shared-media .chat-gif-badge {
+        bottom: 4px;
+        left: 4px;
+    }
+
+    .account-page .chat-info .chat-shared-file {
+        background: var(--white);
+        color: var(--ink);
+        margin: 0 0 6px;
+        max-width: none;
+        padding: 6px 10px 6px 6px;
+    }
+
+    .account-page .chat-info .chat-shared-file:hover {
+        background: var(--mist);
+    }
+
+    .chat-shared-file .chat-file-type {
+        flex-basis: 34px;
+        height: 34px;
+        width: 34px;
+    }
+
+    .chat-shared-file .chat-file-copy strong {
+        font-size: 12px;
+    }
+
+    .chat-shared-file .chat-file-copy small {
+        color: var(--muted);
+        font-size: 10px;
+    }
+
+    html[data-theme="dark"] .account-page .chat-info .chat-shared-file {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: #e4f1ef;
+    }
+
+    html[data-theme="dark"] .account-page .chat-info .chat-shared-file:hover {
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    html[data-theme="dark"] .chat-shared-media a {
+        background: rgba(255, 255, 255, 0.06);
+    }
+
     /* ---------- New message ---------- */
     .chat-new-hint {
         align-self: center;
@@ -1890,8 +1997,7 @@ require __DIR__ . '/../includes/header.php';
 <main class="chat-page" data-chat data-selected="<?= $h($selectedKey) ?>" data-token="<?= $h($messageActionToken) ?>">
     <div class="chat-page-bar">
         <a class="chat-back-link" href="<?= $h($homeHref) ?>">
-            <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 6-6 6 6 6"/></svg>
-            Back to workspace
+            <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 6-6 6 6 6"/></svg>  
         </a>
         <h1>Messages</h1>
         <div class="chat-page-tools">
@@ -1904,12 +2010,6 @@ require __DIR__ . '/../includes/header.php';
             <div class="chat-sidebar-heading">
                 <h2>Chats</h2>
                 <div class="chat-sidebar-actions">
-                    <button class="chat-icon-button" type="button" data-action="refresh" aria-label="Refresh messages" title="Refresh messages">
-                        <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <path d="M20 11a8 8 0 1 0-2.3 5.7"/>
-                            <path d="M20 5v6h-6"/>
-                        </svg>
-                    </button>
                     <button class="chat-icon-button chat-new-button"
                         type="button"
                         data-bs-toggle="dialog"
@@ -2171,10 +2271,66 @@ require __DIR__ . '/../includes/header.php';
             <small data-info-role>Mentora</small>
             <a class="chat-info-email" data-info-email hidden></a>
             <p class="chat-info-stats" data-info-stats></p>
-            <h3 class="chat-collapse-toggle" tabindex="0" role="button" aria-expanded="true">Chat info <span aria-hidden="true">⌄</span></h3>
-            <p class="chat-collapse-content">Messages are stored securely in your Mentora inbox.</p>
-            <h3 class="chat-collapse-toggle" tabindex="0" role="button" aria-expanded="true">Replying <span aria-hidden="true">⌄</span></h3>
-            <p class="chat-collapse-content">Press Enter to send and Shift + Enter for a new line. Mentora support announcements can't be replied to.</p>
+            <?php
+            // Everything shared in each conversation, newest first: photos/GIFs and files.
+            $shared = [];
+            foreach ($conversations as $conversation) {
+                $shared[$conversation['key']] = ['media' => [], 'files' => []];
+                foreach (array_reverse($conversation['messages']) as $message) {
+                    foreach ($attachments[(int) $message['id']] ?? [] as $attachment) {
+                        $shared[$conversation['key']][$attachment['kind'] === 'file' ? 'files' : 'media'][] = $attachment + ['sent_at' => $message['created_at']];
+                    }
+                }
+            }
+            ?>
+            <h3 class="chat-collapse-toggle" tabindex="0" role="button" aria-expanded="true">Photos &amp; GIFs<em class="chat-shared-count" data-shared-count="media"></em> <span aria-hidden="true">⌄</span></h3>
+            <div class="chat-collapse-content">
+                <p class="chat-shared-empty chat-shared-group" data-shared="" data-shared-type="media">Choose a conversation to see its photos.</p>
+                <?php foreach ($shared as $key => $items): ?>
+                    <div class="chat-shared-group" data-shared="<?= $h($key) ?>" data-shared-type="media" data-count="<?= count($items['media']) ?>" hidden>
+                        <?php if (!$items['media']): ?>
+                            <p class="chat-shared-empty">No photos or GIFs shared yet.</p>
+                        <?php else: ?>
+                            <div class="chat-shared-media">
+                                <?php foreach ($items['media'] as $picture): ?>
+                                    <?php if ($picture['kind'] === 'gif'): ?>
+                                        <a href="<?= $h($picture['url']) ?>" target="_blank" rel="noopener noreferrer" title="<?= $h($picture['original_name']) ?>">
+                                            <img src="<?= $h($picture['url']) ?>" alt="<?= $h($picture['original_name']) ?>" loading="lazy" referrerpolicy="no-referrer">
+                                            <span class="chat-gif-badge">GIF</span>
+                                        </a>
+                                    <?php else: ?>
+                                        <a href="attachment.php?id=<?= (int) $picture['id'] ?>" target="_blank" rel="noopener" title="<?= $h($picture['original_name']) ?>">
+                                            <img src="attachment.php?id=<?= (int) $picture['id'] ?>" alt="<?= $h($picture['original_name']) ?>" loading="lazy">
+                                        </a>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <h3 class="chat-collapse-toggle" tabindex="0" role="button" aria-expanded="true">Files<em class="chat-shared-count" data-shared-count="files"></em> <span aria-hidden="true">⌄</span></h3>
+            <div class="chat-collapse-content">
+                <p class="chat-shared-empty chat-shared-group" data-shared="" data-shared-type="files">Choose a conversation to see its files.</p>
+                <?php foreach ($shared as $key => $items): ?>
+                    <div class="chat-shared-group" data-shared="<?= $h($key) ?>" data-shared-type="files" data-count="<?= count($items['files']) ?>" hidden>
+                        <?php if (!$items['files']): ?>
+                            <p class="chat-shared-empty">No files shared yet.</p>
+                        <?php endif; ?>
+                        <?php foreach ($items['files'] as $document):
+                            $extension = strtoupper(pathinfo((string) $document['original_name'], PATHINFO_EXTENSION)) ?: 'FILE';
+                        ?>
+                            <a class="chat-file chat-shared-file" href="attachment.php?id=<?= (int) $document['id'] ?>&amp;download=1" download title="<?= $h($document['original_name']) ?>">
+                                <span class="chat-file-type"><?= $h(mb_substr($extension, 0, 4)) ?></span>
+                                <span class="chat-file-copy">
+                                    <strong><?= $h($document['original_name']) ?></strong>
+                                    <small><?= $h($formatBytes((int) $document['size'])) ?> · <?= $h($toDate($document['sent_at'])->format('d M Y')) ?></small>
+                                </span>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </aside>
     </div>
 
@@ -2685,6 +2841,13 @@ require __DIR__ . '/../includes/header.php';
             email.href = item.dataset.email ? `mailto:${item.dataset.email}` : '';
             const count = Number(item.dataset.count || 0);
             setText('[data-info-stats]', `${count} message${count === 1 ? '' : 's'} in this conversation`);
+            // Shared photos and files for this conversation.
+            root.querySelectorAll('[data-shared]').forEach((group) => { group.hidden = group.dataset.shared !== key; });
+            root.querySelectorAll('[data-shared-count]').forEach((badge) => {
+                const group = root.querySelector(`.chat-shared-group[data-shared-type="${badge.dataset.sharedCount}"]:not([hidden])`);
+                const total = Number(group?.dataset.count || 0);
+                badge.textContent = total ? String(total) : '';
+            });
 
             workspace.classList.add('is-thread-open');
             syncComposer();
@@ -2855,7 +3018,6 @@ require __DIR__ . '/../includes/header.php';
         });
 
         // Buttons
-        root.querySelector('[data-action="refresh"]').addEventListener('click', () => window.location.reload());
         root.querySelector('[data-action="back"]').addEventListener('click', backToList);
 
         root.querySelectorAll('.chat-collapse-toggle').forEach((toggle) => {

@@ -18,13 +18,22 @@ $themeFollowsDevice = $themeFollowsDevice ?? true;
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="icon" type="image/png" href="<?= $root ?>assets/images/mentora-logo.png?v=1">
-    <link rel="stylesheet" href="<?= $root ?>assets/css/style.css?v=36">
-    <link rel="stylesheet" href="<?= $root ?>assets/css/theme.css?v=8">
-    <link rel="stylesheet" href="<?= $root ?>assets/css/dialog.css?v=1">
+    <link rel="stylesheet" href="<?= $root ?>assets/css/style.css?v=37">
+    <link rel="stylesheet" href="<?= $root ?>assets/css/theme.css?v=9">
+    <link rel="stylesheet" href="<?= $root ?>assets/css/dialog.css?v=2">
+    <?php if ($inAccount): // account/*.php pages (Messages) ?>
+    <link rel="stylesheet" href="<?= $root ?>assets/css/account.css?v=4">
+    <?php endif; ?>
     <?php require __DIR__ . '/theme_boot.php'; ?>
 </head>
 
 <body class="<?= htmlspecialchars($bodyClass, ENT_QUOTES, 'UTF-8') ?>">
+    <script>
+        // theme_boot.php runs in <head> before <body> exists, so add the body's dark-mode class now.
+        if (window.MentoraTheme) {
+            document.body.classList.toggle('workspace-dark-mode', window.MentoraTheme.mode === 'dark');
+        }
+    </script>
     <?php if (empty($hideTopbar)): // a page can set $hideTopbar = true (Messages does) to go without the top header ?>
     <header class="topbar<?= $headerStyle ? ' ' . htmlspecialchars($headerStyle, ENT_QUOTES, 'UTF-8') . '-topbar' : '' ?>">
         <a class="brand" href="<?= $root ?>index.php" aria-label="Mentora home">
@@ -34,8 +43,9 @@ $themeFollowsDevice = $themeFollowsDevice ?? true;
         <div class="topbar-tools">
             <?php if ($headerStyle !== 'signin-page'): ?>
                 <nav>
-                    <a href="<?= $root ?>auth/signin.php"><strong>Sign in</strong></a>
+                    <?php $onAbout = basename($_SERVER['SCRIPT_NAME'] ?? '') === 'about.php'; ?>
                     <a class="button button-small" href="<?= $root ?>auth/signup.php">Apply now</a>
+                    <a href="<?= $root ?>about.php"<?= $onAbout ? ' aria-current="page"' : '' ?>><strong>About us</strong></a>
                 </nav>
             <?php endif; ?>
         </div>

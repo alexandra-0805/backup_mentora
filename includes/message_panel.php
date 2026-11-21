@@ -1,7 +1,8 @@
 <?php
 $userId = (int) ($_SESSION['user']['id'] ?? 0);
 $messageQuery = $userId
-    ? $pdo->prepare('SELECT m.subject,
+    ? $pdo->prepare('SELECT m.sender_id,
+            m.subject,
             m.body,
             m.created_at,
             COALESCE(CONCAT(u.first_name, " ", u.last_name), "Mentora support") AS sender_name
@@ -9,7 +10,7 @@ $messageQuery = $userId
         LEFT JOIN users u ON u.id = m.sender_id
         WHERE m.recipient_id = ? OR m.recipient_id IS NULL
         ORDER BY m.created_at DESC')
-    : $pdo->prepare('SELECT m.subject, m.body, m.created_at, "Mentora support" AS sender_name
+    : $pdo->prepare('SELECT m.sender_id, m.subject, m.body, m.created_at, "Mentora support" AS sender_name
         FROM messages m
         WHERE m.recipient_id IS NULL
         ORDER BY m.created_at DESC');
@@ -21,6 +22,17 @@ if ($userId) {
 }
 
 $messageItems = $messageQuery->fetchAll();
+$messagesPageHref = str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/applicant/')
+    ? '../../account/messages.php'
+    : '../account/messages.php';
+// Conversation key used by account/messages.php (?c=...): u{id} per person, "support" for system
+// messages, "all" for announcements you sent yourself.
+$messageConversationKey = static function (array $message) use ($userId): string {
+    if ($message['sender_id'] === null) {
+        return 'support';
+    }
+    return (int) $message['sender_id'] === $userId ? 'all' : 'u' . (int) $message['sender_id'];
+};
 ?>
 <span class="message-popover">
     <button class="header-icon-link message-toggle<?= $unreadMessageCount > 0 ? ' has-unread' : '' ?>"
@@ -54,7 +66,7 @@ $messageItems = $messageQuery->fetchAll();
                 <p class="message-toast-empty">No messages yet.</p>
             <?php else: ?>
                 <?php foreach ($messageItems as $message): ?>
-                    <article class="message-toast-item">
+                    <a class="message-toast-item" href="<?= htmlspecialchars($messagesPageHref . '?c=' . rawurlencode($messageConversationKey($message)), ENT_QUOTES, 'UTF-8') ?>">
                         <span class="message-toast-avatar"><?= htmlspecialchars(strtoupper(substr($message['sender_name'], 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
                         <div>
                             <strong><?= htmlspecialchars($message['sender_name'], ENT_QUOTES, 'UTF-8') ?></strong>
@@ -62,14 +74,11 @@ $messageItems = $messageQuery->fetchAll();
                             <p><?= trim((string) $message['body']) !== '' ? htmlspecialchars($message['body'], ENT_QUOTES, 'UTF-8') : '📎 Attachment' ?></p>
                             <small><?= htmlspecialchars($message['created_at'], ENT_QUOTES, 'UTF-8') ?></small>
                         </div>
-                    </article>
+                    </a>
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
-        <a class="message-toast-all"
-            href="<?= str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/applicant/')
-                ? '../../account/messages.php'
-                : '../account/messages.php' ?>">Open all messages</a>
+        <a class="message-toast-all" href="<?= htmlspecialchars($messagesPageHref, ENT_QUOTES, 'UTF-8') ?>">Open all messages</a>
     </aside>
 </span>
 <script>

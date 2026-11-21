@@ -72,9 +72,11 @@
     color: #758b89
 }
 
+/* One column per step, however many there are (interns have 6, employees 6, older flows 5). */
 .timeline {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
     gap: 0;
     margin-top: 18px
 }
@@ -176,6 +178,16 @@
     font-size: 11px
 }
 
+/* Tablet: keep the steps in one row, at a readable width, and let the row scroll sideways if needed. */
+@media (max-width: 1100px) {
+    .timeline {
+        grid-auto-columns: minmax(118px, 1fr);
+        overflow-x: auto;
+        padding: 6px 2px 8px; /* room for the current step's ring, which scrolling would otherwise clip */
+        scrollbar-width: thin
+    }
+}
+
 @media(max-width:700px) {
 
     .applicant-sidebar {
@@ -188,7 +200,10 @@
     }
 
     .timeline {
-        grid-template-columns: 1fr
+        grid-auto-flow: row;
+        grid-auto-columns: auto;
+        grid-template-columns: 1fr;
+        overflow: visible
     }
 
     .timeline-step {
@@ -290,6 +305,25 @@ ol.timeline {
 
 .timeline-link:hover {
     background: rgba(11, 98, 93, 0.06);
+}
+
+/* Under the Active / Busy / Offline picker on the Profile page. */
+.presence-hint {
+    color: var(--workspace-muted, #6e6e73);
+    display: block;
+    font-size: 10px;
+    margin-top: 8px;
+}
+
+/* Upcoming steps aren't links: no hover highlight, normal cursor, slightly faded. */
+.timeline-link.is-locked {
+    cursor: default;
+    opacity: 0.7;
+}
+
+.timeline-link.is-locked:hover,
+body.workspace-dark-mode .timeline-link.is-locked:hover {
+    background: transparent;
 }
 
 .timeline-link:focus-visible {
@@ -425,4 +459,122 @@ ol.timeline {
         max-width: none;
         overflow: visible;
     }
+}
+
+/* ---------- Presence: Active / Busy / Offline (set on the Profile page) ---------- */
+.presence-wrap {
+    display: inline-flex;
+    flex: 0 0 auto;
+    position: relative;
+}
+
+.profile-chip > .presence-wrap,
+body.accent-custom .profile-chip > .presence-wrap {
+    background: none;
+}
+
+.profile-chip .presence-wrap > .avatar:has(.avatar-img) {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+.presence-dot {
+    border: 2px solid #fff;
+    border-radius: 50%;
+    bottom: -1px;
+    box-sizing: border-box;
+    height: 10px;
+    position: absolute;
+    right: -1px;
+    width: 10px;
+}
+
+.presence-dot.is-active {
+    background: #22c55e;
+}
+
+.presence-dot.is-busy {
+    background: #ef4444;
+}
+
+.presence-dot.is-offline {
+    background: #9ca3af;
+}
+
+/* Sidebar chip sits on the dark teal sidebar. */
+.profile-chip .presence-dot {
+    border-color: var(--mentora-deep, #0f4847);
+}
+
+.presence-wrap-xl .presence-dot {
+    border-width: 3px;
+    bottom: 3px;
+    height: 22px;
+    right: 3px;
+    width: 22px;
+}
+
+.presence-picker {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 12px 0 0;
+}
+
+.presence-option {
+    align-items: center;
+    background: transparent;
+    border: 1px solid rgba(15, 72, 71, 0.18);
+    border-radius: 999px;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    gap: 7px;
+    padding: 6px 12px;
+    transition: background 160ms ease, border-color 160ms ease;
+}
+
+.presence-option .presence-dot {
+    border: 0;
+    height: 8px;
+    position: static;
+    width: 8px;
+}
+
+.presence-option:hover:not(:disabled) {
+    background: rgba(47, 133, 128, 0.08);
+}
+
+.presence-option[aria-pressed="true"] {
+    background: rgba(47, 133, 128, 0.12);
+    border-color: var(--mentora-teal, #2f8580);
+}
+
+.presence-option:focus-visible {
+    outline: 2px solid var(--mentora-teal, #2f8580);
+    outline-offset: 2px;
+}
+
+.presence-option:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+body.workspace-dark-mode .presence-wrap-xl .presence-dot {
+    border-color: #2b3f3e;
+}
+
+body.workspace-dark-mode .presence-option {
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+body.workspace-dark-mode .presence-option:hover:not(:disabled),
+body.workspace-dark-mode .presence-option[aria-pressed="true"] {
+    background: rgba(143, 239, 218, 0.1);
+}
+
+body.workspace-dark-mode .presence-option[aria-pressed="true"] {
+    border-color: var(--mentora-mint, #8fefda);
 }

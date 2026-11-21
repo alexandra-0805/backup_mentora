@@ -23,6 +23,7 @@ $stepDetail=array_column($progress['steps'],'detail','label');
 <?php mentora_render_hiring_progress($progress,'Hiring progress'); ?>
 <div class="admin-grid"><section class="pathway-card"><h3>Pathway summary</h3><ul class="status-list">
 <li><span>Application verified</span><?= $badge($stepState['Application'],'Complete','Form needed','Form needed') ?></li>
+<li><span>AI screening &amp; HR decision</span><?= $badge($stepState['Screening'],'Accepted',htmlspecialchars($stepDetail['Screening']),'Upcoming') ?></li>
 <li><span>Evaluation review</span><?= $badge($stepState['Evaluation'],'Complete','In review','Upcoming') ?></li>
 <li><span>Interview &amp; offer</span><?= $badge($stepState['Interview & offer'],'Complete','In progress','Upcoming') ?></li>
 <li><span>Training</span><?= $badge($stepState['Training'],'Complete',htmlspecialchars($stepDetail['Training']),'Upcoming') ?></li>
@@ -30,7 +31,8 @@ $stepDetail=array_column($progress['steps'],'detail','label');
 </ul></section><section class="pathway-card"><h3>Next steps</h3><ul class="checklist">
 <?php
 $next=[
-  'Application'=>['Complete your application form','form.php'],
+  'Application'=>['Complete your application form or upload your resume','form.php'],
+  'Screening'=>['Wait for the HR decision on your screened application','overview.php'],
   'Evaluation'=>['Wait for your evaluation results','evaluation.php'],
   'Interview & offer'=>['Prepare for your interview with HR','evaluation.php'],
   'Training'=>['Complete your employee training','training.php'],

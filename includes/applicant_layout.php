@@ -41,7 +41,7 @@ $email = is_array($user) ? ($user['email'] ?? '') : '';
 ========================================================= */
 
 $query = $pdo->prepare(
-    'SELECT id, user_code, first_name, last_name, email, pathway, department_id, avatar_path, created_at
+    'SELECT id, user_code, first_name, last_name, email, pathway, department_id, avatar_path, presence, last_seen_at, created_at
      FROM users
      WHERE email = ?
      LIMIT 1'
@@ -58,8 +58,15 @@ $currentUser = $query->fetch() ?: [
         ? 'internship'
         : 'employee_va',
     'department_id' => null,
-    'avatar_path'   => null
+    'avatar_path'   => null,
+    'presence'      => 'active'
 ];
+
+// Active / Busy / Offline, chosen on the Profile page ($chosenPresence); Offline automatically when they're away
+// or signed out ($presence, what others see; see mentora_effective_presence()).
+$presenceLabels = ['active' => 'Active', 'busy' => 'Busy', 'offline' => 'Offline'];
+$chosenPresence = isset($presenceLabels[$currentUser['presence'] ?? '']) ? $currentUser['presence'] : 'active';
+$presence = (int) $currentUser['id'] > 0 ? mentora_effective_presence($chosenPresence, $currentUser['last_seen_at'] ?? null) : $chosenPresence;
 
 /* =========================================================
    NAVIGATION
@@ -156,23 +163,23 @@ $now = new DateTimeImmutable(
 
     <link
         rel="stylesheet"
-        href="../../assets/css/admin.css?v=5">
+        href="../../assets/css/admin.css?v=6">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/applicant.css?v=3">
+        href="../../assets/css/applicant.css?v=8">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/settings.css?v=29">
+        href="../../assets/css/settings.css?v=31">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/theme.css?v=8">
+        href="../../assets/css/theme.css?v=9">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/dialog.css?v=1">
+        href="../../assets/css/dialog.css?v=2">
 
     <?php require __DIR__ . '/theme_boot.php'; ?>
 
@@ -254,9 +261,9 @@ $now = new DateTimeImmutable(
             <a
                 class="profile-chip"
                 href="profile.php"
-                aria-label="Open profile">
+                aria-label="Open profile (<?= $e($presenceLabels[$presence]) ?>)">
 
-                <?= mentora_avatar($avatarUrl, $initials) ?>
+                <span class="presence-wrap"><?= mentora_avatar($avatarUrl, $initials) ?><i class="presence-dot is-<?= $e($presence) ?>" title="<?= $e($presenceLabels[$presence]) ?>"></i></span>
 
 
                 <div>

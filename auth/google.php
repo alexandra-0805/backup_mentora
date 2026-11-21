@@ -1,19 +1,21 @@
 <?php
 /**
  * Step 1 of "Continue with Google": remember what the person wants (sign up as which pathway,
- * or sign in), then send them to Google's account chooser.
+ * join with an agent's recruitment link, or sign in), then send them to Google's account chooser.
  */
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/google_auth.php';
 
 mentora_session_start();
 
-$intent = mentora_post_string('intent') === 'signup' ? 'signup' : 'signin';
+$intent = in_array(mentora_post_string('intent'), ['signup', 'join'], true) ? mentora_post_string('intent') : 'signin';
 $pathway = mentora_post_string('pathway');
 $pathway = in_array($pathway, ['employee_va', 'internship'], true) ? $pathway : null;
-$backTo = $intent === 'signup'
-    ? 'auth/signup.php' . ($pathway === 'internship' ? '?pathway=internship' : '')
-    : 'auth/signin.php';
+$backTo = match ($intent) {
+    'signup' => 'auth/signup.php' . ($pathway === 'internship' ? '?pathway=internship' : ''),
+    'join' => 'auth/join.php',   // the recruitment link is kept in the session
+    default => 'auth/signin.php',
+};
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     mentora_redirect($backTo);

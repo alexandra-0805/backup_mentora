@@ -8,7 +8,7 @@
  *     (documents, category "Certificates", owner = the person). The person can download it only
  *     after finishing every module (enforced in account/document.php too).
  *   - When the last module is finished, the agent is asked to upload the certificate (or, if it's
- *     already uploaded, the person is told it's ready).
+ *     already uploaded, the person is told it's ready), and an intern gets their AI assessment.
  */
 
 declare(strict_types=1);
@@ -140,11 +140,22 @@ function mentora_handle_certificate_post(PDO $pdo, array $staff, array $person, 
     ];
 }
 
-/** Called when someone finishes a module: on the last one, ask for / announce the certificate. */
+/**
+ * Called when someone finishes a module: on the last one, ask for / announce the certificate, and for
+ * an intern run the AI assessment and ranking (ai/intern_assessment.php), which hands them to their agent.
+ */
 function mentora_after_module_finished(PDO $pdo, array $person): void
 {
     if (!mentora_training_complete($pdo, (int) $person['id'], $person['pathway'])) {
         return;
+    }
+    if (mentora_pathway_folder($person['pathway']) === 'intern') {
+        require_once __DIR__ . '/../ai/intern_assessment.php';
+        try {
+            mentora_ai_assess_intern($pdo, (int) $person['id']);
+        } catch (Throwable $exception) {
+            error_log('Mentora AI assessment failed: ' . $exception->getMessage()); // never blocks the training step
+        }
     }
     $name = trim($person['first_name'] . ' ' . $person['last_name']);
     if (mentora_training_certificate($pdo, (int) $person['id'])) {

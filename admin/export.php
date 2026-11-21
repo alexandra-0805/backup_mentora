@@ -1,9 +1,10 @@
 <?php
-// CSV downloads for HR: ?type=employees | interns | agents | users | social | attendance&date= | summary&from=&to=&scope=
+// CSV downloads for HR: ?type=employees | interns | agents | users | social | screening | attendance&date= | summary&from=&to=&scope=
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/workflow.php';
 require_once __DIR__ . '/../includes/social_profiles.php';
 require_once __DIR__ . '/../includes/report_summary.php';
+require_once __DIR__ . '/../includes/screening.php';
 mentora_require_login(['admin']);
 
 $type = (string) ($_GET['type'] ?? '');
@@ -124,7 +125,14 @@ switch ($type) {
                 $s['average_score'] !== null ? mentora_hours($s['average_score']) : ''
             ],
             ['Days present', $s['present']], ['Hours worked (time in / out)', mentora_hours($s['worked_hours'])],
+            ['Employee VAs screened by AI', (int) $s['screening']['screened']], ['AI: suitable', (int) $s['screening']['suitable']],
+            ['AI: for review', (int) $s['screening']['for_review']], ['AI: flagged unsuitable', (int) $s['screening']['unsuitable']],
+            ['Interns assessed by AI', (int) $s['assessments']['assessed']], ['Interns ready to employ', (int) $s['assessments']['ready']],
+            ['Agent employability reports', $s['agent_reports']],
         ];
+        foreach (mentora_department_skill_map($pdo) as $gap) {
+            $rows[] = ['Lacking skills: ' . $gap['name'], $gap['lacking'] ? implode(', ', $gap['lacking']) : 'None'];
+        }
         foreach ($s['departments'] as $department) {
             $rows[] = [
                 'Department: ' . $department['name'] . ' (people / hours / avg score)',
@@ -135,6 +143,29 @@ switch ($type) {
     case 'social':
         // Social profile monitoring for every active intern (Student VA) and employee (Professional VA).
         mentora_csv("mentora-social-profiles-{$stamp}.csv", mentora_social_export_header(), mentora_social_export_rows($pdo));
+    case 'screening':
+        // AI screening of Employee VA applications: every candidate's latest review and HR's decision.
+        $rows = [];
+        foreach (array_keys(MENTORA_SCREENING_VIEWS) as $view) {
+            if ($view === 'flagged') {
+                continue; // already inside "review"
+            }
+            foreach (mentora_screening_rows($pdo, $view) as $row) {
+                $rows[] = [
+                    $row['user_code'], $row['name'], $row['email'], $row['desired_role'] ?? '',
+                    MENTORA_EDUCATION_LEVELS[$row['education'] ?? ''] ?? '', $row['experience_years'] ?? '',
+                    $row['submission_mode'] === 'resume' ? 'Resume' : 'Form', $row['score'], MENTORA_AI_CATEGORIES[$row['category']][0],
+                    $row['department_name'] ?? '', implode(', ', $row['gap_skills']), implode(', ', $row['skills']), $row['summary'],
+                    $row['dept_verdict'] ? ($row['dept_verdict'] === 'endorsed' ? 'Endorsed' : 'Not endorsed') : '',
+                    ['pending' => 'Waiting', 'approved' => 'Accepted', 'rejected' => 'Declined'][$row['application_status']] ?? '',
+                    $row['referrer_name'] ?? '', date('Y-m-d', strtotime($row['created_at'])),
+                ];
+            }
+        }
+        mentora_csv("mentora-ai-screening-{$stamp}.csv", [
+            'User ID', 'Name', 'Email', 'Role applied for', 'Education', 'Years of experience', 'Applied with', 'AI score', 'AI category',
+            'Best-fit department', 'Lacking skills they fill', 'Skills found', 'AI summary', 'Department assessment', 'HR decision', 'Referred by', 'Reviewed',
+        ], $rows);
     default:
         http_response_code(404);
         exit('Unknown export.');

@@ -1,8 +1,9 @@
 <?php
-// Consolidated report (HR): recruitment, training, hours, evaluations and attendance for a date range.
+// Consolidated report (HR): recruitment, AI onboarding, training, hours, evaluations and attendance for a date range.
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/workflow.php';
 require_once __DIR__ . '/../includes/report_summary.php';
+require_once __DIR__ . '/../includes/screening.php';
 $pageTitle = 'Consolidated report builder';
 $activePage = 'consolidated_report.php';
 require __DIR__ . '/../includes/admin_layout.php';
@@ -50,7 +51,7 @@ $presets = [
             </div>
         </div>
         <div class="field"><label>Sources</label>
-            <?php foreach (['Recruitment and applications' => $summary['applications'], 'Training and evaluations' => $summary['modules'] + $summary['evaluations'], 'Daily reports' => $summary['reports'], 'Attendance' => $summary['present']] as $source => $records): ?>
+            <?php foreach (['Recruitment and applications' => $summary['applications'], 'AI screening and assessments' => (int) $summary['screening']['screened'] + (int) $summary['assessments']['assessed'] + $summary['agent_reports'], 'Training and evaluations' => $summary['modules'] + $summary['evaluations'], 'Daily reports' => $summary['reports'], 'Attendance' => $summary['present']] as $source => $records): ?>
                 <div class="notice-row">
                     <span><?= $source ?></span><span class="badge <?= $records ? '' : 'warn' ?>"><?= $records ? $records . ' records' : 'No records' ?></span>
                 </div>
@@ -91,6 +92,45 @@ $presets = [
                 <strong class="report-stat-value"><?= $summary['present'] ?><small>days</small></strong>
                 <span class="report-stat-note"><?= mentora_hours($summary['worked_hours']) ?> hrs worked · open shift</span>
             </div>
+        </div>
+        <h2 class="report-section-title">AI-supported onboarding</h2>
+        <div class="report-stats is-quad">
+            <div class="report-stat">
+                <span class="report-stat-label">Employee VAs screened</span>
+                <strong class="report-stat-value"><?= (int) $summary['screening']['screened'] ?></strong>
+                <span class="report-stat-note"><?= (int) $summary['screening']['suitable'] ?> suitable · <?= (int) $summary['screening']['for_review'] ?> for review · <?= (int) $summary['screening']['unsuitable'] ?> flagged</span>
+            </div>
+            <div class="report-stat">
+                <span class="report-stat-label">Average AI review score</span>
+                <?php if ($summary['screening']['average'] !== null): ?>
+                    <strong class="report-stat-value"><?= round((float) $summary['screening']['average']) ?><small>/100</small></strong>
+                <?php else: ?>
+                    <strong class="report-stat-value is-empty">—</strong>
+                <?php endif; ?>
+                <span class="report-stat-note"><?= $summary['screening']['average'] !== null ? 'Latest review per applicant' : 'No applications screened yet' ?></span>
+            </div>
+            <div class="report-stat">
+                <span class="report-stat-label">Interns assessed</span>
+                <strong class="report-stat-value"><?= (int) $summary['assessments']['assessed'] ?></strong>
+                <span class="report-stat-note"><?= (int) $summary['assessments']['ready'] ?> ready to employ<?= $summary['assessments']['average'] !== null ? ' · avg ' . round((float) $summary['assessments']['average']) . '/100' : '' ?></span>
+            </div>
+            <div class="report-stat">
+                <span class="report-stat-label">Agent reports</span>
+                <strong class="report-stat-value"><?= $summary['agent_reports'] ?></strong>
+                <span class="report-stat-note">Employability reports with AI summaries</span>
+            </div>
+        </div>
+        <h2 class="report-section-title">Department skill gaps (today)</h2>
+        <div class="report-table-wrap">
+        <table class="admin-table"><thead><tr><th>Department</th><th>People</th><th>Lacking skills</th></tr></thead><tbody>
+            <?php foreach (mentora_department_skill_map($pdo) as $gap): ?>
+            <tr>
+                <td><?= mentora_h($gap['name']) ?></td>
+                <td><?= (int) $gap['people'] ?></td>
+                <td><?= $gap['required'] ? mentora_skill_chips($gap['lacking'], $gap['lacking'], 'No gaps') : '<small>No required skills set</small>' ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody></table>
         </div>
         <h2 class="report-section-title">By department</h2>
         <div class="report-table-wrap">

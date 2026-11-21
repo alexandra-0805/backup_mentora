@@ -1,7 +1,8 @@
 <?php
-// Agent dashboard: your interns, training, evaluations due and reports waiting, from the database.
+// Agent dashboard: your interns, training, AI assessments, department candidates, evaluations due and reports waiting.
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/workflow.php';
+require_once __DIR__ . '/../includes/screening.php';
 $pageTitle = 'Dashboard';
 $activePage = 'dashboard.php';
 require __DIR__ . '/../includes/agent_layout.php';
@@ -28,6 +29,10 @@ $checkedIn = (int) $pdo->query("SELECT COUNT(*)
     JOIN users u ON u.id = a.user_id
     WHERE a.work_date = CURDATE() AND a.time_in IS NOT NULL AND u.pathway = 'internship'")
     ->fetchColumn();
+$myDepartmentId = (int) ($pdo->query('SELECT department_id FROM users WHERE id = ' . $meId)->fetchColumn() ?: 0);
+$candidates = $myDepartmentId ? mentora_screening_rows($pdo, 'suitable', $myDepartmentId) : [];
+$assessed = array_filter(mentora_intern_rankings($pdo, $myInterns ? $meId : null), static fn($i) => $i['ai'] !== null);
+$readyToReport = count(array_filter($assessed, static fn($i) => (int) $i['ai']['ready'] === 1));
 $hour = (int) date('G');
 $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
 ?>
@@ -37,7 +42,7 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
         <p><?= $greeting ?>. Keep your team's learning and work on track.</p>
     </div>
     <div class="admin-actions">
-        <a class="admin-btn" href="reporting_overview.php">View reporting</a><a class="admin-btn primary" href="intern_directory.php<?= $myInterns ? '?scope=mine' : '' ?>">Open team</a>
+        <a class="admin-btn" href="recruitment.php">Recruitment links</a><a class="admin-btn" href="reporting_overview.php">View reporting</a><a class="admin-btn primary" href="intern_directory.php<?= $myInterns ? '?scope=mine' : '' ?>">Open team</a>
     </div>
 </div>
 <?= mentora_flash_html() ?>
@@ -73,6 +78,16 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
     <section class="admin-panel">
         <h2>Needs your attention</h2>
         <p class="panel-subtitle"><?= date('l, d F') ?> · PHT</p>
+        <?php foreach (array_slice($candidates, 0, 3) as $candidate): ?>
+            <div class="notice-row">
+                <span><?= mentora_h($candidate['name']) ?><br><small>Suitable for <?= mentora_h($candidate['department_name']) ?> · AI <?= (int) $candidate['score'] ?>/100<?= $candidate['dept_verdict'] ? ' · assessed' : '' ?></small></span><a class="badge <?= $candidate['dept_verdict'] ? '' : 'warn' ?>" href="candidates.php#r<?= (int) $candidate['user_id'] ?>"><?= $candidate['dept_verdict'] ? 'View' : 'Assess' ?></a>
+            </div>
+        <?php endforeach; ?>
+        <?php if ($readyToReport): ?>
+            <div class="notice-row">
+                <span><?= $readyToReport ?> intern<?= $readyToReport === 1 ? ' is' : 's are' ?> ready to employ<br><small>From the AI assessment after training</small></span><a class="badge info" href="agent_reports.php#new">Report to HR</a>
+            </div>
+        <?php endif; ?>
         <?php foreach (array_slice($waiting, 0, 4) as $report): ?>
             <div class="notice-row">
                 <span><?= mentora_h($report['first_name'] . ' ' . $report['last_name']) ?><br><small>Report · <?= date('d M', strtotime($report['report_date'])) ?> · <?= mentora_hours($report['hours']) ?> hrs</small></span><a class="badge warn" href="reporting_overview.php#review">Review</a>
@@ -86,7 +101,7 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
                         href="individual_evaluation.php?id=<?= (int) $evaluation['id'] ?>"><?= $overdue ? 'Overdue' : 'Evaluate' ?></a>
             </div>
         <?php endforeach; ?>
-        <?php if (!$waiting && !$dueEvaluations): ?><p class="panel-subtitle">Nothing waiting. Nice work!</p><?php endif; ?>
+        <?php if (!$waiting && !$dueEvaluations && !$candidates && !$readyToReport): ?><p class="panel-subtitle">Nothing waiting. Nice work!</p><?php endif; ?>
     </section>
 </div>
 <?php require __DIR__ . '/../includes/admin_footer.php'; ?>

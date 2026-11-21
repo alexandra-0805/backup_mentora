@@ -834,9 +834,22 @@
 .message-toast-item {
     align-items: flex-start;
     border-bottom: 1px solid rgba(60, 60, 67, 0.1);
+    color: inherit;
+    cursor: pointer;
     display: flex;
     gap: 10px;
     padding: 14px 16px;
+    text-decoration: none;
+    transition: background 160ms ease;
+}
+
+.message-toast-item:hover {
+    background: rgba(47, 133, 128, 0.08);
+}
+
+.message-toast-item:focus-visible {
+    outline: 2px solid var(--mentora-teal);
+    outline-offset: -2px;
 }
 
 .message-toast-avatar {
@@ -1514,5 +1527,248 @@
     /* Short card tables (training modules, evaluation criteria) fit the card rather than scrolling 780px. */
     .pathway-card .admin-table {
         min-width: 0;
+    }
+}
+/* ==========================================================================
+   AI onboarding: screening cards, skill chips, assessments, recruitment links
+   (admin/screening.php, agent/candidates.php, agent/intern_assessments.php,
+   agent/agent_reports.php, admin/intern_reports.php, agent/recruitment.php)
+   ========================================================================== */
+.badge.danger {
+    background: #fde7e5;
+    color: #a2382c;
+}
+
+.screening-card {
+    margin-bottom: 16px;
+}
+
+.screening-head {
+    align-items: flex-start;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+}
+
+.screening-head h2 small {
+    color: var(--workspace-muted);
+    font-size: 10px;
+    font-weight: normal;
+}
+
+.screening-score {
+    align-items: baseline;
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    justify-content: flex-end;
+}
+
+.screening-score strong {
+    color: var(--admin-ink);
+    font-size: 26px;
+    line-height: 1;
+}
+
+.screening-score small {
+    color: var(--workspace-muted);
+}
+
+.screening-summary {
+    font-size: 11px;
+    line-height: 1.6;
+    margin: 10px 0 14px;
+}
+
+.screening-card h3 {
+    font-size: 11px;
+    margin: 0 0 8px;
+}
+
+.screening-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: 1.3fr 1fr 1fr;
+}
+
+.screening-list {
+    font-size: 10px;
+    line-height: 1.6;
+    margin: 0;
+    padding-left: 16px;
+}
+
+.screening-list.is-concern li::marker {
+    color: #b0812a;
+}
+
+.screening-note,
+.screening-engine {
+    color: var(--workspace-muted);
+    display: block;
+    font-size: 9px;
+    margin-top: 8px;
+}
+
+.screening-dept {
+    font-size: 10px;
+    margin: 14px 0 0;
+    padding: 10px 12px;
+}
+
+.screening-actions {
+    align-items: center;
+    border-top: 1px solid #e6eeee;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+}
+
+.screening-actions form {
+    display: contents;
+}
+
+.screening-actions select,
+.screening-actions input,
+.link-field {
+    border: 1px solid #dbe8e6;
+    border-radius: 10px;
+    color: inherit;
+    font: inherit;
+    min-height: 34px;
+    padding: 6px 10px;
+}
+
+.screening-actions input {
+    flex: 1 1 220px;
+}
+
+.link-field {
+    font-size: 10px;
+    width: min(320px, 100%);
+}
+
+.skill-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.skill-chip {
+    background: #eef4f3;
+    border: 1px solid #dbe8e6;
+    border-radius: 999px;
+    color: #355e5b;
+    font-size: 9px;
+    padding: 3px 9px;
+}
+
+.skill-chip.is-gap {
+    background: #fff2d6;
+    border-color: #f0d89c;
+    color: #8a6420;
+    font-weight: 600;
+}
+
+.assessment-details {
+    font-size: 10px;
+    margin-top: 6px;
+}
+
+.assessment-details summary {
+    color: var(--mentora-teal);
+    cursor: pointer;
+}
+
+.assessment-details p {
+    line-height: 1.6;
+}
+
+.recommend-list {
+    display: grid;
+    gap: 0 18px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.toolbar-action {
+    margin-left: auto;
+}
+
+.application-mode {
+    border: 0;
+    margin: 0 0 14px;
+    padding: 0;
+}
+
+.application-mode legend {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.application-mode > small {
+    color: var(--workspace-muted);
+    display: block;
+    margin-top: 8px;
+}
+
+/* Fields for the other way to apply (form / resume) are hidden; .field's display must not override it. */
+[data-mode][hidden] {
+    display: none !important;
+}
+
+h2.report-section-title {
+    margin: 22px 0 10px;
+}
+
+body.workspace-dark-mode .badge.danger {
+    background: rgba(240, 110, 95, 0.16);
+    color: #f5a498;
+}
+
+body.workspace-dark-mode .skill-chip {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #cfe3e0;
+}
+
+body.workspace-dark-mode .skill-chip.is-gap {
+    background: rgba(245, 190, 90, 0.16);
+    border-color: rgba(245, 190, 90, 0.35);
+    color: #f2cc7d;
+}
+
+body.workspace-dark-mode .screening-score strong {
+    color: var(--mentora-mint);
+}
+
+body.workspace-dark-mode .screening-actions {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.workspace-dark-mode :is(.screening-actions select, .screening-actions input, .link-field) {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+@media (max-width: 1024px) {
+    .screening-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .screening-head {
+        flex-direction: column;
+    }
+
+    .screening-score {
+        justify-content: flex-start;
+    }
+
+    .toolbar-action {
+        margin-left: 0;
     }
 }
