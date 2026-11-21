@@ -7,21 +7,20 @@ $root ??= (str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/auth/') || $inAccount) 
 <?php if (empty($hideFooter)): // a page can set $hideFooter = true (Messages does) to go without the footer ?>
 <footer class="footer">
     <div>
-        <a class="brand" href="<?= $root ?>index.php" aria-label="Mentora home">
+        <a class="brand footer-logo-link" href="<?= $root ?>index.php" aria-label="Mentora home">
             <img
                 class="footer-logo"
                 src="<?= $root ?>assets/images/mentora-logo.png"
-                alt="Mentora">
+                alt="">
         </a>
-        <small>
-            © <?= date('Y') ?> Mentora. All rights reserved.
-        </small>
+        <div class="footer-brand-text">
+            <a class="footer-brand-name hover-lift-text" href="<?= $root ?>index.php">Mentora</a>
+            <small class="hover-lift-text">Practical support. Proven guidance.</small>
+        </div>
     </div>
 
     <div>
-        <small>
-            Data Privacy Notice · Terms · Help & resources
-        </small>
+        <small class="hover-lift-text">© <?= date('Y') ?> Mentora. All rights reserved.</small>
     </div>
 </footer>
 <?php endif; ?>

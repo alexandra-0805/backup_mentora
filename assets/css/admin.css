@@ -391,6 +391,31 @@
     margin: 0;
 }
 
+/* Admin, agent and applicant pages (their layouts add .admin-workspace): no big title + subtitle block;
+   the page name is in the top bar. The title stays readable for screen readers, and the page's buttons
+   and badges stay, on the right. Headings that are content keep showing: a training lesson
+   (.module-heading) and one person's record (.keep-title, e.g. their name on User details). */
+.admin-workspace .admin-heading:not(.module-heading, .keep-title) > div:first-child {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+.admin-workspace .admin-heading:not(.module-heading, .keep-title) {
+    justify-content: flex-end;
+}
+
+/* A heading with no buttons (e.g. Settings) takes no space at all. */
+.admin-workspace .admin-heading:not(.module-heading, .keep-title):not(:has(> :nth-child(2))) {
+    margin: 0;
+}
+
 .admin-actions {
     display: flex;
     gap: 8px;
@@ -1335,11 +1360,25 @@
         min-width: 0;
     }
 
+    /* Top bar title: one line, takes all the space the icons leave, shortened with "…" only if needed. */
+    .admin-topbar .topbar-actions {
+        flex-shrink: 0;
+    }
+
+    .crumbs ol {
+        flex-wrap: nowrap;
+    }
+
     .crumbs li:last-child {
+        flex: 1 1 auto;
         min-width: 0;
     }
 
     .crumbs [aria-current="page"] {
+        display: block;
+        font-size: 15px;
+        max-width: 100%;
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

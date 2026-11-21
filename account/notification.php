@@ -1,9 +1,13 @@
 <?php
 
 /**
- * Opening a notification from the bell panel (includes/notification_panel.php):
- * marks it as read and goes to the page it is about (notifications.link).
+ * The bell panel's actions (includes/notification_panel.php):
+ *   GET  ?id=12                       open one notification: mark it read, go to the page it is about
+ *   POST mark_notifications_done=1    "Mark as done": mark all of them read, go back to the page you were on
  * Only your own notifications (or ones for everyone), and only pages inside Mentora.
+ *
+ * "Mark as done" is handled here (not on the page you're on), so pages with their own forms never
+ * mistake it for theirs and answer "Your session expired".
  */
 
 declare(strict_types=1);
@@ -14,6 +18,21 @@ require_once __DIR__ . '/../includes/auth_check.php';
 $user = mentora_require_login();
 $userId = (int) $user['id'];
 $home = mentora_home_path($user);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $token = (string) ($_SESSION['notification_action_token'] ?? '');
+    if (isset($_POST['mark_notifications_done']) && $token !== '' && hash_equals($token, (string) ($_POST['notification_action_token'] ?? ''))) {
+        $pdo->prepare('UPDATE notifications SET read_at = NOW() WHERE (user_id = ? OR user_id IS NULL) AND read_at IS NULL')->execute([$userId]);
+    }
+
+    // Back to the page the panel was opened on: a path on this site only (no other sites, no line breaks).
+    $back = (string) ($_POST['back'] ?? '');
+    if (preg_match('~^/(?![/\\\\])[^\r\n\\\\]*$~', $back) === 1) {
+        header('Location: ' . $back);
+        exit;
+    }
+    mentora_redirect($home);
+}
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$id) {

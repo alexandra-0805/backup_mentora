@@ -73,15 +73,16 @@ $adminNav = [
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $e($pageTitle) ?></title>
     <link rel="icon" type="image/png" href="../assets/images/mentora-logo.png?v=1">
-    <link rel="stylesheet" href="../assets/css/style.css?v=36">
-    <link rel="stylesheet" href="../assets/css/admin.css?v=6">
+    <link rel="stylesheet" href="../assets/css/style.css?v=44">
+    <link rel="stylesheet" href="../assets/css/admin.css?v=10">
     <link rel="stylesheet" href="../assets/css/settings.css?v=31">
-    <link rel="stylesheet" href="../assets/css/theme.css?v=9">
+    <link rel="stylesheet" href="../assets/css/theme.css?v=10">
     <link rel="stylesheet" href="../assets/css/dialog.css?v=2">
     <?php require __DIR__ . '/theme_boot.php'; ?>
 </head>
 
-<body class="admin-body">
+<?php // admin-workspace: admin pages hide the big page title + subtitle (the top bar already names the page). ?>
+<body class="admin-body admin-workspace">
     <?php require __DIR__ . '/workspace_theme_runtime.php'; ?>
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <aside class="admin-sidebar">

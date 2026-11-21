@@ -43,6 +43,25 @@ $account = [
 ];
 
 $fieldErrors = [];   // field name => message, shown under that field
+$resendMessage = null;   // ['ok' => bool, 'text' => string] after "Resend email"
+
+// "Resend email" on the confirm-your-email screen.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'resend_verification') {
+    $userId = (int) ($_SESSION['applied']['user_id'] ?? 0);
+    if (!mentora_csrf_valid($_POST['csrf_token'] ?? null) || $userId <= 0) {
+        $_SESSION['resend_message'] = ['ok' => false, 'text' => 'Your session expired. Please apply again with the same email to get a new link.'];
+    } else {
+        $sent = mentora_send_verification_email($pdo, $userId);
+        $_SESSION['resend_message'] = $sent['ok']
+            ? ['ok' => true, 'text' => 'We sent you a new email. Links sent earlier no longer work.']
+            : ['ok' => false, 'text' => $sent['error']];
+    }
+    mentora_redirect('auth/signup.php?applied=1');
+}
+if (is_array($_SESSION['resend_message'] ?? null)) {
+    $resendMessage = $_SESSION['resend_message'];
+}
+unset($_SESSION['resend_message']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($account as $key => $_) {
@@ -77,6 +96,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = ['ok' => false, 'error' => 'We could not send your application right now. Please try again.'];
         }
 
+        // Applied before but never confirmed the email: send the "confirm your email" link again.
+        if (!$result['ok'] && !empty($result['id']) && !$isStaff && mentora_mail_enabled() && !mentora_email_is_verified($pdo, (int) $result['id'])) {
+            $resent = mentora_send_verification_email($pdo, (int) $result['id']);
+            if ($resent['ok'] || $resent['too_soon']) {
+                $_SESSION['applied'] = [
+                    'user_id' => (int) $result['id'], 'name' => $account['first_name'], 'email' => $account['email'],
+                    'pathway' => $account['pathway'], 'emailed' => true, 'verify_sent' => true,
+                ];
+                $_SESSION['resend_message'] = ['ok' => true, 'text' => $resent['ok']
+                    ? 'You already applied with this email, so we sent you a new confirmation email.'
+                    : 'You already applied with this email. We just sent your confirmation email, so please check your inbox.'];
+                mentora_redirect('auth/signup.php?applied=1');
+            }
+        }
+
         if (!$result['ok']) {
             $fieldErrors['email'] = $result['error'];
             $errors[] = $result['error'];
@@ -85,14 +119,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $showTrack = true; // so the tracking page opens with this email filled in
             }
         } else {
-            mentora_notify_admins_new_applicant($pdo, $account['first_name'] . ' ' . $account['last_name'], $account['email'], $account['pathway']);
-            $receivedEmailed = mentora_send_application_received_email($account['email'], $account['first_name'], $account['last_name'], $account['pathway']);
+            // Applicants get a "confirm your email" link first; HR sees the application once it's clicked.
+            // Staff adding someone vouch for the address, so it goes straight to the approval queue.
+            $outcome = mentora_process_new_application($pdo, $result['id'], $account['first_name'], $account['last_name'], $account['email'], $account['pathway'], $isStaff);
             if ($isStaff) {
-                // Staff adding someone: it joins the same approval queue; clear the form for the next one.
+                // Staff adding someone: it joins the approval queue; clear the form for the next one.
                 $created = $account;
                 $account = ['first_name' => '', 'last_name' => '', 'email' => '', 'pathway' => $created['pathway']];
             } else {
-                $_SESSION['applied'] = ['name' => $account['first_name'], 'email' => $account['email'], 'pathway' => $account['pathway'], 'emailed' => $receivedEmailed];
+                $_SESSION['applied'] = [
+                    'user_id' => $result['id'], 'name' => $account['first_name'], 'email' => $account['email'],
+                    'pathway' => $account['pathway'], 'emailed' => $outcome['emailed'], 'verify_sent' => $outcome['verify_sent'],
+                ];
                 mentora_redirect('auth/signup.php?applied=1');
             }
         }
@@ -110,8 +148,56 @@ $fieldError = static fn(string $field): string => '<small class="field-error" id
 require __DIR__ . '/../includes/header.php';
 ?>
 <main class="auth-shell account-shell">
-    <?php if ($applied): ?>
-        <!-- Waiting for confirmation -->
+    <?php if ($applied && !empty($applied['verify_sent'])): ?>
+        <!-- "Confirm your email" link sent -->
+        <section class="auth-card account-card application-status" aria-labelledby="application-status-title">
+            <span class="application-status-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <rect x="3" y="5" width="18" height="14" rx="2"/>
+                    <path d="m3 7 9 6 9-6"/>
+                </svg>
+            </span>
+            <h1 id="application-status-title">Confirm your email.</h1>
+            <p class="intro">
+                Thanks, <?= $h($applied['name']) ?>! We sent a link to <strong><?= $h($applied['email']) ?></strong>.
+                Click it to confirm your email and send your application to HR.
+            </p>
+            <?php if ($resendMessage): ?>
+                <div class="alert<?= $resendMessage['ok'] ? ' success' : '' ?>" role="status"><?= $h($resendMessage['text']) ?></div>
+            <?php endif; ?>
+            <ol class="application-steps">
+                <li class="is-done">
+                    <b aria-hidden="true">✓</b>
+                    <span><strong>Application sent</strong><small>Your <?= $applied['pathway'] === 'internship' ? 'Intern' : 'Employee VA' ?> application was received.</small></span>
+                </li>
+                <li class="is-current" aria-current="step">
+                    <b aria-hidden="true">2</b>
+                    <span><strong>Confirm your email</strong><small>Open the email from Mentora HR and click “Confirm my email”. The link expires in <?= MENTORA_VERIFY_HOURS ?> hours.</small></span>
+                </li>
+                <li>
+                    <b aria-hidden="true">3</b>
+                    <span><strong>HR confirms your application</strong><small>An HR admin reviews and approves it.</small></span>
+                </li>
+                <li>
+                    <b aria-hidden="true">4</b>
+                    <span><strong>Create your username and password</strong><small>We email you a link once you’re approved.</small></span>
+                </li>
+            </ol>
+            <div class="notice">
+                <strong>Can’t find it?</strong> Check your Spam or Promotions folder, or send it again.
+            </div>
+            <form method="post" class="form-actions">
+                <?= mentora_csrf_field() ?>
+                <input type="hidden" name="action" value="resend_verification">
+                <button class="button button-primary" type="submit">Resend email</button>
+            </form>
+            <div class="auth-links">
+                Used the wrong email? <a href="signup.php?new=1">Start a new application</a><br><br>
+                <a href="../index.php">Back to home</a>
+            </div>
+        </section>
+    <?php elseif ($applied): ?>
+        <!-- Waiting for confirmation (email isn't set up, so HR approves first) -->
         <section class="auth-card account-card application-status" aria-labelledby="application-status-title">
             <span class="application-status-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" focusable="false">
@@ -162,7 +248,9 @@ require __DIR__ . '/../includes/header.php';
             <p class="intro">
                 <?= $isStaff
                     ? 'The application joins the approval queue. Once an HR admin approves it, they send the applicant a link to create their username and password.'
-                    : 'Choose your pathway and tell us who you are. Once HR confirms your application, we’ll email you a link to create your username and password.' ?>
+                    : (mentora_mail_enabled()
+                        ? 'Choose your pathway and tell us who you are. We’ll email you a link to confirm your email; once HR approves your application, we’ll email you a link to create your username and password.'
+                        : 'Choose your pathway and tell us who you are. Once HR confirms your application, we’ll email you a link to create your username and password.') ?>
             </p>
             <?php if ($created): ?>
                 <div class="alert success">
@@ -241,7 +329,7 @@ require __DIR__ . '/../includes/header.php';
                         <input type="hidden" name="pathway" value="<?= $h($account['pathway']) ?>" data-pathway-from="signup-form">
                         <?php mentora_google_button('signup'); ?>
                     </form>
-                    <small>Applying with Google also waits for HR to confirm it.</small>
+                    <small>With Google, your email is already confirmed. Your application still waits for HR to approve it.</small>
                 </div>
                 <div class="auth-links">Already have an account? <a href="signin.php">Sign in</a></div>
             <?php endif; ?>

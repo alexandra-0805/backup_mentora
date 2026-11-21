@@ -233,12 +233,8 @@
         padding: 0 12px
     }
 
-    .admin-topbar span:first-child {
-        max-width: 60%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis
-    }
+    /* The page title (breadcrumb) is sized in admin.css: it uses the free space and only shortens
+       with "…" when it really doesn't fit, instead of being capped at 60% of its own width. */
 
 }
 

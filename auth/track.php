@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $lookups[] = time();
         $_SESSION['track_lookups'] = array_values($lookups);
         $query = $pdo->prepare(
-            "SELECT u.id, u.first_name, u.last_name, u.pathway, u.status, u.created_at AS applied_at,
+            "SELECT u.id, u.first_name, u.last_name, u.pathway, u.status, u.created_at AS applied_at, u.email_verified_at,
                     (SELECT MAX(i.created_at) FROM account_invites i WHERE i.user_id = u.id) AS link_sent_at,
                     (SELECT MAX(i.expires_at) FROM account_invites i WHERE i.user_id = u.id AND i.used_at IS NULL) AS link_expires_at
              FROM users u WHERE u.email = ? AND u.role = 'applicant'"
@@ -44,6 +44,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $query->execute([$email]);
         $row = $query->fetch() ?: null;
         $result = $row ? $row + ['link_valid' => $row['link_expires_at'] !== null && strtotime($row['link_expires_at']) > time()] : ['status' => 'not_found'];
+
+        // Email not confirmed yet: send a new "confirm your email" link.
+        if ($row && ($_POST['action'] ?? '') === 'resend_verification' && $row['status'] === 'pending' && $row['email_verified_at'] === null) {
+            $sent = mentora_send_verification_email($pdo, (int) $row['id']);
+            if ($sent['ok']) {
+                $notice = 'We emailed you a new link to confirm your email. Watch your inbox (and Spam / Promotions).';
+            } else {
+                $error = $sent['error'];
+            }
+        }
 
         // Link expired (or lost): ask HR for a new one, at most once a day per applicant.
         if ($row && ($_POST['action'] ?? '') === 'request_link' && $row['status'] === 'approved' && !$result['link_valid']) {
@@ -93,21 +103,32 @@ $step = static function (int $number, string $state, string $title, string $deta
                 <?php if ($result['status'] === 'not_found'): ?>
                     <div class="notice"><strong>No application found for <?= $h($email) ?>.</strong><br>Check the spelling, or <a href="signup.php">apply now</a>. If an agent sent you a link, open that link instead.</div>
                 <?php elseif (in_array($result['status'], ['pending', 'approved'], true)):
-                    $approved = $result['status'] === 'approved'; ?>
+                    $approved = $result['status'] === 'approved';
+                    $unverified = !$approved && $result['email_verified_at'] === null; ?>
                     <p class="track-summary">
-                        <span class="badge <?= $approved ? '' : 'warn' ?>"><?= $approved ? ($result['link_valid'] ? 'Approved · link sent' : 'Approved · link expired') : 'Waiting for confirmation' ?></span>
+                        <span class="badge <?= $approved ? '' : 'warn' ?>"><?= $approved
+                            ? ($result['link_valid'] ? 'Approved · link sent' : 'Approved · link expired')
+                            : ($unverified ? 'Confirm your email' : 'Waiting for confirmation') ?></span>
                         <?= $h(mentora_pathway_label($result['pathway'])) ?> application · sent <?= $date($result['applied_at']) ?>
                     </p>
                     <ol class="application-steps">
                         <?= $step(1, 'done', 'Application sent', 'Received ' . $date($result['applied_at']) . '.') ?>
-                        <?= $step(2, $approved ? 'done' : 'current', 'HR confirms your application', $approved ? 'Approved by the HR team.' : 'An HR admin is reviewing it. This usually takes 1–3 working days.') ?>
-                        <?= $step(3, $approved ? 'current' : '', 'Check your email', $approved
+                        <?= $step(2, $unverified ? 'current' : 'done', 'Confirm your email', $unverified
+                            ? 'Click “Confirm my email” in the email we sent you. Check Spam / Promotions too.'
+                            : 'Your email is confirmed.') ?>
+                        <?= $step(3, $approved ? 'done' : ($unverified ? '' : 'current'), 'HR confirms your application', $approved ? 'Approved by the HR team.' : 'An HR admin reviews it. This usually takes 1–3 working days.') ?>
+                        <?= $step(4, $approved ? 'current' : '', 'Create your username and password', $approved
                             ? ($result['link_valid']
                                 ? 'Link sent ' . $date($result['link_sent_at']) . '. It works until ' . $date($result['link_expires_at']) . '. Check Spam / Promotions too.'
                                 : 'Your link expired. Ask for a new one below.')
-                            : 'You’ll get a confirmation link at this email.') ?>
-                        <?= $step(4, '', 'Create your username and password', 'Then your applicant workspace opens.') ?>
+                            : 'We email you a link once you’re approved.') ?>
                     </ol>
+                    <?php if ($unverified && $notice === '' && mentora_mail_enabled()): ?>
+                        <form method="post">
+                            <?= mentora_csrf_field() ?><input type="hidden" name="email" value="<?= $h($email) ?>"><input type="hidden" name="action" value="resend_verification">
+                            <button class="button button-primary" type="submit">Email me a new link</button>
+                        </form>
+                    <?php endif; ?>
                     <?php if ($approved && !$result['link_valid'] && $notice === ''): ?>
                         <form method="post">
                             <?= mentora_csrf_field() ?><input type="hidden" name="email" value="<?= $h($email) ?>"><input type="hidden" name="action" value="request_link">

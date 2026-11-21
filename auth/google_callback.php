@@ -96,7 +96,8 @@ if ($intent !== 'signup' || !in_array($pathway, ['employee_va', 'internship'], t
     $fail('There’s no Mentora account for ' . $email . ' yet. Choose Employee VA or Intern, then apply with Google.', 'auth/signup.php');
 }
 
-// New application from the Google profile: it waits for HR like any other application.
+// New application from the Google profile. Google has already verified the email, so it goes straight
+// to HR for approval (no "confirm your email" step).
 $firstName = trim((string) ($profile['given_name'] ?? ''));
 $lastName = trim((string) ($profile['family_name'] ?? ''));
 if ($firstName === '') {
@@ -111,11 +112,21 @@ try {
     error_log('Mentora Google application failed: ' . $exception->getMessage());
     $result = ['ok' => false, 'error' => 'We couldn’t send your application right now. Please try again.'];
 }
+// Applied with the form before but never confirmed the email: signing in with Google confirms it.
+if (!$result['ok'] && !empty($result['id']) && !mentora_email_is_verified($pdo, (int) $result['id'])) {
+    $pending = $pdo->prepare("SELECT first_name, last_name, pathway FROM users WHERE id = ? AND status = 'pending'");
+    $pending->execute([(int) $result['id']]);
+    if ($row = $pending->fetch()) {
+        mentora_mark_email_verified($pdo, (int) $result['id']);
+        mentora_notify_admins_new_applicant($pdo, trim($row['first_name'] . ' ' . $row['last_name']), $email, $row['pathway']);
+        $_SESSION['applied'] = ['user_id' => (int) $result['id'], 'name' => $row['first_name'], 'email' => $email, 'pathway' => $row['pathway']];
+        mentora_redirect('auth/signup.php?applied=1');
+    }
+}
 if (!$result['ok']) {
     $fail($result['error'], 'auth/signup.php');
 }
 
-mentora_notify_admins_new_applicant($pdo, trim($firstName . ' ' . $lastName), $email, $pathway);
-$receivedEmailed = mentora_send_application_received_email($email, $firstName, $lastName, $pathway);
-$_SESSION['applied'] = ['name' => $firstName, 'email' => $email, 'pathway' => $pathway, 'emailed' => $receivedEmailed];
+$outcome = mentora_process_new_application($pdo, $result['id'], $firstName, $lastName, $email, $pathway, true);
+$_SESSION['applied'] = ['user_id' => $result['id'], 'name' => $firstName, 'email' => $email, 'pathway' => $pathway, 'emailed' => $outcome['emailed']];
 mentora_redirect('auth/signup.php?applied=1');

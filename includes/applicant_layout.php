@@ -159,15 +159,15 @@ $now = new DateTimeImmutable(
 
     <link
         rel="stylesheet"
-        href="../../assets/css/style.css?v=36">
+        href="../../assets/css/style.css?v=44">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/admin.css?v=6">
+        href="../../assets/css/admin.css?v=10">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/applicant.css?v=8">
+        href="../../assets/css/applicant.css?v=9">
 
     <link
         rel="stylesheet"
@@ -175,7 +175,7 @@ $now = new DateTimeImmutable(
 
     <link
         rel="stylesheet"
-        href="../../assets/css/theme.css?v=9">
+        href="../../assets/css/theme.css?v=10">
 
     <link
         rel="stylesheet"
@@ -186,7 +186,8 @@ $now = new DateTimeImmutable(
 </head>
 
 
-<body class="applicant-body">
+<?php // admin-workspace: hides the big page title + subtitle (the top bar already names the page); see admin.css. ?>
+<body class="applicant-body admin-workspace">
 
     <?php require __DIR__ . '/workspace_theme_runtime.php'; ?>
 

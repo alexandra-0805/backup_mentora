@@ -109,7 +109,7 @@ require __DIR__ . '/../includes/header.php';
             </p>
             <div class="notice">
                 <strong>Already created your account?</strong> <a href="signin.php">Sign in</a> with your username or email.<br>
-                <strong>Need a new link?</strong> Ask the Mentora HR team at hello@mentora.ph to send you another one.
+                <strong>Need a new link?</strong> <a href="track.php">Track your application</a> to request another one, or ask the Mentora HR team at hello@mentora.ph.
             </div>
             <div class="auth-links"><a href="../index.php">Back to home</a></div>
         </section>

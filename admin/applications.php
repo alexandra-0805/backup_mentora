@@ -52,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // The link is also shown once, to this admin, as a backup (Gmail / copy).
             $_SESSION['applications_flash'] = [
                 'invite' => [
+                    'user_id' => (int) $applicant['id'],
                     'name' => $applicant['first_name'],
                     'full_name' => $fullName,
                     'email' => $applicant['email'],
@@ -101,7 +102,7 @@ foreach ($pdo->query("SELECT status, COUNT(*) total FROM users WHERE role = 'app
 }
 
 $listQuery = $pdo->prepare(
-    "SELECT u.id, u.user_code, u.username, u.first_name, u.last_name, u.email, u.pathway, u.status, u.created_at,
+    "SELECT u.id, u.user_code, u.username, u.first_name, u.last_name, u.email, u.email_verified_at, u.pathway, u.status, u.created_at,
             (SELECT MAX(i.created_at) FROM account_invites i WHERE i.user_id = u.id) AS link_sent_at,
             (SELECT MAX(i.expires_at) FROM account_invites i WHERE i.user_id = u.id AND i.used_at IS NULL) AS link_expires_at
      FROM users u
@@ -174,6 +175,8 @@ $pathwayLabel = static fn(string $pathway): string => $pathway === 'internship' 
                             <?php endif; ?>
                         <?php elseif ($view === 'active'): ?>
                             <?= $h($applicant['username'] ?: '—') ?><br><small><?= $h($applicant['user_code']) ?></small>
+                        <?php elseif ($view === 'pending' && $applicant['email_verified_at'] === null): ?>
+                            <span class="badge">Email not confirmed</span><br><small>Applicant hasn’t clicked their link yet</small>
                         <?php else: ?>
                             <span class="badge <?= $view === 'pending' ? 'warn' : '' ?>"><?= $h($views[$view][0]) ?></span>
                         <?php endif; ?>

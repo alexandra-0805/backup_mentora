@@ -26,7 +26,7 @@ $sendInvite = static function (PDO $pdo, array $user, array $admin, bool $resent
         ? mentora_send_invite_email($user['email'], $fullName, $user['first_name'], $user['pathway'], $link, $admin['name'], $admin['email'], $user['role'])
         : ['ok' => false, 'error' => '', 'not_configured' => true];
     $_SESSION['user_invite'] = [
-        'name' => $user['first_name'], 'full_name' => $fullName, 'email' => $user['email'], 'pathway' => $user['pathway'],
+        'user_id' => (int) $user['id'], 'name' => $user['first_name'], 'full_name' => $fullName, 'email' => $user['email'], 'pathway' => $user['pathway'],
         'role' => $user['role'], 'link' => $link, 'resent' => $resent, 'emailed' => $mail['ok'],
         'mail_error' => $mail['error'], 'mail_not_configured' => !empty($mail['not_configured']),
     ];
@@ -154,7 +154,7 @@ $statusBadge = [
     'disabled' => ['warn', 'Turned off']
 ];
 ?>
-<div class="admin-heading">
+<div class="admin-heading keep-title">
     <div>
         <h1><?= $isNew ? 'Invite user' : ($user ? mentora_h(trim($user['first_name'] . ' ' . $user['last_name'])) : 'User not found') ?></h1>
         <p><?= $isNew ? 'Create an account and send a one-time link to set a username and password.' : 'Account details, access and workspace records.' ?></p>

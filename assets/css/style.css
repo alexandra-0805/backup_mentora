@@ -318,7 +318,6 @@ body {
     font-size: 10px;
     color: var(--muted)
 }
-
 .auth-shell {
     min-height: calc(100vh - 66px);
     display: flex;
@@ -4096,4 +4095,62 @@ html[data-theme="dark"] body .track-summary .badge.warn {
 
 html[data-theme="dark"] body .track-result {
     border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Footer (includes/footer.php): "Mentora" beside the logo, with the tagline under it. */
+.footer .footer-brand-text {
+    gap: 2px;
+}
+
+.footer-brand-name {
+    color: inherit; /* the footer's text colour: dark on the light footer, white on the dark one */
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+/* Footer text hover: the landing page's lift + soft teal glow (.landing-page .hover-lift-text), on every page. */
+.footer .hover-lift-text {
+    transition: transform 220ms ease, text-shadow 220ms ease;
+}
+
+.footer .hover-lift-text:hover,
+.footer a.hover-lift-text:focus-visible {
+    text-shadow: 0 6px 18px rgba(47, 133, 128, 0.24);
+    transform: translateY(-3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .footer .hover-lift-text {
+        transition: none;
+    }
+
+    .footer .hover-lift-text:hover,
+    .footer a.hover-lift-text:focus-visible {
+        transform: none;
+    }
+}
+
+/* Footer logo hover: an even white circle around the logo (instead of the header's lopsided pill
+   from .landing-page .brand, which has extra space on the right for the name). Same on every page. */
+.footer .brand.footer-logo-link {
+    background: transparent;
+    border-radius: 50%;
+    box-shadow: none;
+    padding: 3px;
+    transform: none;
+    transition: background 180ms ease, box-shadow 180ms ease;
+}
+
+.footer .brand.footer-logo-link:hover,
+.footer .brand.footer-logo-link:focus-visible {
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .footer .brand.footer-logo-link {
+        transition: none;
+    }
 }

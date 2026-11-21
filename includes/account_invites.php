@@ -3,7 +3,8 @@
 /**
  * Application approval and account confirmation.
  *
- *   1. Someone applies (auth/signup.php): a "pending" account is created, with no usable password.
+ *   1. Someone applies (auth/signup.php): a "pending" account is created, with no usable password,
+ *      and a "confirm your email" link is emailed (auth/verify_email.php). Once it's clicked, HR is told.
  *   2. An HR admin approves it (admin/applications.php): status "approved" and a one-time
  *      confirmation link, which the admin sends from their own Gmail (or copies).
  *   3. The applicant opens the link (auth/activate.php), chooses a username and password:
@@ -18,6 +19,7 @@ require_once __DIR__ . '/application_fields.php';
 require_once __DIR__ . '/mailer.php';
 
 const MENTORA_INVITE_DAYS = 7;
+const MENTORA_VERIFY_HOURS = 48;   // "confirm your email" links
 
 /**
  * Absolute URL of a page, e.g. mentora_app_url('auth/activate.php?token=...').
@@ -53,8 +55,9 @@ function mentora_create_pending_applicant(PDO $pdo, string $firstName, string $l
         return match ($row['status']) {
             'active' => ['ok' => false, 'error' => 'An account with this email already exists. Please sign in instead.'],
             // 'track': the sign-up page offers auth/track.php to follow the application.
-            'pending' => ['ok' => false, 'track' => true, 'error' => 'An application with this email is already waiting for confirmation.'],
-            'approved' => ['ok' => false, 'track' => true, 'error' => 'This application was approved. Check your email for the link to create your username and password.'],
+            // 'id': the sign-up page can email this applicant their confirmation link again.
+            'pending' => ['ok' => false, 'track' => true, 'id' => (int) $row['id'], 'error' => 'An application with this email is already waiting for confirmation.'],
+            'approved' => ['ok' => false, 'track' => true, 'id' => (int) $row['id'], 'error' => 'This application was approved. Check your email for the link to create your username and password.'],
             default => (function () use ($pdo, $row, $firstName, $lastName, $pathway): array {
                 // Declined before: a new application starts over.
                 $pdo->prepare("UPDATE users SET first_name = ?, last_name = ?, pathway = ?, status = 'pending', created_at = NOW() WHERE id = ?")
@@ -86,6 +89,139 @@ function mentora_notify_admins_new_applicant(PDO $pdo, string $name, string $ema
             'Pathway: ' . $label, '', 'Approve it so they get their confirmation link: ' . mentora_app_url('admin/applications.php?view=pending'),
         ]));
     }
+}
+
+/**
+ * Right after someone applies (auth/signup.php, auth/google_callback.php).
+ *   - Email already confirmed (Google sign-up, or a reopened application): straight to HR.
+ *   - Otherwise: email a "confirm your email" link (auth/verify_email.php). HR is told once it's clicked.
+ *   - Email not set up / not sent: nothing to confirm with, so straight to HR as before.
+ * Returns ['verify_sent' => bool, 'emailed' => bool (any email reached them)].
+ */
+function mentora_process_new_application(PDO $pdo, int $userId, string $firstName, string $lastName, string $email, string $pathway, bool $emailAlreadyVerified = false): array
+{
+    if ($emailAlreadyVerified) {
+        mentora_mark_email_verified($pdo, $userId);
+    } elseif (!mentora_email_is_verified($pdo, $userId) && mentora_mail_enabled() && mentora_send_verification_email($pdo, $userId)['ok']) {
+        return ['verify_sent' => true, 'emailed' => true];
+    } else {
+        mentora_mark_email_verified($pdo, $userId);
+    }
+
+    mentora_notify_admins_new_applicant($pdo, trim($firstName . ' ' . $lastName), $email, $pathway);
+    return ['verify_sent' => false, 'emailed' => mentora_send_application_received_email($email, $firstName, $lastName, $pathway)];
+}
+
+function mentora_email_is_verified(PDO $pdo, int $userId): bool
+{
+    $query = $pdo->prepare('SELECT email_verified_at IS NOT NULL FROM users WHERE id = ?');
+    $query->execute([$userId]);
+
+    return (bool) $query->fetchColumn();
+}
+
+function mentora_mark_email_verified(PDO $pdo, int $userId): void
+{
+    $pdo->prepare('UPDATE users SET email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = ?')->execute([$userId]);
+}
+
+/**
+ * Email a pending applicant a one-time "confirm your email" link (a new one replaces any earlier one).
+ * At most one email a minute per applicant. Returns ['ok' => bool, 'error' => string, 'too_soon' => bool].
+ */
+function mentora_send_verification_email(PDO $pdo, int $userId): array
+{
+    $query = $pdo->prepare("SELECT id, first_name, last_name, email, pathway FROM users
+        WHERE id = ? AND role = 'applicant' AND status = 'pending' AND email_verified_at IS NULL");
+    $query->execute([$userId]);
+    $user = $query->fetch();
+    if (!$user) {
+        return ['ok' => false, 'error' => 'This email is already confirmed.', 'too_soon' => false];
+    }
+    if (!mentora_mail_enabled()) {
+        return ['ok' => false, 'error' => 'Automatic email isn’t set up yet.', 'too_soon' => false];
+    }
+
+    $recent = $pdo->prepare('SELECT COUNT(*) FROM email_verifications WHERE user_id = ? AND created_at > NOW() - INTERVAL 60 SECOND');
+    $recent->execute([$userId]);
+    if ((int) $recent->fetchColumn() > 0) {
+        return ['ok' => false, 'error' => 'We just sent you an email. Please wait a minute before asking for another one.', 'too_soon' => true];
+    }
+
+    $token = bin2hex(random_bytes(32));
+    $pdo->prepare('DELETE FROM email_verifications WHERE user_id = ? AND used_at IS NULL')->execute([$userId]);
+    $pdo->prepare('INSERT INTO email_verifications (user_id, token_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ' . MENTORA_VERIFY_HOURS . ' HOUR))')
+        ->execute([$userId, hash('sha256', $token)]);
+    $link = mentora_app_url('auth/verify_email.php?token=' . $token);
+
+    [$subject, $text, $html] = mentora_verification_email($user['first_name'], $user['pathway'], $link);
+    $result = mentora_send_mail($user['email'], trim($user['first_name'] . ' ' . $user['last_name']), $subject, $text, $html);
+    if (!$result['ok']) {
+        error_log('Mentora email confirmation to ' . $user['email'] . ' failed: ' . $result['error']);
+        $pdo->prepare('DELETE FROM email_verifications WHERE user_id = ? AND used_at IS NULL')->execute([$userId]);
+        return ['ok' => false, 'error' => 'We couldn’t send the email right now. Please try again in a few minutes.', 'too_soon' => false];
+    }
+
+    return ['ok' => true, 'error' => '', 'too_soon' => false];
+}
+
+/** The "confirm your email" message sent right after applying: [subject, plain text, HTML]. */
+function mentora_verification_email(string $firstName, string $pathway, string $link): array
+{
+    $label = mentora_pathway_label($pathway);
+    $hours = MENTORA_VERIFY_HOURS;
+    $subject = 'Confirm your email for your Mentora application';
+    $text = "Hi {$firstName},\n\n"
+        . "Thanks for applying to Mentora as {$label}! Please confirm this is your email address:\n{$link}\n\n"
+        . "Once it's confirmed, your application goes to the HR team. When they approve it, we'll email you a link to create your username and password.\n\n"
+        . "This link expires in {$hours} hours. If you didn't apply to Mentora, you can ignore this email.\n\nMentora HR";
+
+    $e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $html = mentora_email_html(
+        'Confirm your email',
+        'Hi ' . $e($firstName) . ', please confirm your email',
+        '<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#3a3a3c;">Thanks for applying to Mentora as <strong>' . $e($label)
+            . '</strong>! Click the button below to confirm this is your email address.</p>'
+            . '<p style="margin:0 0 22px;font-size:14px;line-height:1.6;color:#3a3a3c;">Once it’s confirmed, your application goes to the HR team. '
+            . 'When they approve it, we’ll email you a link to create your username and password.</p>',
+        'Confirm my email',
+        $link,
+        'This link expires in ' . $hours . ' hours. If you didn’t apply to Mentora, you can ignore this email.',
+        'Mentora HR'
+    );
+
+    return [$subject, $text, $html];
+}
+
+/**
+ * Open a "confirm your email" link: marks the email confirmed and sends the application to HR.
+ * Returns the applicant (id, first_name, email, pathway) or null when the link is unknown, used or expired.
+ */
+function mentora_use_verification_link(PDO $pdo, string $token): ?array
+{
+    if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
+        return null;
+    }
+    $query = $pdo->prepare(
+        "SELECT v.id AS verification_id, u.id, u.first_name, u.last_name, u.email, u.pathway
+         FROM email_verifications v JOIN users u ON u.id = v.user_id
+         WHERE v.token_hash = ? AND v.used_at IS NULL AND v.expires_at > NOW() AND u.status = 'pending'"
+    );
+    $query->execute([hash('sha256', $token)]);
+    $user = $query->fetch();
+    if (!$user) {
+        return null;
+    }
+
+    // Only the request that actually marks the link used tells HR (opening the link twice at once is harmless).
+    $use = $pdo->prepare('UPDATE email_verifications SET used_at = NOW() WHERE id = ? AND used_at IS NULL');
+    $use->execute([$user['verification_id']]);
+    if ($use->rowCount() === 1) {
+        mentora_mark_email_verified($pdo, (int) $user['id']);
+        mentora_notify_admins_new_applicant($pdo, trim($user['first_name'] . ' ' . $user['last_name']), $user['email'], $user['pathway']);
+    }
+
+    return $user;
 }
 
 /**
@@ -137,7 +273,7 @@ function mentora_email_html(string $eyebrow, string $headingHtml, string $bodyHt
     return '<!doctype html><html><body style="margin:0;padding:0;background:#f4f8f7;font-family:Arial,Helvetica,sans-serif;color:#1d1d1f;">'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f8f7;padding:28px 12px;"><tr><td align="center">'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #d5e4e2;">'
-        . '<tr><td style="background:#0b625d;background-image:linear-gradient(135deg,#063d3b,#0b625d 55%,#147b71);padding:22px 28px;color:#ffffff;font-size:20px;font-weight:bold;">Mentora</td></tr>'
+        . '<tr><td bgcolor="#0b625d" style="background:#0b625d;background-image:linear-gradient(135deg,#063d3b,#0b625d 55%,#147b71);padding:22px 28px;color:#ffffff;font-size:20px;font-weight:bold;">Mentora</td></tr>'
         . '<tr><td style="padding:28px;">'
         . '<p style="margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#0b625d;font-weight:bold;">' . $e($eyebrow) . '</p>'
         . '<h1 style="margin:0 0 14px;font-family:Georgia,serif;font-size:26px;font-weight:normal;">' . $headingHtml . '</h1>'

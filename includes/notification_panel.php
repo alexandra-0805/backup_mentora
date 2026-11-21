@@ -1,28 +1,14 @@
 <?php
 $userId = (int) ($_SESSION['user']['id'] ?? 0);
+// "Mark as done" posts to account/notification.php, which marks everything read and comes back here.
 $notificationActionToken = $_SESSION['notification_action_token'] ??= bin2hex(random_bytes(32));
-
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST'
-    && isset($_POST['mark_notifications_done'], $_POST['notification_action_token'])
-    && hash_equals($notificationActionToken, (string) $_POST['notification_action_token'])
-) {
-    $markReadQuery = $userId
-        ? $pdo->prepare('UPDATE notifications SET read_at = NOW() WHERE (user_id = ? OR user_id IS NULL) AND read_at IS NULL')
-        : $pdo->prepare('UPDATE notifications SET read_at = NOW() WHERE user_id IS NULL AND read_at IS NULL');
-
-    if ($userId) {
-        $markReadQuery->execute([$userId]);
-    } else {
-        $markReadQuery->execute();
-    }
-}
 
 $notificationQuery = $userId
     ? $pdo->prepare('SELECT id, title, body, link, read_at, created_at FROM notifications WHERE user_id = ? OR user_id IS NULL ORDER BY created_at DESC')
     : $pdo->prepare('SELECT id, title, body, link, read_at, created_at FROM notifications WHERE user_id IS NULL ORDER BY created_at DESC');
 // Clicking a notification opens account/notification.php (marks it read, then goes to its page).
-$notificationOpenUrl = (str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/applicant/') ? '../../' : '../') . 'account/notification.php?id=';
+$notificationPageUrl = (str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/applicant/') ? '../../' : '../') . 'account/notification.php';
+$notificationOpenUrl = $notificationPageUrl . '?id=';
 
 if ($userId) {
     $notificationQuery->execute([$userId]);
@@ -64,11 +50,14 @@ foreach ($notificationItems as $notification) {
         <div class="notification-panel-header">
             <strong>Notifications</strong>
             <div class="notification-panel-actions">
-                <form method="post">
+                <?php if ($userId && $unreadNotificationCount > 0): ?>
+                <form method="post" action="<?= htmlspecialchars($notificationPageUrl, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="notification_action_token" value="<?= htmlspecialchars($notificationActionToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="back" value="<?= htmlspecialchars((string) ($_SERVER['REQUEST_URI'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     <button class="notification-mark-done" type="submit" name="mark_notifications_done" value="1"
                         data-confirm-title="Mark all as done?" data-confirm="All of your notifications will be marked as read." data-confirm-action="Mark as done">Mark as done</button>
                 </form>
+                <?php endif; ?>
                 <button class="notification-close" type="button" aria-label="Close notifications">×</button>
             </div>
         </div>

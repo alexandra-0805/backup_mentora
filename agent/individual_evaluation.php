@@ -127,7 +127,7 @@ if (!$evaluation):
 ?>
     <form method="post">
         <?= mentora_csrf_field() ?><input type="hidden" name="id" value="<?= (int) $evaluation['id'] ?>">
-        <div class="admin-heading">
+        <div class="admin-heading keep-title">
             <div>
                 <h1><?= mentora_h($name) ?> / <?= mentora_h($evaluation['review_type']) ?></h1>
                 <p><?= mentora_pathway_label($evaluation['pathway']) ?> · <?= mentora_h($evaluation['user_code']) ?> · <?= $isPublished

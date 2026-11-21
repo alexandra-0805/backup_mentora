@@ -97,12 +97,36 @@ function mentora_send_mail(string $to, string $toName, string $subject, string $
         return [in_array($code, $expect, true), $code, $reply];
     };
 
-    $prefix = $config['encryption'] === 'ssl' ? 'ssl://' : 'tcp://';
+    // Connect. A short network or DNS hiccup shouldn't fail the email, so retry once, then try the
+    // server's other standard port (Gmail: 587 STARTTLS <-> 465 SSL; some networks block one of them).
+    @set_time_limit(90);
+    $routes = [[$config['encryption'], $config['port']], [$config['encryption'], $config['port']]];
+    if ($config['encryption'] === 'tls' && $config['port'] === 587) {
+        $routes[] = ['ssl', 465];
+    } elseif ($config['encryption'] === 'ssl' && $config['port'] === 465) {
+        $routes[] = ['tls', 587];
+    }
     $context = stream_context_create(['ssl' => ['verify_peer' => true, 'verify_peer_name' => true, 'peer_name' => $config['host']]]);
-    $socket = @stream_socket_client($prefix . $config['host'] . ':' . $config['port'], $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $context);
+    $socket = null;
+    $errstr = '';
+    $encryption = $config['encryption'];
+    foreach ($routes as $attempt => [$routeEncryption, $routePort]) {
+        if ($attempt > 0) {
+            sleep(2);
+        }
+        $prefix = $routeEncryption === 'ssl' ? 'ssl://' : 'tcp://';
+        $socket = @stream_socket_client($prefix . $config['host'] . ':' . $routePort, $errno, $errstr, 10, STREAM_CLIENT_CONNECT, $context);
+        if (is_resource($socket)) {
+            $encryption = $routeEncryption;
+            break;
+        }
+    }
     if (!is_resource($socket)) {
+        $offline = stripos($errstr, 'getaddrinfo') !== false || stripos($errstr, 'No such host') !== false;
         return $fail(
-            'Couldn’t connect to the mail server (' . $config['host'] . ':' . $config['port'] . '). Check the internet connection and mail settings.',
+            $offline
+                ? 'This computer couldn’t reach the internet (the mail server ' . $config['host'] . ' wasn’t found). Check the Wi-Fi or internet connection, then try again.'
+                : 'Couldn’t connect to the mail server (' . $config['host'] . '). Check the internet connection, or whether a firewall or antivirus blocks email ports 587 and 465.',
             $errstr
         );
     }
@@ -118,7 +142,7 @@ function mentora_send_mail(string $to, string $toName, string $subject, string $
         return $fail('The mail server didn’t respond as expected.', $reply);
     }
 
-    if ($config['encryption'] === 'tls') {
+    if ($encryption === 'tls') {
         [$ok, , $reply] = $command('STARTTLS', [220]);
         $secured = $ok && @stream_socket_enable_crypto(
             $socket,
