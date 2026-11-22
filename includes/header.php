@@ -18,8 +18,8 @@ $themeFollowsDevice = $themeFollowsDevice ?? true;
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="icon" type="image/png" href="<?= $root ?>assets/images/mentora-logo.png?v=1">
-    <link rel="stylesheet" href="<?= $root ?>assets/css/style.css?v=45">
-    <link rel="stylesheet" href="<?= $root ?>assets/css/theme.css?v=10">
+    <link rel="stylesheet" href="<?= $root ?>assets/css/style.css?v=48">
+    <link rel="stylesheet" href="<?= $root ?>assets/css/theme.css?v=13">
     <link rel="stylesheet" href="<?= $root ?>assets/css/dialog.css?v=2">
     <?php if ($inAccount): // account/*.php pages (Messages) ?>
     <link rel="stylesheet" href="<?= $root ?>assets/css/account.css?v=4">
@@ -43,10 +43,9 @@ $themeFollowsDevice = $themeFollowsDevice ?? true;
         <div class="topbar-tools">
             <?php if ($headerStyle !== 'signin-page'): ?>
                 <nav>
-                    <?php $onAbout = basename($_SERVER['SCRIPT_NAME'] ?? '') === 'about.php'; ?>
+                    <?php $currentPage = basename($_SERVER['SCRIPT_NAME'] ?? ''); ?>
                     <a class="button button-small" href="<?= $root ?>auth/signup.php">Apply now</a>
-                    <a href="<?= $root ?>about.php"<?= $onAbout ? ' aria-current="page"' : '' ?>><strong>About us</strong></a>
-                </nav>
+                    <a href="<?= $root ?>about.php"<?= $currentPage === 'about.php' ? ' aria-current="page"' : '' ?>><strong>About us</strong></a>                </nav>
             <?php endif; ?>
         </div>
     </header>

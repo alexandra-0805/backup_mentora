@@ -188,19 +188,19 @@ require __DIR__ . '/includes/header.php';
             <h2 id="values-title">What we<br>value.</h2>
             <p>The ideas that shape how Mentora works for you.</p>
         </div>
-        <div class="preparation-list">
-            <div>
-                <span><?= mentora_icon('sprout') ?></span><strong>Growth first</strong><small>Every feature exists to help people learn, improve, and move forward.</small>
-            </div>
-            <div>
-                <span><?= mentora_icon('message-heart') ?></span><strong>Guidance, not guesswork</strong><small>Mentors and clear next steps, so no one is left wondering what to do.</small>
-            </div>
-            <div>
-                <span><?= mentora_icon('shield-check') ?></span><strong>Privacy &amp; trust</strong><small>Your information is kept private, with access based on your role.</small>
-            </div>
-            <div>
-                <span><?= mentora_icon('heart') ?></span><strong>People-centred</strong><small>Thoughtful tools built for applicants, mentors, and people teams alike.</small>
-            </div>
+        <div class="faq-list" aria-label="Frequently asked questions">
+            <details open>
+                <summary>Which pathway should I choose?</summary>
+                <p>Choose employee VA if you’re ready to bring relevant skills to a full-time role. Choose internship if you need supervised, school-accredited work experience.</p>
+            </details>
+            <details>
+                <summary>What are the internship requirements?</summary>
+                <p>You should be enrolled in a college or university, meet your school’s requirements, and be able to commit at least 20 hours per week.</p>
+            </details>
+            <details>
+                <summary>Can I save my application and return later?</summary>
+                <p>Yes. Create an account and sign in to your workspace to continue managing your application and documents.</p>
+            </details>
         </div>
     </section>
 

@@ -486,6 +486,24 @@ try {
             CONSTRAINT fk_agent_reports_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
+    // Public ratings and feedback about Mentora (feedback.php, summary on index.php). Anyone can post;
+    // name, rating and comment are shown to everyone, the email stays private. HR admins can remove a review.
+    // user_id is set when the person was signed in; ip_hash (sha256, never the raw IP) limits repeat posts.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS site_feedback (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NULL,
+            name VARCHAR(100) NOT NULL,
+            email VARCHAR(160) NULL,
+            rating TINYINT UNSIGNED NOT NULL,
+            comment TEXT NOT NULL,
+            ip_hash CHAR(64) NOT NULL DEFAULT "",
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_site_feedback_created (created_at),
+            KEY idx_site_feedback_ip (ip_hash, created_at),
+            CONSTRAINT fk_site_feedback_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
 } catch (PDOException $exception) {
     error_log('Mentora database connection failed: ' . $exception->getMessage());
     http_response_code(500);

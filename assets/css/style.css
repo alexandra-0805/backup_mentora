@@ -4305,3 +4305,595 @@ html[data-theme="dark"] .footer-social-link.is-instagram {
         transform: none;
     }
 }
+/* ==========================================================================
+   Feedback: ratings and reviews (index.php "What people are saying", feedback.php)
+   ========================================================================== */
+.landing-page {
+    --star: #e5a823;
+}
+
+.feedback-page .feedback-hero {
+    min-height: 0;
+    padding: 150px 24px 88px;
+}
+
+.landing-page .feedback-section > *,
+.landing-page .feedback-layout,
+.landing-page .feedback-reviews > * {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1180px;
+}
+
+.landing-page .section h2 em {
+    color: var(--mentora-teal);
+    font-style: italic;
+}
+
+/* Heading row with the "Leave feedback" button. */
+.landing-page .feedback-heading {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+    margin-bottom: 34px;
+}
+
+.landing-page .feedback-heading h2 {
+    margin: 8px 0 0;
+}
+
+.landing-page .feedback-leave {
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--ios-border);
+    color: #1d1d1f;
+    display: inline-flex;
+    font-weight: 700;
+    gap: 10px;
+}
+
+.landing-page .feedback-leave svg {
+    fill: none;
+    height: 18px;
+    stroke: currentColor;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    width: 18px;
+}
+
+.landing-page .feedback-leave:hover {
+    background: var(--mentora-gradient);
+    border-color: var(--mentora-teal);
+    color: #fff;
+}
+
+.landing-page .feedback-leave:hover svg {
+    fill: var(--star);
+    stroke: var(--star);
+}
+
+/* Landing: rating card on the left, latest reviews on the right. */
+.landing-page .feedback-overview {
+    align-items: start;
+    display: grid;
+    gap: 30px;
+    grid-template-columns: minmax(280px, 0.42fr) 1fr;
+}
+
+/* Feedback page: rating card on the left, the form on the right. */
+.landing-page .feedback-layout {
+    align-items: start;
+    display: grid;
+    gap: 40px;
+    grid-template-columns: minmax(280px, 0.8fr) 1.2fr;
+}
+
+/* Shared surfaces: rating card, form card, review cards. */
+.landing-page .rating-summary,
+.landing-page .feedback-form-card,
+.landing-page .review-card {
+    background: var(--ios-surface);
+    border: 1px solid var(--ios-border);
+    border-radius: 20px;
+    box-shadow: 0 12px 32px rgba(60, 60, 67, 0.07);
+}
+
+.landing-page .rating-summary {
+    padding: 36px 40px;
+}
+
+.landing-page .rating-summary .eyebrow,
+.landing-page .feedback-form-card .eyebrow {
+    margin: 0 0 18px;
+}
+
+/* Stars: outline row with the filled row on top, cut to the rating's width. */
+.landing-page .rating-stars {
+    display: inline-block;
+    line-height: 0;
+    position: relative;
+    vertical-align: middle;
+}
+
+.landing-page .rating-stars-empty,
+.landing-page .rating-stars-fill {
+    display: inline-flex;
+    gap: 3px;
+    white-space: nowrap;
+}
+
+.landing-page .rating-stars-fill {
+    inset: 0 auto 0 0;
+    overflow: hidden;
+    position: absolute;
+}
+
+.landing-page .rating-stars svg {
+    flex: none;
+    height: 18px;
+    stroke: var(--star);
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+    width: 18px;
+}
+
+.landing-page .rating-stars-empty svg {
+    fill: none;
+}
+
+.landing-page .rating-stars-fill svg {
+    fill: var(--star);
+}
+
+.landing-page .rating-summary-score {
+    align-items: center;
+    display: flex;
+    gap: 20px;
+}
+
+.landing-page .rating-average {
+    color: #1d1d1f;
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    min-width: 46px;
+    text-align: center;
+}
+
+.landing-page .rating-summary .rating-stars svg {
+    height: 22px;
+    width: 22px;
+}
+
+.landing-page .rating-summary-score small {
+    color: #6e6e73;
+    display: block;
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+.landing-page .rating-bars {
+    display: grid;
+    gap: 9px;
+    list-style: none;
+    margin: 26px 0 0;
+    padding: 0;
+}
+
+.landing-page .rating-bars li {
+    align-items: center;
+    color: #6e6e73;
+    display: grid;
+    font-size: 13px;
+    gap: 12px;
+    grid-template-columns: 34px 1fr 28px;
+}
+
+.landing-page .rating-bars li > span:first-child span {
+    color: var(--star);
+}
+
+.landing-page .rating-bars li > span:last-child {
+    text-align: right;
+}
+
+.landing-page .rating-bar-track {
+    background: var(--mentora-pale);
+    border-radius: 999px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.landing-page .rating-bar-track span {
+    background: var(--mentora-gradient);
+    border-radius: inherit;
+    display: block;
+    height: 100%;
+}
+
+.landing-page .rating-summary-note {
+    align-items: center;
+    color: #6e6e73;
+    display: flex;
+    font-size: 13px;
+    gap: 8px;
+    margin: 26px 0 0;
+}
+
+.landing-page .rating-summary-note svg {
+    fill: none;
+    flex: none;
+    height: 15px;
+    stroke: var(--mentora-teal);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 15px;
+}
+
+/* Review cards. */
+.landing-page .review-grid {
+    display: grid;
+    gap: 22px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.landing-page .review-grid.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.landing-page .review-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+    padding: 26px;
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.landing-page .review-card:hover {
+    border-color: rgba(11, 98, 93, 0.35);
+    box-shadow: 0 18px 38px rgba(11, 98, 93, 0.16);
+    transform: translateY(-4px);
+}
+
+.landing-page .review-card-top {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+.landing-page .review-card blockquote {
+    color: #3a3a3c;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.landing-page .review-card footer {
+    align-items: center;
+    border-top: 1px solid var(--ios-border);
+    display: flex;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+.landing-page .review-avatar {
+    align-items: center;
+    background: var(--mentora-gradient);
+    border-radius: 50%;
+    color: #fff;
+    display: inline-flex;
+    flex: none;
+    font-size: 14px;
+    font-weight: 700;
+    height: 38px;
+    justify-content: center;
+    width: 38px;
+}
+
+.landing-page .review-card strong {
+    color: #1d1d1f;
+    display: block;
+    font-size: 14px;
+}
+
+.landing-page .review-card small {
+    color: #6e6e73;
+    display: block;
+    font-size: 12px;
+}
+
+.landing-page .review-remove {
+    margin: 0;
+}
+
+.landing-page .review-remove button {
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: #6e6e73;
+    cursor: pointer;
+    font-size: 18px;
+    height: 30px;
+    line-height: 1;
+    width: 30px;
+}
+
+.landing-page .review-remove button:hover,
+.landing-page .review-remove button:focus-visible {
+    background: #fdecec;
+    color: #b42318;
+}
+
+.landing-page .feedback-all-link {
+    color: var(--mentora-teal);
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 22px;
+}
+
+.landing-page .review-empty {
+    color: #6e6e73;
+    font-size: 15px;
+}
+
+.landing-page .review-empty.is-boxed {
+    align-self: stretch;
+    border: 1px dashed var(--ios-border);
+    border-radius: 20px;
+    margin: 0;
+    padding: 40px 24px;
+    text-align: center;
+}
+
+.landing-page .review-empty a {
+    color: var(--mentora-teal);
+    text-decoration: underline;
+}
+
+/* "Leave feedback" form (feedback.php). */
+.landing-page .feedback-form-card {
+    padding: 36px 40px;
+    scroll-margin-top: 100px;
+}
+
+.landing-page .feedback-form-card h2 {
+    font-size: clamp(26px, 3vw, 34px);
+    margin: 0 0 8px;
+}
+
+.landing-page .feedback-form-intro {
+    color: #6e6e73;
+    font-size: 14px;
+    margin: 0 0 24px;
+}
+
+.landing-page .feedback-form {
+    display: grid;
+    gap: 20px;
+}
+
+.landing-page .star-input {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.landing-page .star-input legend,
+.landing-page .feedback-field > span {
+    color: #1d1d1f;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    padding: 0;
+}
+
+.landing-page .feedback-field > span em {
+    color: #6e6e73;
+    font-style: normal;
+    font-weight: 400;
+}
+
+.landing-page .star-input-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+/* Stars are listed 5 -> 1 and reversed, so "~ label" lights up the chosen star and the ones before it. */
+.landing-page .star-input-options {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 4px;
+}
+
+.landing-page .star-input-options input {
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    width: 1px;
+}
+
+.landing-page .star-input-options label {
+    border-radius: 8px;
+    color: #d2d2d7;
+    cursor: pointer;
+    line-height: 0;
+    padding: 2px;
+    transition: color 150ms ease, transform 150ms ease;
+}
+
+.landing-page .star-input-options svg {
+    fill: currentColor;
+    height: 34px;
+    width: 34px;
+}
+
+.landing-page .star-input-options input:checked ~ label,
+.landing-page .star-input-options:hover label:hover,
+.landing-page .star-input-options:hover label:hover ~ label {
+    color: var(--star);
+}
+
+.landing-page .star-input-options:hover input:checked ~ label:not(:hover):not(:hover ~ label) {
+    color: #d2d2d7;
+}
+
+.landing-page .star-input-options label:hover {
+    transform: scale(1.12);
+}
+
+.landing-page .star-input-options input:focus-visible + label {
+    outline: 3px solid rgba(11, 98, 93, 0.35);
+    outline-offset: 2px;
+}
+
+.landing-page .star-input-text {
+    color: #6e6e73;
+    font-size: 14px;
+}
+
+.landing-page .feedback-fields {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: 1fr 1fr;
+}
+
+.landing-page .feedback-field {
+    display: grid;
+}
+
+.landing-page .feedback-field input,
+.landing-page .feedback-field textarea {
+    background: #fff;
+    border: 1px solid var(--ios-border);
+    border-radius: 14px;
+    color: #1d1d1f;
+    font: inherit;
+    font-size: 14px;
+    min-height: 50px;
+    padding: 12px 14px;
+    width: 100%;
+}
+
+.landing-page .feedback-field textarea {
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.landing-page .feedback-field input:focus,
+.landing-page .feedback-field textarea:focus {
+    border-color: var(--mentora-teal);
+    box-shadow: 0 0 0 3px rgba(11, 98, 93, 0.15);
+    outline: none;
+}
+
+.landing-page .feedback-submit {
+    align-items: center;
+    background: var(--mentora-gradient);
+    border: 0;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    font-weight: 700;
+    gap: 10px;
+    justify-self: start;
+}
+
+.landing-page .feedback-submit svg {
+    fill: none;
+    height: 16px;
+    stroke: currentColor;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 16px;
+}
+
+.landing-page .feedback-alert {
+    border-radius: 12px;
+    font-size: 14px;
+    margin: 0 0 20px;
+    padding: 12px 16px;
+}
+
+.landing-page .feedback-alert p {
+    margin: 0;
+}
+
+.landing-page .feedback-alert.is-success {
+    background: #e7f7ef;
+    border: 1px solid #b9e3ca;
+    color: #17653e;
+}
+
+.landing-page .feedback-alert.is-error {
+    background: #fdecec;
+    border: 1px solid #f4c7c3;
+    color: #b42318;
+}
+
+/* Feedback page: all reviews. */
+.landing-page .feedback-reviews h2 {
+    margin: 8px auto 34px;
+}
+
+@media (max-width: 900px) {
+    .landing-page .feedback-overview,
+    .landing-page .feedback-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-page .review-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .landing-page .review-grid,
+    .landing-page .review-grid.two,
+    .landing-page .feedback-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-page .rating-summary,
+    .landing-page .feedback-form-card {
+        padding: 26px 22px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .landing-page .review-card:hover,
+    .landing-page .star-input-options label:hover {
+        transform: none;
+    }
+}
+
+/* Feedback page: the reviews sit on Mentora green (.pale), so text on the section itself turns light. */
+.landing-page .pale.feedback-reviews .eyebrow,
+.landing-page .pale h2 em {
+    color: var(--mentora-mint);
+}
+
+.landing-page .pale.feedback-reviews .review-empty {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.landing-page .pale.feedback-reviews .review-card {
+    background: #fff;
+    border-color: transparent;
+    box-shadow: 0 14px 34px rgba(3, 30, 29, 0.28);
+}
+
+.landing-page .pale.feedback-reviews .review-card:hover {
+    border-color: var(--mentora-mint);
+    box-shadow: 0 22px 44px rgba(3, 30, 29, 0.36);
+}

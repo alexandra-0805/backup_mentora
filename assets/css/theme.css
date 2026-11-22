@@ -851,3 +851,106 @@ html[data-theme="dark"] .account-page :is(.chat-composer, .chat-info h3) {
         transition: none !important;
     }
 }
+/* Feedback: ratings and reviews */
+html[data-theme="dark"] .landing-page .rating-summary,
+html[data-theme="dark"] .landing-page .feedback-form-card,
+html[data-theme="dark"] .landing-page .review-card {
+    background: var(--dark-surface);
+    border-color: var(--dark-line);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .landing-page .rating-average,
+html[data-theme="dark"] .landing-page .review-card strong,
+html[data-theme="dark"] .landing-page .star-input legend,
+html[data-theme="dark"] .landing-page .feedback-field > span {
+    color: var(--dark-heading);
+}
+
+html[data-theme="dark"] .landing-page .section h2 em,
+html[data-theme="dark"] .landing-page .feedback-all-link,
+html[data-theme="dark"] .landing-page .review-empty a {
+    color: var(--mentora-mint);
+}
+
+html[data-theme="dark"] .landing-page .rating-summary-score small,
+html[data-theme="dark"] .landing-page .rating-bars li,
+html[data-theme="dark"] .landing-page .rating-summary-note,
+html[data-theme="dark"] .landing-page .review-card small,
+html[data-theme="dark"] .landing-page .review-empty,
+html[data-theme="dark"] .landing-page .feedback-form-intro,
+html[data-theme="dark"] .landing-page .feedback-field > span em,
+html[data-theme="dark"] .landing-page .star-input-text,
+html[data-theme="dark"] .landing-page .review-remove button {
+    color: var(--dark-muted);
+}
+
+html[data-theme="dark"] .landing-page .review-card blockquote {
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] .landing-page .review-card footer,
+html[data-theme="dark"] .landing-page .review-empty.is-boxed {
+    border-color: var(--dark-line);
+}
+
+html[data-theme="dark"] .landing-page .rating-bar-track {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .landing-page .rating-summary-note svg {
+    stroke: var(--mentora-mint);
+}
+
+html[data-theme="dark"] .landing-page .feedback-leave {
+    background: var(--dark-surface);
+    border-color: var(--dark-line);
+    color: var(--dark-heading);
+}
+
+html[data-theme="dark"] .landing-page .feedback-field input,
+html[data-theme="dark"] .landing-page .feedback-field textarea {
+    background: var(--dark-input);
+    border-color: var(--dark-line);
+    color: var(--dark-text);
+}
+
+html[data-theme="dark"] .landing-page .star-input-options label,
+html[data-theme="dark"] .landing-page .star-input-options:hover input:checked ~ label:not(:hover):not(:hover ~ label) {
+    color: rgba(255, 255, 255, 0.18);
+}
+
+html[data-theme="dark"] .landing-page .star-input-options input:checked ~ label,
+html[data-theme="dark"] .landing-page .star-input-options:hover label:hover,
+html[data-theme="dark"] .landing-page .star-input-options:hover label:hover ~ label {
+    color: var(--star);
+}
+
+html[data-theme="dark"] .landing-page .feedback-alert.is-success {
+    background: #24443b;
+    border-color: #1e5a44;
+    color: #a7e8c4;
+}
+
+html[data-theme="dark"] .landing-page .feedback-alert.is-error {
+    background: rgba(255, 155, 143, 0.12);
+    border-color: rgba(255, 155, 143, 0.3);
+    color: #ff9b8f;
+}
+
+html[data-theme="dark"] .landing-page .review-remove button:hover,
+html[data-theme="dark"] .landing-page .review-remove button:focus-visible {
+    background: rgba(255, 155, 143, 0.15);
+    color: #ff9b8f;
+}
+
+/* Feedback page: reviews on the green band keep dark cards in dark mode. */
+html[data-theme="dark"] .landing-page .pale.feedback-reviews .review-card {
+    background: var(--dark-surface-solid);
+    border-color: var(--dark-line);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .landing-page .pale.feedback-reviews .review-card:hover {
+    border-color: rgba(143, 239, 218, 0.3);
+}

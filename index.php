@@ -1,6 +1,11 @@
 <?php
 
 require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/feedback.php';
+
+// "What people are saying": overall rating + the 4 newest reviews. Posting happens on feedback.php.
+$feedbackSummary = mentora_feedback_summary($pdo);
+$homeReviews = mentora_feedback_list($pdo, 4);
 
 $pageTitle = 'Mentora';
 $bodyClass = 'landing-page';
@@ -166,21 +171,35 @@ require __DIR__ . '/includes/header.php';
         </div>
     </section>
 
-    <section class="section faq-section" aria-labelledby="faq-title">
-        <h2 id="faq-title">Questions before your next chapter?</h2>
-        <div class="faq-list">
-            <details open>
-                <summary>Which pathway should I choose?</summary>
-                <p>Choose employee VA if you’re ready to bring relevant skills to a full-time role. Choose internship if you need supervised, school-accredited work experience.</p>
-            </details>
-            <details>
-                <summary>What are the internship requirements?</summary>
-                <p>You should be enrolled in a college or university, meet your school’s requirements, and be able to commit at least 20 hours per week.</p>
-            </details>
-            <details>
-                <summary>Can I save my application and return later?</summary>
-                <p>Yes. Create an account and sign in to your workspace to continue managing your application and documents.</p>
-            </details>
+    <section id="feedback" class="section feedback-section" aria-labelledby="feedback-title">
+        <div class="feedback-heading">
+            <div>
+                <p class="eyebrow">Feedback</p>
+                <h2 id="feedback-title">What people <em>are saying.</em></h2>
+            </div>
+            <a class="button feedback-leave" href="feedback.php#leave-feedback">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 2.8 2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9L12 2.8Z"/></svg>
+                Feedback
+            </a>
+        </div>
+
+        <div class="feedback-overview">
+            <?= mentora_feedback_summary_card($feedbackSummary) ?>
+
+            <?php if ($homeReviews): ?>
+                <div>
+                    <div class="review-grid two">
+                        <?php foreach ($homeReviews as $review): ?>
+                            <?= mentora_feedback_card($review) ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <a class="feedback-all-link" href="feedback.php#reviews">Read all feedback</a>
+                </div>
+            <?php else: ?>
+                <p class="review-empty is-boxed">
+                    No reviews yet. <a href="feedback.php#leave-feedback">Be the first to leave feedback.</a>
+                </p>
+            <?php endif; ?>
         </div>
     </section>
 
