@@ -1,0 +1,4 @@
+# Settings and passwords (database, email, Google, GIPHY). Never served over the web;
+# pages load these files with PHP (require), which this doesn't block.
+Options -Indexes
+Require all denied

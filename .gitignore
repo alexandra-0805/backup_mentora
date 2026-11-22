@@ -19,3 +19,6 @@ uploads/messages/*
 !uploads/messages/.htaccess
 uploads/documents/*
 !uploads/documents/.htaccess
+
+# Hosting settings: live database password and site address (see config/db.php)
+config/config.local.php

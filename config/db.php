@@ -2,12 +2,45 @@
 
 declare(strict_types=1);
 
-$dbHost = getenv('MENTORA_DB_HOST') ?: '127.0.0.1';
-$dbName = getenv('MENTORA_DB_NAME') ?: 'backup_mentora_db';
-$dbUser = getenv('MENTORA_DB_USER') ?: 'root';
-$dbPassword = getenv('MENTORA_DB_PASSWORD') ?: '';
+/*
+ * Hosting settings: config/config.local.php (not in git; holds the live database password).
+ *   return ['app' => ['url' => 'https://...', 'debug' => false],
+ *           'db'  => ['host' => ..., 'port' => '3306', 'name' => ..., 'user' => ..., 'password' => ...]];
+ * It's ignored on localhost (XAMPP), so the same files work locally with the local database.
+ * MENTORA_* environment variables, when set, still win over both.
+ */
+$requestHost = strtolower((string) preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+$runningLocally = PHP_SAPI === 'cli' || in_array($requestHost, ['', 'localhost', '127.0.0.1', '[::1]'], true);
+$localConfigFile = __DIR__ . '/config.local.php';
+$localConfig = (!$runningLocally && is_file($localConfigFile)) ? require $localConfigFile : [];
+$localConfig = is_array($localConfig) ? $localConfig : [];
+$dbConfig = is_array($localConfig['db'] ?? null) ? $localConfig['db'] : [];
+$appConfig = is_array($localConfig['app'] ?? null) ? $localConfig['app'] : [];
 
-$dsn = sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', $dbHost, $dbName);
+// Live site: never print PHP errors to visitors (they go to the server's error log instead).
+if (!$runningLocally) {
+    ini_set('display_errors', !empty($appConfig['debug']) ? '1' : '0');
+    ini_set('log_errors', '1');
+}
+
+// Hosts that end HTTPS at a proxy pass the original scheme in a header; treat those requests as HTTPS
+// so secure session cookies, email links and the Google sign-in address all use https://.
+if (empty($_SERVER['HTTPS']) && strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https') {
+    $_SERVER['HTTPS'] = 'on';
+}
+
+// Public address for links in emails (mentora_app_url), e.g. https://alexawebsite.free.nf
+if (!getenv('MENTORA_APP_URL') && !empty($appConfig['url'])) {
+    putenv('MENTORA_APP_URL=' . rtrim((string) $appConfig['url'], '/'));
+}
+
+$dbHost = getenv('MENTORA_DB_HOST') ?: (string) ($dbConfig['host'] ?? '127.0.0.1');
+$dbPort = getenv('MENTORA_DB_PORT') ?: (string) ($dbConfig['port'] ?? '3306');
+$dbName = getenv('MENTORA_DB_NAME') ?: (string) ($dbConfig['name'] ?? 'backup_mentora_db');
+$dbUser = getenv('MENTORA_DB_USER') ?: (string) ($dbConfig['user'] ?? 'root');
+$dbPassword = getenv('MENTORA_DB_PASSWORD') ?: (string) ($dbConfig['password'] ?? '');
+
+$dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $dbHost, $dbPort, $dbName);
 
 try {
     $pdo = new PDO($dsn, $dbUser, $dbPassword, [

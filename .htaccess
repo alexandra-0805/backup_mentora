@@ -1,0 +1,10 @@
+# Mentora: web server rules for hosting (e.g. InfinityFree).
+
+# Open index.php for the site address, and don't list folder contents.
+DirectoryIndex index.php
+Options -Indexes
+
+# Never serve database dumps, notes, logs, backups or hidden files (.git, .env, ...).
+<FilesMatch "(?i)\.(sql|md|log|bak|zip|ini|example\.php)$|^\.">
+    Require all denied
+</FilesMatch>
