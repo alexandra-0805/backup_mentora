@@ -23,6 +23,9 @@ uploads/documents/*
 # Hosting settings: live database password and site address (see config/db.php)
 config/config.local.php
 
+# FTP login for tools/deploy.php (uploads changed files to the live site)
+config/deploy.local.php
+
 # Server logs (mail delivery log written by includes/mailer.php)
 logs/*
 !logs/.htaccess
