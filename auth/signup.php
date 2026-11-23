@@ -185,24 +185,6 @@ require __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="form-actions"><button class="button button-primary" type="submit">Confirm email</button></div>
             </form>
-            <ol class="application-steps">
-                <li class="is-done">
-                    <b aria-hidden="true">✓</b>
-                    <span><strong>Application sent</strong><small>Your <?= $applied['pathway'] === 'internship' ? 'Intern' : 'Employee VA' ?> application was received.</small></span>
-                </li>
-                <li class="is-current" aria-current="step">
-                    <b aria-hidden="true">2</b>
-                    <span><strong>Confirm your email</strong><small>Open the email from Mentora HR and type the code above. It expires in <?= MENTORA_VERIFY_HOURS ?> hours.</small></span>
-                </li>
-                <li>
-                    <b aria-hidden="true">3</b>
-                    <span><strong>HR confirms your application</strong><small>An HR admin reviews and approves it.</small></span>
-                </li>
-                <li>
-                    <b aria-hidden="true">4</b>
-                    <span><strong>Create your username and password</strong><small>We email you a link to create your account once you’re approved.</small></span>
-                </li>
-            </ol>
             <form method="post" class="notice resend-form">
                 <?= mentora_csrf_field() ?>
                 <input type="hidden" name="action" value="resend_verification">

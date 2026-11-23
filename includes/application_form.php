@@ -154,8 +154,7 @@ require __DIR__ . '/applicant_layout.php';
     <?php if ($application): ?>
         <strong>Your qualifications form has been received.</strong>You can update your details below at any time.
     <?php else: ?>
-        <strong>Almost done, <?= $e(explode(' ', $formUser['name'])[0]) ?>.</strong>Fill in this form so the Mentora team can review your qualifications. Fields marked with * are required.
-        <a href="../../auth/pathway.php">Change pathway</a>
+        <strong>Almost done, <?= $e(explode(' ', $formUser['name'])[0]) ?>.</strong>
     <?php endif; ?>
 </div>
 

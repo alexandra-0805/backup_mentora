@@ -404,22 +404,7 @@ CREATE TABLE `notifications` (
 -- Dumping data for table `notifications`
 --
 
-INSERT INTO `notifications` (`id`, `user_id`, `title`, `body`, `link`, `read_at`, `created_at`) VALUES
-(9, 1, 'New application: Lyke Concepcion', 'Employee VA · alexandralykemae@gmail.com is waiting for confirmation in Applications.', 'admin/applications.php?view=pending', '2026-11-19 19:03:46', '2026-11-19 10:58:55'),
-(50, 1, 'New application: Angel Marie Palce', 'Intern · palceangel5@gmail.com is waiting for confirmation in Applications.', 'admin/applications.php?view=pending', '2026-11-21 14:40:59', '2026-11-21 06:18:12'),
-(51, 1, 'New application: Angel Marie Palce', 'Intern · palceangel1@gmail.com is waiting for confirmation in Applications.', 'admin/applications.php?view=pending', '2026-11-21 14:40:54', '2026-11-21 06:29:31'),
-(52, 1, 'New application: Angel Marie Palce', 'Intern · palceangel1@gmail.com is waiting for confirmation in Applications.', 'admin/applications.php?view=pending', '2026-11-21 16:18:10', '2026-11-21 06:45:03'),
-(53, 1, 'New application: Zamara Jarmin', 'Intern · zamaramikayla@gmail.com is waiting for confirmation in Applications.', 'admin/applications.php?view=pending', '2026-11-21 15:39:22', '2026-11-21 06:47:07'),
-(54, 1, 'New applicant: Angel Palce', 'Employee VA · angelmarieo652@gmail.com applied and was emailed a link to create their account.', 'admin/applications.php?view=approved', '2026-11-21 15:39:19', '2026-11-21 07:30:28'),
-(55, 1, 'For HR review: Angel Palce (flagged unsuitable)', 'AI review 28/100. Applying as Marketing. College undergraduate; no experience stated. Skills found: Canva, Microsoft Excel. Best fit: Accounting (1 of 7 required skills; fills lacking skills Microsoft Excel).', 'admin/screening.php?view=flagged#r88', '2026-11-21 15:58:47', '2026-11-21 07:52:36'),
-(56, 88, 'Application received', 'Your Employee VA application was screened and is now with the Mentora HR team. We’ll notify you about your next step.', 'applicant/employee/overview.php', '2026-11-21 15:52:49', '2026-11-21 07:52:36'),
-(57, 2, 'New intern started training: Angel Marie', 'They submitted the internship form and went straight to training.', 'agent/reporting_overview.php', '2026-11-21 16:11:08', '2026-11-21 08:10:55'),
-(58, 1, 'For HR review: Test Employee (flagged unsuitable)', 'AI review 17/100. Applying as Customer support. Educational attainment not stated; no experience stated. Skills found: Customer service. Best fit: Psychotherapist (1 of 6 required skills; fills lacking skills Customer service).', 'admin/screening.php?view=flagged#r4', '2026-11-21 16:18:10', '2026-11-21 08:11:44'),
-(59, 4, 'Application received', 'Your Employee VA application was screened and is now with the Mentora HR team. We’ll notify you about your next step.', 'applicant/employee/overview.php', NULL, '2026-11-21 08:11:44'),
-(60, 1, 'For HR review: Lyke Concepcion (flagged unsuitable)', 'AI review 8/100. Applying as developer. Educational attainment not stated; no experience stated. No department-relevant skills found.', 'admin/screening.php?view=flagged#r41', '2026-11-21 16:18:10', '2026-11-21 08:11:44'),
-(61, 41, 'Application received', 'Your Employee VA application was screened and is now with the Mentora HR team. We’ll notify you about your next step.', 'applicant/employee/overview.php', '2026-11-21 17:25:51', '2026-11-21 08:11:44'),
-(63, 1, 'New 5-star feedback from Alex', 'Rated Mentora 5/5 (Excellent). It is live on the Feedback page.', 'feedback.php', NULL, '2026-11-22 03:46:39');
-
+INSERT INTO `notifications` (`id`, `user_id`, `title`, `body`, `link`, `read_at`, `created_at`);
 -- --------------------------------------------------------
 
 --

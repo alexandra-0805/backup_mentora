@@ -1753,6 +1753,55 @@
     margin-top: 8px;
 }
 
+.application-mode .pathway-choice label {
+    align-items: flex-start;
+    display: flex;
+    gap: 2px;
+    padding: 14px 16px;
+}
+
+.application-mode .pathway-choice input {
+    flex: 0 0 auto;
+    margin-top: 3px;
+}
+
+.application-mode .pathway-choice strong {
+    color: var(--mentora-deep);
+    display: block;
+    font-size: 14px;
+}
+
+.application-mode .pathway-choice small {
+    color: var(--workspace-muted);
+    display: block;
+    font-size: 12px;
+    line-height: 1.45;
+    margin-top: 3px;
+}
+
+body.workspace-dark-mode .application-mode legend {
+    color: #eef6f5;
+}
+
+body.workspace-dark-mode .application-mode .pathway-choice label {
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #e4f1ef;
+}
+
+body.workspace-dark-mode .application-mode .pathway-choice label:hover,
+body.workspace-dark-mode .application-mode .pathway-choice label:has(input:checked) {
+    background: rgba(143, 239, 218, 0.08);
+    border-color: rgba(143, 239, 218, 0.45);
+}
+
+body.workspace-dark-mode .application-mode .pathway-choice strong {
+    color: #eef6f5;
+}
+
+body.workspace-dark-mode .application-mode .pathway-choice small {
+    color: var(--workspace-muted);
+}
+
 /* Fields for the other way to apply (form / resume) are hidden; .field's display must not override it. */
 [data-mode][hidden] {
     display: none !important;

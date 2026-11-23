@@ -105,7 +105,7 @@ $navCounts = ['candidates.php' => (int) $candidateCountQuery->fetchColumn()];
 
     <link
         rel="stylesheet"
-        href="../assets/css/admin.css?v=10">
+        href="../assets/css/admin.css?v=11">
 
     <link
         rel="stylesheet"
