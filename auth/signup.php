@@ -44,6 +44,27 @@ $account = [
 
 $fieldErrors = [];   // field name => message, shown under that field
 $resendMessage = null;   // ['ok' => bool, 'text' => string] after "Resend email"
+$codeError = null;       // wrong / expired code typed on the confirm-your-email screen
+
+// The 6-digit code from the email, typed on the confirm-your-email screen.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'verify_code') {
+    $userId = (int) ($_SESSION['applied']['user_id'] ?? 0);
+    if (!mentora_csrf_valid($_POST['csrf_token'] ?? null) || $userId <= 0) {
+        $_SESSION['code_error'] = 'Your session expired. Open “Track your application”, enter your email and type the code there.';
+    } else {
+        $checked = mentora_use_verification_code($pdo, $userId, mentora_post_string('code'));
+        if ($checked['ok']) {
+            $_SESSION['email_confirmed'] = $checked['user'];
+            mentora_redirect('auth/verify_email.php');
+        }
+        $_SESSION['code_error'] = $checked['error'];
+    }
+    mentora_redirect('auth/signup.php?applied=1');
+}
+if (is_string($_SESSION['code_error'] ?? null)) {
+    $codeError = $_SESSION['code_error'];
+}
+unset($_SESSION['code_error']);
 
 // "Resend email" on the confirm-your-email screen.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'resend_verification') {
@@ -53,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'resen
     } else {
         $sent = mentora_send_verification_email($pdo, $userId);
         $_SESSION['resend_message'] = $sent['ok']
-            ? ['ok' => true, 'text' => 'We sent you a new email. Links sent earlier no longer work.']
+            ? ['ok' => true, 'text' => 'We sent you a new code. Codes sent earlier no longer work.']
             : ['ok' => false, 'text' => $sent['error']];
     }
     mentora_redirect('auth/signup.php?applied=1');
@@ -96,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = ['ok' => false, 'error' => 'We could not send your application right now. Please try again.'];
         }
 
-        // Applied before but never confirmed the email: send the "confirm your email" link again.
+        // Applied before but never confirmed the email: send the "confirm your email" code again.
         if (!$result['ok'] && !empty($result['id']) && !$isStaff && mentora_mail_enabled() && !mentora_email_is_verified($pdo, (int) $result['id'])) {
             $resent = mentora_send_verification_email($pdo, (int) $result['id']);
             if ($resent['ok'] || $resent['too_soon']) {
@@ -105,8 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'pathway' => $account['pathway'], 'emailed' => true, 'verify_sent' => true,
                 ];
                 $_SESSION['resend_message'] = ['ok' => true, 'text' => $resent['ok']
-                    ? 'You already applied with this email, so we sent you a new confirmation email.'
-                    : 'You already applied with this email. We just sent your confirmation email, so please check your inbox.'];
+                    ? 'You already applied with this email, so we sent you a new confirmation code.'
+                    : 'You already applied with this email. We just sent your confirmation code, so please check your inbox.'];
                 mentora_redirect('auth/signup.php?applied=1');
             }
         }
@@ -119,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $showTrack = true; // so the tracking page opens with this email filled in
             }
         } else {
-            // Applicants get a "confirm your email" link first; HR sees the application once it's clicked.
+            // Applicants get a "confirm your email" code first; HR is told once they type it in.
             // Staff adding someone vouch for the address, so it goes straight to the approval queue.
             $outcome = mentora_process_new_application($pdo, $result['id'], $account['first_name'], $account['last_name'], $account['email'], $account['pathway'], $isStaff);
             if ($isStaff) {
@@ -149,7 +170,7 @@ require __DIR__ . '/../includes/header.php';
 ?>
 <main class="auth-shell account-shell">
     <?php if ($applied && !empty($applied['verify_sent'])): ?>
-        <!-- "Confirm your email" link sent -->
+        <!-- "Confirm your email" code sent -->
         <section class="auth-card account-card application-status" aria-labelledby="application-status-title">
             <span class="application-status-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" focusable="false">
@@ -159,12 +180,23 @@ require __DIR__ . '/../includes/header.php';
             </span>
             <h1 id="application-status-title">Confirm your email.</h1>
             <p class="intro">
-                Thanks, <?= $h($applied['name']) ?>! We sent a link to <strong><?= $h($applied['email']) ?></strong>.
-                Click it to confirm your email and send your application to HR.
+                Thanks, <?= $h($applied['name']) ?>! We sent a 6-digit code to <strong><?= $h($applied['email']) ?></strong>.
+                Type it below to confirm your email and send your application to HR.
             </p>
             <?php if ($resendMessage): ?>
                 <div class="alert<?= $resendMessage['ok'] ? ' success' : '' ?>" role="status"><?= $h($resendMessage['text']) ?></div>
             <?php endif; ?>
+            <form method="post" class="verify-code-form">
+                <?= mentora_csrf_field() ?>
+                <input type="hidden" name="action" value="verify_code">
+                <div class="field">
+                    <label for="code">Confirmation code</label>
+                    <input id="code" class="code-input" type="text" name="code" required inputmode="numeric" pattern="[0-9 \-]{6,8}" maxlength="8"
+                           autocomplete="one-time-code" placeholder="123456" aria-describedby="code-error"<?= $codeError ? ' aria-invalid="true" autofocus' : '' ?>>
+                    <small class="field-error" id="code-error" role="alert"><?= $codeError ? $h($codeError) : '' ?></small>
+                </div>
+                <div class="form-actions"><button class="button button-primary" type="submit">Confirm email</button></div>
+            </form>
             <ol class="application-steps">
                 <li class="is-done">
                     <b aria-hidden="true">✓</b>
@@ -172,7 +204,7 @@ require __DIR__ . '/../includes/header.php';
                 </li>
                 <li class="is-current" aria-current="step">
                     <b aria-hidden="true">2</b>
-                    <span><strong>Confirm your email</strong><small>Open the email from Mentora HR and click “Confirm my email”. The link expires in <?= MENTORA_VERIFY_HOURS ?> hours.</small></span>
+                    <span><strong>Confirm your email</strong><small>Open the email from Mentora HR and type the code above. It expires in <?= MENTORA_VERIFY_HOURS ?> hours.</small></span>
                 </li>
                 <li>
                     <b aria-hidden="true">3</b>
@@ -183,13 +215,11 @@ require __DIR__ . '/../includes/header.php';
                     <span><strong>Create your username and password</strong><small>We email you a link once you’re approved.</small></span>
                 </li>
             </ol>
-            <div class="notice">
-                <strong>Can’t find it?</strong> Check your Spam or Promotions folder, or send it again.
-            </div>
-            <form method="post" class="form-actions">
+            <form method="post" class="notice resend-form">
                 <?= mentora_csrf_field() ?>
                 <input type="hidden" name="action" value="resend_verification">
-                <button class="button button-primary" type="submit">Resend email</button>
+                <strong>No email?</strong> Search your inbox, Spam and Promotions for “Mentora confirmation code”, or
+                <button class="text-button" type="submit">send a new code</button>.
             </form>
             <div class="auth-links">
                 Used the wrong email? <a href="signup.php?new=1">Start a new application</a><br><br>

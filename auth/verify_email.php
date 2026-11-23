@@ -1,9 +1,10 @@
 <?php
 
 /**
- * "Confirm my email" link, emailed right after someone applies (auth/signup.php).
- * Opening it marks the email confirmed and sends the application to HR (admin/applications.php).
- * Links work once and expire after MENTORA_VERIFY_HOURS hours; a new one can be sent from track.php.
+ * "Email confirmed" page. Reached two ways:
+ *   - after typing the 6-digit code from the email (auth/signup.php or auth/track.php put the applicant in the session);
+ *   - from a "Confirm my email" link in emails sent before codes replaced links (?token=...).
+ * Either one marks the email confirmed and sends the application to HR (admin/applications.php).
  */
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
@@ -12,7 +13,10 @@ require_once __DIR__ . '/../includes/account_invites.php';
 mentora_session_start();
 
 $token = is_string($_GET['token'] ?? null) ? $_GET['token'] : '';
-$applicant = mentora_use_verification_link($pdo, $token);
+$applicant = $token === '' && is_array($_SESSION['email_confirmed'] ?? null)
+    ? $_SESSION['email_confirmed']
+    : mentora_use_verification_link($pdo, $token);
+unset($_SESSION['email_confirmed']);
 if ($applicant) {
     unset($_SESSION['applied']);
 }
@@ -57,7 +61,7 @@ require __DIR__ . '/../includes/header.php';
             </p>
             <div class="notice">
                 <strong>Already confirmed?</strong> Your application is with HR. <a href="track.php">Track your application</a> to see where it is.<br>
-                <strong>Need a new link?</strong> <a href="track.php">Track your application</a> with your email and choose “Email me a new link”.
+                <strong>Not confirmed yet?</strong> <a href="track.php">Track your application</a> with your email, then type your code or choose “Email me a new code”.
             </div>
             <div class="auth-links"><a href="../index.php">Back to home</a></div>
         </section>

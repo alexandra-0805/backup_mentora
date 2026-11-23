@@ -139,6 +139,13 @@ try {
             CONSTRAINT fk_email_verifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
+    // The email carries a 6-digit code instead of a link (links to free-hosting domains get filtered as spam):
+    // the applicant types it on the sign-up or Track page. attempts = wrong tries; too many and the code stops working.
+    if (!in_array('code_hash', $pdo->query('SHOW COLUMNS FROM email_verifications')->fetchAll(PDO::FETCH_COLUMN), true)) {
+        $pdo->exec('ALTER TABLE email_verifications
+            ADD COLUMN code_hash CHAR(64) NULL AFTER token_hash,
+            ADD COLUMN attempts TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER code_hash');
+    }
     // Give every user without a code one: role prefix + their id, e.g. ADM-0001, AGT-0002, INT-0003, EMP-0004.
     // Covers app sign-ups and rows added by hand (e.g. in phpMyAdmin). The id part keeps codes unique.
     $pdo->exec(

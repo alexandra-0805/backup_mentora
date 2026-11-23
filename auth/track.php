@@ -22,6 +22,7 @@ if ($email === '' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 $error = '';
 $notice = '';
+$codeError = '';   // wrong / expired confirmation code
 $result = null; // ['status', 'pathway', 'applied_at', 'link_sent_at', 'link_expires_at', 'link_valid']
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -45,14 +46,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $row = $query->fetch() ?: null;
         $result = $row ? $row + ['link_valid' => $row['link_expires_at'] !== null && strtotime($row['link_expires_at']) > time()] : ['status' => 'not_found'];
 
-        // Email not confirmed yet: send a new "confirm your email" link.
+        // Email not confirmed yet: send a new "confirm your email" code.
         if ($row && ($_POST['action'] ?? '') === 'resend_verification' && $row['status'] === 'pending' && $row['email_verified_at'] === null) {
             $sent = mentora_send_verification_email($pdo, (int) $row['id']);
             if ($sent['ok']) {
-                $notice = 'We emailed you a new link to confirm your email. Watch your inbox (and Spam / Promotions).';
+                $notice = 'We emailed you a new code. Watch your inbox (and Spam / Promotions). Codes sent earlier no longer work.';
             } else {
                 $error = $sent['error'];
             }
+        }
+
+        // Email not confirmed yet: the code from the email, typed here (e.g. on another device than the one they applied on).
+        if ($row && ($_POST['action'] ?? '') === 'verify_code' && $row['status'] === 'pending' && $row['email_verified_at'] === null) {
+            $checked = mentora_use_verification_code($pdo, (int) $row['id'], mentora_post_string('code'));
+            if ($checked['ok']) {
+                $_SESSION['email_confirmed'] = $checked['user'];
+                mentora_redirect('auth/verify_email.php');
+            }
+            $codeError = $checked['error'];
         }
 
         // Link expired (or lost): ask HR for a new one, at most once a day per applicant.
@@ -114,7 +125,7 @@ $step = static function (int $number, string $state, string $title, string $deta
                     <ol class="application-steps">
                         <?= $step(1, 'done', 'Application sent', 'Received ' . $date($result['applied_at']) . '.') ?>
                         <?= $step(2, $unverified ? 'current' : 'done', 'Confirm your email', $unverified
-                            ? 'Click “Confirm my email” in the email we sent you. Check Spam / Promotions too.'
+                            ? 'Type the 6-digit code from the email we sent you. Check Spam / Promotions too.'
                             : 'Your email is confirmed.') ?>
                         <?= $step(3, $approved ? 'done' : ($unverified ? '' : 'current'), 'HR confirms your application', $approved ? 'Approved by the HR team.' : 'An HR admin reviews it. This usually takes 1–3 working days.') ?>
                         <?= $step(4, $approved ? 'current' : '', 'Create your username and password', $approved
@@ -123,10 +134,23 @@ $step = static function (int $number, string $state, string $title, string $deta
                                 : 'Your link expired. Ask for a new one below.')
                             : 'We email you a link once you’re approved.') ?>
                     </ol>
-                    <?php if ($unverified && $notice === '' && mentora_mail_enabled()): ?>
-                        <form method="post">
+                    <?php if ($unverified): ?>
+                        <form method="post" class="verify-code-form">
+                            <?= mentora_csrf_field() ?><input type="hidden" name="email" value="<?= $h($email) ?>"><input type="hidden" name="action" value="verify_code">
+                            <div class="field">
+                                <label for="code">Confirmation code</label>
+                                <input id="code" class="code-input" type="text" name="code" required inputmode="numeric" pattern="[0-9 \-]{6,8}" maxlength="8"
+                                       autocomplete="one-time-code" placeholder="123456" aria-describedby="code-error"<?= $codeError !== '' ? ' aria-invalid="true" autofocus' : '' ?>>
+                                <small class="field-error" id="code-error" role="alert"><?= $h($codeError) ?></small>
+                            </div>
+                            <div class="form-actions"><button class="button button-primary" type="submit">Confirm email</button></div>
+                        </form>
+                    <?php endif; ?>
+                    <?php if ($unverified && mentora_mail_enabled()): ?>
+                        <form method="post" class="notice resend-form">
                             <?= mentora_csrf_field() ?><input type="hidden" name="email" value="<?= $h($email) ?>"><input type="hidden" name="action" value="resend_verification">
-                            <button class="button button-primary" type="submit">Email me a new link</button>
+                            <strong>No email?</strong> Search your inbox, Spam and Promotions for “Mentora confirmation code”, or
+                            <button class="text-button" type="submit">email me a new code</button>.
                         </form>
                     <?php endif; ?>
                     <?php if ($approved && !$result['link_valid'] && $notice === ''): ?>

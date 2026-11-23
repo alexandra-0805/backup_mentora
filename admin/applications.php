@@ -176,7 +176,7 @@ $pathwayLabel = static fn(string $pathway): string => $pathway === 'internship' 
                         <?php elseif ($view === 'active'): ?>
                             <?= $h($applicant['username'] ?: '—') ?><br><small><?= $h($applicant['user_code']) ?></small>
                         <?php elseif ($view === 'pending' && $applicant['email_verified_at'] === null): ?>
-                            <span class="badge">Email not confirmed</span><br><small>Applicant hasn’t clicked their link yet</small>
+                            <span class="badge">Email not confirmed</span><br><small>Applicant hasn’t entered their emailed code yet</small>
                         <?php else: ?>
                             <span class="badge <?= $view === 'pending' ? 'warn' : '' ?>"><?= $h($views[$view][0]) ?></span>
                         <?php endif; ?>
