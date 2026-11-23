@@ -146,6 +146,13 @@ try {
             ADD COLUMN code_hash CHAR(64) NULL AFTER token_hash,
             ADD COLUMN attempts TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER code_hash');
     }
+    // Activation emails carry a 6-digit code instead of a link (links to free-hosting domains land in Spam):
+    // the approved applicant types it on the Track / Activate page. attempts = wrong tries on this invite.
+    if (!in_array('code_hash', $pdo->query('SHOW COLUMNS FROM account_invites')->fetchAll(PDO::FETCH_COLUMN), true)) {
+        $pdo->exec('ALTER TABLE account_invites
+            ADD COLUMN code_hash CHAR(64) NULL AFTER token_hash,
+            ADD COLUMN attempts TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER code_hash');
+    }
     // Give every user without a code one: role prefix + their id, e.g. ADM-0001, AGT-0002, INT-0003, EMP-0004.
     // Covers app sign-ups and rows added by hand (e.g. in phpMyAdmin). The id part keeps codes unique.
     $pdo->exec(

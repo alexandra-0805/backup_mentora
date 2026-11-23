@@ -117,20 +117,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = ['ok' => false, 'error' => 'We could not send your application right now. Please try again.'];
         }
 
-        // Applied before but never confirmed the email: send the "confirm your email" code again.
-        if (!$result['ok'] && !empty($result['id']) && !$isStaff && mentora_mail_enabled() && !mentora_email_is_verified($pdo, (int) $result['id'])) {
-            $resent = mentora_send_verification_email($pdo, (int) $result['id']);
-            if ($resent['ok'] || $resent['too_soon']) {
-                $_SESSION['applied'] = [
-                    'user_id' => (int) $result['id'], 'name' => $account['first_name'], 'email' => $account['email'],
-                    'pathway' => $account['pathway'], 'emailed' => true, 'verify_sent' => true,
-                ];
-                $_SESSION['resend_message'] = ['ok' => true, 'text' => $resent['ok']
-                    ? 'You already applied with this email, so we sent you a new confirmation code.'
-                    : 'You already applied with this email. We just sent your confirmation code, so please check your inbox.'];
-                mentora_redirect('auth/signup.php?applied=1');
-            }
-        }
+        // Email already used (one account per email): refused below with the reason. Someone who applied but
+        // never confirmed their email gets a new code from "Track your application", not from a second sign-up.
 
         if (!$result['ok']) {
             $fieldErrors['email'] = $result['error'];
@@ -212,7 +200,7 @@ require __DIR__ . '/../includes/header.php';
                 </li>
                 <li>
                     <b aria-hidden="true">4</b>
-                    <span><strong>Create your username and password</strong><small>We email you a link once you’re approved.</small></span>
+                    <span><strong>Create your username and password</strong><small>We email you a link to create your account once you’re approved.</small></span>
                 </li>
             </ol>
             <form method="post" class="notice resend-form">

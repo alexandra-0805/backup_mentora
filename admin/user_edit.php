@@ -20,10 +20,10 @@ $pathways = ['internship' => 'Internship', 'employee_va' => 'Employee VA'];
 
 /** Send a fresh invite link to $user and keep the result for the panel. */
 $sendInvite = static function (PDO $pdo, array $user, array $admin, bool $resent): void {
-    $link = mentora_create_invite($pdo, (int) $user['id'], (int) $admin['id']);
+    $link = mentora_create_invite($pdo, (int) $user['id'], (int) $admin['id'], $code);
     $fullName = trim($user['first_name'] . ' ' . $user['last_name']);
     $mail = mentora_mail_enabled()
-        ? mentora_send_invite_email($user['email'], $fullName, $user['first_name'], $user['pathway'], $link, $admin['name'], $admin['email'], $user['role'])
+        ? mentora_send_invite_email($user['email'], $fullName, $user['first_name'], $user['pathway'], $link, $admin['name'], $admin['email'], $user['role'], (string) $code)
         : ['ok' => false, 'error' => '', 'not_configured' => true];
     $_SESSION['user_invite'] = [
         'user_id' => (int) $user['id'], 'name' => $user['first_name'], 'full_name' => $fullName, 'email' => $user['email'], 'pathway' => $user['pathway'],
@@ -47,11 +47,8 @@ if (mentora_is_post()) {
     $agentId = (int) ($_POST['agent_id'] ?? 0) ?: null;
     $validDepartment = $departmentId === null || in_array($departmentId, array_map('intval', array_column(mentora_departments($pdo), 'id')), true);
     $validAgent = $agentId === null || in_array($agentId, array_map('intval', array_column(mentora_active_agents($pdo), 'id')), true);
-    $emailTaken = static function (PDO $pdo, string $email, int $exceptId): bool {
-        $query = $pdo->prepare('SELECT COUNT(*) FROM users WHERE email = ? AND id <> ?');
-        $query->execute([$email, $exceptId]);
-        return (int) $query->fetchColumn() > 0;
-    };
+    // One account per email (Gmail lookalikes such as dots or "+tags" count as the same email).
+    $emailTaken = static fn(PDO $pdo, string $email, int $exceptId): bool => mentora_find_account_by_email($pdo, $email, $exceptId) !== null;
     $formError = match (true) {
         !in_array($action, ['save', 'invite'], true) => null,
         $first === '' || $last === '' => 'First and last name are required.',

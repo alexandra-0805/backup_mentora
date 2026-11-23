@@ -33,6 +33,10 @@ function mentora_mail_config(): array
         'password' => str_replace(' ', '', $value('password')),    // Gmail shows App Passwords in groups of 4
         'from_email' => $value('from_email'),
         'from_name' => $value('from_name', 'Mentora HR'),
+        // Optional Google Apps Script relay (mentora_send_via_relay): set on free hosting, whose shared server
+        // addresses Gmail distrusts, so the email is sent by Google itself instead.
+        'relay_url' => $value('relay_url'),
+        'relay_secret' => $value('relay_secret'),
     ];
     if ($config['from_email'] === '') {
         $config['from_email'] = $config['username'];   // Gmail sends as the signed-in account
@@ -44,6 +48,10 @@ function mentora_mail_config(): array
 function mentora_mail_enabled(): bool
 {
     $config = mentora_mail_config();
+
+    if ($config['relay_url'] !== '' && $config['relay_secret'] !== '') {
+        return true;
+    }
 
     return $config['host'] !== '' && $config['username'] !== '' && $config['password'] !== ''
         && filter_var($config['from_email'], FILTER_VALIDATE_EMAIL) !== false;
@@ -71,12 +79,22 @@ function mentora_send_mail(string $to, string $toName, string $subject, string $
         return ['ok' => false, 'error' => 'The recipient’s email address isn’t valid.'];
     }
 
-    $fail = static function (string $message, string $detail = '') use (&$socket): array {
+    // Relay set up: Google sends it. If the relay can't (e.g. its daily quota is used up), fall back to SMTP below.
+    if ($config['relay_url'] !== '' && $config['relay_secret'] !== '') {
+        $relayed = mentora_send_via_relay($config, $to, $toName, $subject, $text, $html, $replyTo);
+        mentora_mail_log($to, $subject, ($relayed['ok'] ? 'SENT via Google relay' : 'RELAY FAILED, trying SMTP: ' . $relayed['error']));
+        if ($relayed['ok']) {
+            return ['ok' => true, 'error' => ''];
+        }
+    }
+
+    $fail = static function (string $message, string $detail = '') use (&$socket, $to, $subject): array {
         if (is_resource($socket)) {
             @fwrite($socket, "QUIT\r\n");
             @fclose($socket);
         }
         error_log('Mentora email: ' . $message . ($detail !== '' ? ' (' . $detail . ')' : ''));
+        mentora_mail_log($to, $subject, 'FAILED: ' . $message . ($detail !== '' ? ' | ' . $detail : ''));
         return ['ok' => false, 'error' => $message];
     };
 
@@ -216,8 +234,115 @@ function mentora_send_mail(string $to, string $toName, string $subject, string $
 
     @fwrite($socket, "QUIT\r\n");
     @fclose($socket);
+    mentora_mail_log($to, $subject, 'SENT: ' . $reply);   // Gmail's reply includes its message id ("250 2.0.0 OK ... gsmtp")
 
     return ['ok' => true, 'error' => ''];
+}
+
+/**
+ * Hand one email to the Google Apps Script relay (deploy/mentora/mentora_mail_relay.gs, running under the Gmail
+ * account). Google then sends it from its own servers. Returns ['ok' => bool, 'error' => string].
+ */
+function mentora_send_via_relay(array $config, string $to, string $toName, string $subject, string $text, ?string $html, string $replyTo): array
+{
+    $payload = json_encode([
+        'secret' => $config['relay_secret'],
+        'to' => $to,
+        'toName' => $toName,
+        'subject' => $subject,
+        'text' => $text,
+        'html' => $html ?? '',
+        'name' => $config['from_name'],
+        'replyTo' => $replyTo,
+    ], JSON_UNESCAPED_UNICODE);
+
+    // InfinityFree blocks DNS lookups of script.google.com (other Google names work). Google serves all its
+    // sites from the same front-end servers, so connect to www.google.com's address while still asking for
+    // the relay's own host name: TLS still checks the real certificate for script.google.com.
+    $host = (string) parse_url($config['relay_url'], PHP_URL_HOST);
+    if (function_exists('curl_init')) {
+        $curl = curl_init($config['relay_url']);
+        $options = [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_USERAGENT => 'Mentora-mailer',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,   // Apps Script answers with a redirect to the result (fetched with GET)
+            CURLOPT_MAXREDIRS => 5,
+            CURLOPT_CONNECTTIMEOUT => 15,
+            CURLOPT_TIMEOUT => 40,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+        ];
+        if ($host !== '' && gethostbyname($host) === $host && str_ends_with($host, '.google.com')) {
+            $frontEnd = gethostbyname('www.google.com');
+            if ($frontEnd !== 'www.google.com') {
+                $options[CURLOPT_RESOLVE] = [$host . ':443:' . $frontEnd];
+            }
+        }
+        curl_setopt_array($curl, $options);
+        $body = curl_exec($curl);
+        $error = $body === false ? curl_error($curl) : '';
+        curl_close($curl);
+        if ($body === false) {
+            return ['ok' => false, 'error' => 'could not reach the relay (' . $error . ')'];
+        }
+        $answer = json_decode((string) $body, true);
+        if (!is_array($answer)) {
+            return ['ok' => false, 'error' => 'unexpected relay answer: ' . substr(trim(strip_tags((string) $body)), 0, 160)];
+        }
+
+        return !empty($answer['ok'])
+            ? ['ok' => true, 'error' => '']
+            : ['ok' => false, 'error' => (string) ($answer['error'] ?? 'relay refused the email')];
+    }
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-Type: application/json\r\nUser-Agent: Mentora-mailer\r\n",
+            'content' => $payload,
+            'timeout' => 30,
+            'ignore_errors' => true,
+            'follow_location' => 1,   // Apps Script answers with a redirect to the result
+            'max_redirects' => 5,
+        ],
+        'ssl' => ['verify_peer' => true, 'verify_peer_name' => true],
+    ]);
+    $body = @file_get_contents($config['relay_url'], false, $context);
+    if ($body === false) {
+        return ['ok' => false, 'error' => 'could not reach the relay (' . (error_get_last()['message'] ?? 'network error') . ')'];
+    }
+    $answer = json_decode($body, true);
+    if (!is_array($answer)) {
+        return ['ok' => false, 'error' => 'unexpected relay answer: ' . substr(trim(strip_tags($body)), 0, 160)];
+    }
+
+    return !empty($answer['ok'])
+        ? ['ok' => true, 'error' => '']
+        : ['ok' => false, 'error' => (string) ($answer['error'] ?? 'relay refused the email')];
+}
+
+/**
+ * One line per email in logs/mail.log: time, recipient, subject and the mail server's answer, so a
+ * "never arrived" email can be traced (accepted by Gmail = delivered or filtered on the recipient's side).
+ * logs/ is locked from the web (.htaccess). The file is trimmed to its newest half once it passes 256 KB.
+ */
+function mentora_mail_log(string $to, string $subject, string $result): void
+{
+    $dir = __DIR__ . '/../logs';
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+        return;
+    }
+    $file = $dir . '/mail.log';
+    if (is_file($file) && filesize($file) > 262144) {
+        $keep = substr((string) file_get_contents($file), -131072);
+        @file_put_contents($file, substr($keep, (int) strpos($keep, "\n") + 1));
+    }
+    $clean = static fn(string $value): string => trim(preg_replace('/\s+/', ' ', $value) ?? '');
+    $subject = preg_replace('/\b\d{6}\b/', '******', $subject) ?? $subject;   // never keep confirmation codes in the log
+    @file_put_contents($file, date('Y-m-d H:i:s') . ' | to ' . $clean($to) . ' | ' . $clean($subject) . ' | ' . $clean($result) . "\n", FILE_APPEND | LOCK_EX);
 }
 
 /** Send through SMTP when it's configured; otherwise fall back to PHP's mail() (the old behaviour). */

@@ -130,10 +130,22 @@ $step = static function (int $number, string $state, string $title, string $deta
                         <?= $step(3, $approved ? 'done' : ($unverified ? '' : 'current'), 'HR confirms your application', $approved ? 'Approved by the HR team.' : 'An HR admin reviews it. This usually takes 1–3 working days.') ?>
                         <?= $step(4, $approved ? 'current' : '', 'Create your username and password', $approved
                             ? ($result['link_valid']
-                                ? 'Link sent ' . $date($result['link_sent_at']) . '. It works until ' . $date($result['link_expires_at']) . '. Check Spam / Promotions too.'
+                                ? 'Link sent ' . $date($result['link_sent_at']) . '. Click “Create my account” in the email (check Spam / Promotions too). It works until ' . $date($result['link_expires_at']) . '. Link not working? Type the code from the email below.'
                                 : 'Your link expired. Ask for a new one below.')
-                            : 'We email you a link once you’re approved.') ?>
+                            : 'We email you a link to create your account once you’re approved.') ?>
                     </ol>
+                    <?php if ($approved && $result['link_valid']): ?>
+                        <form method="post" class="verify-code-form" action="activate.php">
+                            <?= mentora_csrf_field() ?><input type="hidden" name="email" value="<?= $h($email) ?>"><input type="hidden" name="action" value="use_code">
+                            <div class="field">
+                                <label for="activation-code">Activation code</label>
+                                <input id="activation-code" class="code-input" type="text" name="code" required inputmode="numeric" pattern="[0-9 \-]{6,8}" maxlength="8"
+                                       autocomplete="one-time-code" placeholder="123456">
+                                <small>Backup for when the link doesn’t work: the code is in the same email.</small>
+                            </div>
+                            <div class="form-actions"><button class="button button-primary" type="submit">Create my account</button></div>
+                        </form>
+                    <?php endif; ?>
                     <?php if ($unverified): ?>
                         <form method="post" class="verify-code-form">
                             <?= mentora_csrf_field() ?><input type="hidden" name="email" value="<?= $h($email) ?>"><input type="hidden" name="action" value="verify_code">

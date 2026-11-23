@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['applications_flash'] = ['error' => 'That application no longer exists.'];
     } elseif (in_array($action, ['approve', 'resend'], true) && in_array($applicant['status'], ['pending', 'approved'], true)) {
         try {
-            $link = mentora_create_invite($pdo, (int) $applicant['id'], (int) $admin['id']);
+            $link = mentora_create_invite($pdo, (int) $applicant['id'], (int) $admin['id'], $code);
             $fullName = trim($applicant['first_name'] . ' ' . $applicant['last_name']);
             // Email it automatically when a mail account is set up (config/mail.local.php).
             $mail = mentora_mail_enabled()
@@ -46,7 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $applicant['pathway'],
                     $link,
                     $admin['name'],
-                    $admin['email']
+                    $admin['email'],
+                    'applicant',
+                    (string) $code   // backup activation code shown under the link (see mentora_invite_email)
                 )
                 : ['ok' => false, 'error' => '', 'not_configured' => true];
             // The link is also shown once, to this admin, as a backup (Gmail / copy).

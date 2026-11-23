@@ -376,6 +376,62 @@ function mentora_name_error(string $name, string $label): ?string
 }
 
 /**
+ * The mailbox an email address really reaches, for "one account per email": lowercase, and for Gmail the dots
+ * and any "+tag" in the name are ignored (Gmail delivers weezer.0906+x@gmail.com to weezer0906@gmail.com).
+ */
+function mentora_email_key(string $email): string
+{
+    $email = strtolower(trim($email));
+    $at = strrpos($email, '@');
+    if ($at === false) {
+        return $email;
+    }
+    $name = substr($email, 0, $at);
+    $domain = substr($email, $at + 1);
+    if ($domain === 'gmail.com' || $domain === 'googlemail.com') {
+        $name = str_replace('.', '', explode('+', $name, 2)[0]);
+        $domain = 'gmail.com';
+    }
+
+    return $name . '@' . $domain;
+}
+
+/**
+ * The account already using this email (or a Gmail lookalike of it), or null. Every way of creating an
+ * account checks this first, so each email address can only ever have one Mentora account.
+ * Returns ['id', 'email', 'status', 'role'].
+ */
+function mentora_find_account_by_email(PDO $pdo, string $email, int $exceptId = 0): ?array
+{
+    $key = mentora_email_key($email);
+    if (str_ends_with($key, '@gmail.com')) {
+        $query = $pdo->prepare("SELECT id, email, status, role FROM users WHERE (email LIKE '%@gmail.com' OR email LIKE '%@googlemail.com') AND id <> ?");
+        $query->execute([$exceptId]);
+    } else {
+        $query = $pdo->prepare('SELECT id, email, status, role FROM users WHERE email = ? AND id <> ?');
+        $query->execute([$key, $exceptId]);
+    }
+    foreach ($query->fetchAll() as $row) {
+        if (mentora_email_key((string) $row['email']) === $key) {
+            return $row;
+        }
+    }
+
+    return null;
+}
+
+/** What to tell someone whose email already has an account (sign-up, recruitment link, Google). */
+function mentora_email_taken_message(array $account): string
+{
+    return match ($account['status']) {
+        'active' => 'An account with this email already exists. Each email can only have one Mentora account, so please sign in instead.',
+        'pending' => 'An application with this email already exists. Each email can only have one Mentora account. Track your application to see where it is.',
+        'approved' => 'This email’s application was already approved. Check your email for the link to create your username and password.',
+        default => 'This email already has a Mentora account that isn’t active. Please contact the Mentora HR team.',
+    };
+}
+
+/**
  * Validation for an email address: valid format and a real-looking domain (name.tld).
  */
 function mentora_email_error(string $email): ?string

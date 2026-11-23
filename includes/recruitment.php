@@ -64,13 +64,12 @@ function mentora_session_recruitment_link(PDO $pdo): ?array
  */
 function mentora_join_create_account(PDO $pdo, array $link, string $first, string $last, string $email, ?string $username, ?string $password): array
 {
-    $existing = $pdo->prepare('SELECT status FROM users WHERE email = ?');
-    $existing->execute([$email]);
-    $status = $existing->fetchColumn();
-    if ($status !== false) {
-        return ['ok' => false, 'error' => $status === 'active'
-            ? 'An account with this email already exists. Sign in instead, and you’ll continue from this link.'
-            : mentora_account_status_message((string) $status)];
+    // One account per email (Gmail lookalikes included): never a second account for the same inbox.
+    $existing = mentora_find_account_by_email($pdo, $email);
+    if ($existing) {
+        return ['ok' => false, 'error' => $existing['status'] === 'active'
+            ? 'An account with this email already exists. Each email can only have one Mentora account, so sign in instead, and you’ll continue from this link.'
+            : mentora_email_taken_message($existing)];
     }
     $pdo->prepare(
         "INSERT INTO users (first_name, last_name, email, username, pathway, pathway_chosen_at, password_hash, role, status, referred_by)

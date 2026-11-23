@@ -42,7 +42,7 @@ require __DIR__ . '/../includes/header.php';
                 <li class="is-done"><b aria-hidden="true">✓</b><span><strong>Application sent</strong><small>We have your details.</small></span></li>
                 <li class="is-done"><b aria-hidden="true">✓</b><span><strong>Email confirmed</strong><small><?= $h($applicant['email']) ?></small></span></li>
                 <li class="is-current" aria-current="step"><b aria-hidden="true">3</b><span><strong>HR confirms your application</strong><small>An HR admin reviews it, usually within 1–3 working days.</small></span></li>
-                <li><b aria-hidden="true">4</b><span><strong>Create your username and password</strong><small>We email you a link once you’re approved.</small></span></li>
+                <li><b aria-hidden="true">4</b><span><strong>Create your username and password</strong><small>We email you a link to create your account once you’re approved.</small></span></li>
             </ol>
             <div class="form-actions"><a class="button button-primary" href="track.php">Track your application</a></div>
             <div class="auth-links"><a href="../index.php">Back to home</a></div>

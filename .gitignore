@@ -22,3 +22,7 @@ uploads/documents/*
 
 # Hosting settings: live database password and site address (see config/db.php)
 config/config.local.php
+
+# Server logs (mail delivery log written by includes/mailer.php)
+logs/*
+!logs/.htaccess

@@ -61,8 +61,11 @@ if (($profile['email_verified'] ?? false) !== true || !filter_var($email, FILTER
 }
 
 $columns = 'SELECT id, user_code, username, first_name, last_name, email, pathway, password_hash, role, status FROM users';
-$query = $pdo->prepare($columns . ' WHERE email = ?');
-$query->execute([$email]);
+// The account for this Google email, also when it was created with a Gmail lookalike (dots / "+tag"),
+// so Google sign-in never makes a second account for the same inbox.
+$existing = mentora_find_account_by_email($pdo, $email);
+$query = $pdo->prepare($columns . ' WHERE id = ?');
+$query->execute([$existing['id'] ?? 0]);
 $user = $query->fetch();
 
 if ($user) {
