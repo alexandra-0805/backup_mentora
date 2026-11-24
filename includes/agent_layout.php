@@ -68,6 +68,7 @@ $agentNav = [
     'agent_reports.php'         => 'Employability reports',
     'reporting_overview.php'    => 'Reporting overview',
     'documents.php'             => 'Documents',
+    'staff_accounts.php'        => 'Staff accounts',
     'settings.php'              => 'Settings',
 ];
 

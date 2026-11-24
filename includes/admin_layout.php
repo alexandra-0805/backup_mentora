@@ -62,6 +62,7 @@ $adminNav = [
     'intern_reports.php'         => 'Intern reports',
     'consolidated_report.php'    => 'Reports',
     'user&access_management.php' => 'Users & access',
+    'staff_accounts.php'         => 'Staff accounts',
     'settings.php'               => 'Settings',
 ];
 ?>

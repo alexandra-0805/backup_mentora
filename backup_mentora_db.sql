@@ -1,13 +1,14 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 4.9.0.1
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Nov 22, 2026 at 10:59 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Host: sql206.infinityfree.com
+-- Generation Time: Nov 24, 2026 at 02:38 AM
+-- Server version: 11.4.14-MariaDB
+-- PHP Version: 7.2.22
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -18,7 +19,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `backup_mentora_db`
+-- Database: `if0_43504347_backup_mentora_db`
 --
 
 -- --------------------------------------------------------
@@ -31,6 +32,8 @@ CREATE TABLE `account_invites` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `user_id` int(10) UNSIGNED NOT NULL,
   `token_hash` char(64) NOT NULL,
+  `code_hash` char(64) DEFAULT NULL,
+  `attempts` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `created_by` int(10) UNSIGNED DEFAULT NULL,
   `expires_at` datetime NOT NULL,
   `used_at` datetime DEFAULT NULL,
@@ -41,48 +44,10 @@ CREATE TABLE `account_invites` (
 -- Dumping data for table `account_invites`
 --
 
-INSERT INTO `account_invites` (`id`, `user_id`, `token_hash`, `created_by`, `expires_at`, `used_at`, `created_at`) VALUES
-(12, 41, '19354f22ec926104327cd23861b7b2c12b7818cf0871164edfc575a2d41865e2', 1, '2026-11-26 19:30:24', '2026-11-19 19:31:35', '2026-11-19 11:30:24'),
-(16, 88, '53b05e5d9031a96079331c728018c99d50981773aa85a41fdf9935a7cdb0312a', 1, '2026-11-28 15:44:40', '2026-11-21 15:45:40', '2026-11-21 07:44:40'),
-(18, 89, '087b10ac5517d68dcaa7c665c136df54de689992c1bd4507d1ec2960f8418055', 1, '2026-11-28 16:00:36', '2026-11-21 16:04:57', '2026-11-21 08:00:36');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `admins`
---
-
-CREATE TABLE `admins` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `username` varchar(80) NOT NULL,
-  `email` varchar(160) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `admins`
---
-
-INSERT INTO `admins` (`id`, `username`, `email`, `password`, `created_at`) VALUES
-(1, 'admin', 'lykemaeconcepcion@gmail.com', '$2y$10$I8n2sPyU2O/vKEaQeQ9ZQe71bekO3izgM854zde39vJy/fFIrHpsC', '2026-11-21 10:11:11');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `admin_password_resets`
---
-
-CREATE TABLE `admin_password_resets` (
-  `id` bigint(20) UNSIGNED NOT NULL,
-  `admin_id` int(10) UNSIGNED NOT NULL,
-  `token_hash` char(64) NOT NULL,
-  `otp_hash` char(64) DEFAULT NULL,
-  `otp_attempts` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
-  `expires_at` datetime NOT NULL,
-  `used_at` datetime DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+INSERT INTO `account_invites` (`id`, `user_id`, `token_hash`, `code_hash`, `attempts`, `created_by`, `expires_at`, `used_at`, `created_at`) VALUES
+(34, 94, 'adc14f730198e201bc238f6ef388fa4a33e5cb78ec4f789b977fcfa6438a384b', '054a69969a16ff0b0dbc98937f8dd6ecc8e7b4b3bb614631989bdddbf6bfe0fb', 0, 1, '2026-11-30 21:59:10', '2026-11-23 22:00:23', '2026-11-23 13:59:10'),
+(37, 95, '63ab8ff5d70ed5b5a68f4484bda9ec44f3e478d2e347712b4fa1ad30aac7ffe6', 'f51acf96093a4f0e81a2e328477d60e181f5f112535b6f1d4d12c67c7caa7baf', 1, 1, '2026-11-30 23:42:36', NULL, '2026-11-23 15:42:36'),
+(38, 96, '098e93f469bb70e255c057dc753a19c65831f98778aba3c9618f2887730ec22d', '95a9c63c0c11fead796f01d6a0dff1a1376b9763842c503764dd331d28f2d9ac', 0, 1, '2026-11-30 23:48:33', '2026-11-23 23:49:12', '2026-11-23 15:48:33');
 
 -- --------------------------------------------------------
 
@@ -129,8 +94,27 @@ CREATE TABLE `ai_assessments` (
 --
 -- Table structure for table `ai_reviews`
 --
--- Error reading structure for table backup_mentora_db.ai_reviews: #1932 - Table &#039;backup_mentora_db.ai_reviews&#039; doesn&#039;t exist in engine
--- Error reading data for table backup_mentora_db.ai_reviews: #1064 - You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near &#039;FROM `backup_mentora_db`.`ai_reviews`&#039; at line 1
+
+CREATE TABLE `ai_reviews` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `application_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `category` enum('suitable','for_review','unsuitable') NOT NULL,
+  `score` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
+  `department_id` int(10) UNSIGNED DEFAULT NULL,
+  `skills` text DEFAULT NULL,
+  `matched_skills` text DEFAULT NULL,
+  `gap_skills` text DEFAULT NULL,
+  `summary` text DEFAULT NULL,
+  `strengths` text DEFAULT NULL,
+  `concerns` text DEFAULT NULL,
+  `engine` varchar(120) NOT NULL DEFAULT '',
+  `dept_verdict` enum('endorsed','not_endorsed') DEFAULT NULL,
+  `dept_note` varchar(1000) DEFAULT NULL,
+  `dept_reviewer_id` int(10) UNSIGNED DEFAULT NULL,
+  `dept_reviewed_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -160,17 +144,6 @@ CREATE TABLE `applications` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `applications`
---
-
-INSERT INTO `applications` (`id`, `user_id`, `submission_mode`, `mobile`, `location`, `school`, `course`, `required_hours`, `desired_role`, `start_date`, `interest`, `education`, `experience_years`, `skills`, `resume_document_id`, `status`, `reviewed_at`, `created_at`, `updated_at`) VALUES
-(1, 3, 'form', NULL, NULL, 'Test University', 'BS Information Systems', 480, NULL, NULL, 'Operations', NULL, NULL, NULL, NULL, 'pending', NULL, '2026-11-18 08:16:23', '2026-11-18 08:16:23'),
-(2, 4, 'form', NULL, NULL, NULL, NULL, NULL, 'Customer support', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, '2026-11-18 08:16:23', '2026-11-18 08:16:23'),
-(17, 41, 'form', '09462274362', 'Cavite', NULL, NULL, NULL, 'developer', '2026-11-23', NULL, NULL, NULL, 'none', NULL, 'pending', NULL, '2026-11-19 11:38:50', '2026-11-19 11:38:50'),
-(24, 88, 'form', '09389344807', 'Dasmarinas, Cavite', NULL, NULL, NULL, 'Marketing', '2026-11-23', NULL, 'college_undergrad', 0, 'One of my skills is creating an excel, editing in canva and such that related to editing or using a laptop or computer. Since the role that i want is marketing, i consider that part of my skills is talking to a customer politely, and introduce to them in better way the product or services that we can offer.', NULL, 'pending', NULL, '2026-11-21 07:52:36', '2026-11-21 07:52:36'),
-(25, 89, 'form', '09389344807', 'Dasmarinas, Cavite', 'Cavite State University - Imus Campus', 'BS Office Administration', 480, NULL, '2026-11-27', 'Marketing Services', NULL, NULL, 'I have no experience yet in workplace, but during my senior high school and college, I have learned a lot. I realized that I have skills in marketing, including data analysis, strategic communication and technical execution.', NULL, 'pending', NULL, '2026-11-21 08:10:55', '2026-11-21 08:10:55');
-
 -- --------------------------------------------------------
 
 --
@@ -185,43 +158,6 @@ CREATE TABLE `attendance` (
   `time_out` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `certificates`
---
-
-CREATE TABLE `certificates` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `title` varchar(200) NOT NULL,
-  `issuer` varchar(150) DEFAULT NULL,
-  `date` varchar(80) DEFAULT NULL,
-  `image` varchar(500) DEFAULT NULL,
-  `url` varchar(500) DEFAULT NULL,
-  `description` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `certificates`
---
-
-INSERT INTO `certificates` (`id`, `title`, `issuer`, `date`, `image`, `url`, `description`, `created_at`) VALUES
-(1, 'Entrepreneurship', 'MIBEX', 'January 2024', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'Entrepreneurship certificate.', '2026-11-21 10:11:14'),
-(2, 'Establishing & Operating Micro-Small Medium Enterprises', 'MIBEX', 'April 2024', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'Business operations certificate.', '2026-11-21 10:11:14'),
-(3, 'Most Sustainable Product in Mini Customized Perfume Bottle', 'MIBEX', 'April 2024', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'Sustainability recognition.', '2026-11-21 10:11:14'),
-(4, 'Best Non-food in Product', 'MIBEX', 'April 2024', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'Product development recognition.', '2026-11-21 10:11:14'),
-(5, 'Visual Graphic Design NC II', 'TESDA', 'February 2026', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'Visual graphic design certification.', '2026-11-21 10:11:14'),
-(6, 'Certificate of Content Creation', 'MIBEX', 'April 2026', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'Certificate of content creation.', '2026-11-21 10:11:14'),
-(7, 'Certificate of MSMEs', 'MIBEX', 'April 2026', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'Certificate for micro, small, and medium enterprise learning.', '2026-11-21 10:11:14'),
-(8, 'NC II Logo Design', 'TESDA', 'April 2026', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'NC II specialization certificate in logo design.', '2026-11-21 10:11:14'),
-(9, 'NC II Print Media', 'TESDA', 'April 2026', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'NC II specialization certificate in print media.', '2026-11-21 10:11:14'),
-(10, 'NC II Product Packaging', 'TESDA', 'April 2026', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'NC II specialization certificate in product packaging.', '2026-11-21 10:11:14'),
-(11, 'NC II User Experience', 'TESDA', 'April 2026', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'NC II specialization certificate in user experience.', '2026-11-21 10:11:14'),
-(12, 'NC II User Interface', 'TESDA', 'April 2026', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'NC II specialization certificate in user interface.', '2026-11-21 10:11:14'),
-(13, 'NC II Visual Graphic Design', 'TESDA', 'April 2026', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'NC II specialization certificate in visual graphic design.', '2026-11-21 10:11:14'),
-(14, 'NC III Product & Window Design', 'TESDA', 'April 2026', NULL, 'https://drive.google.com/drive/folders/1yp7-SgJTQgzfwyaOOZA_OB5dkwGu-0Ek?usp=sharing', 'NC III specialization certificate in product and window design.', '2026-11-21 10:11:14');
 
 -- --------------------------------------------------------
 
@@ -279,6 +215,8 @@ CREATE TABLE `email_verifications` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `user_id` int(10) UNSIGNED NOT NULL,
   `token_hash` char(64) NOT NULL,
+  `code_hash` char(64) DEFAULT NULL,
+  `attempts` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `expires_at` datetime NOT NULL,
   `used_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
@@ -288,8 +226,10 @@ CREATE TABLE `email_verifications` (
 -- Dumping data for table `email_verifications`
 --
 
-INSERT INTO `email_verifications` (`id`, `user_id`, `token_hash`, `expires_at`, `used_at`, `created_at`) VALUES
-(1, 89, '322f44fb9b67899e398cb51ff0285903da240f9c770309a0d5fd1ca9391ab1c0', '2026-11-23 15:57:27', NULL, '2026-11-21 07:57:27');
+INSERT INTO `email_verifications` (`id`, `user_id`, `token_hash`, `code_hash`, `attempts`, `expires_at`, `used_at`, `created_at`) VALUES
+(7, 94, '4ce03f279d898b98ae73c702423b6cba8ad99004ac2427616fcd1077d18b7cbe', '4e11cd0a518c4dc73a3ca4805dc57b7870e6307abd213cf3faf705f3b75024a3', 0, '2026-11-25 21:57:52', '2026-11-23 21:58:49', '2026-11-23 13:57:52'),
+(8, 95, 'b1f21b90195054918529f80e0ae2ef9a91319158763584ab17aa68095799d342', 'a5815591b7f8313f2ec9288133c0562d1ef135e591cef8faad89f28918119744', 0, '2026-11-25 23:14:20', '2026-11-23 23:14:43', '2026-11-23 15:14:20'),
+(9, 96, '0b6a281421a5053e2720642f1e0dd3b92b59465554568b7cd035564a283ed844', 'ca88939fc0f943752c546af5158239cfb81b555f679abcc190920e429d588fe9', 0, '2026-11-25 23:47:23', '2026-11-23 23:48:08', '2026-11-23 15:47:23');
 
 -- --------------------------------------------------------
 
@@ -336,13 +276,8 @@ CREATE TABLE `messages` (
 --
 
 INSERT INTO `messages` (`id`, `sender_id`, `recipient_id`, `subject`, `body`, `read_at`, `created_at`) VALUES
-(19, 1, 41, 'Message', 'hi', '2026-11-20 23:53:06', '2026-11-20 15:37:09'),
-(20, 1, 41, 'Message', 'test', '2026-11-20 23:53:06', '2026-11-20 15:37:12'),
-(21, 1, 41, 'Message', '🧡🧡', '2026-11-20 23:53:06', '2026-11-20 15:38:10'),
-(22, 41, 2, 'Message', 'Hi test', '2026-11-21 11:43:35', '2026-11-21 03:37:49'),
 (23, 2, 1, 'Message', 'test', '2026-11-21 12:06:18', '2026-11-21 03:43:49'),
-(24, 1, 2, 'Re: Message', 'ok', '2026-11-21 16:26:50', '2026-11-21 04:06:23'),
-(25, 89, 1, 'Message', 'hi', NULL, '2026-11-21 09:12:54');
+(24, 1, 2, 'Re: Message', 'ok', '2026-11-21 16:26:50', '2026-11-21 04:06:23');
 
 -- --------------------------------------------------------
 
@@ -363,14 +298,6 @@ CREATE TABLE `message_attachments` (
   `height` smallint(5) UNSIGNED DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `message_attachments`
---
-
-INSERT INTO `message_attachments` (`id`, `message_id`, `kind`, `stored_name`, `url`, `original_name`, `mime`, `size`, `width`, `height`, `created_at`) VALUES
-(5, 21, 'file', 'm21-6b7f5e629cbff809.pdf', NULL, 'KLD-REG-FR-0008-01-Pre-Enrollment-Advising-Form-1.pdf', 'application/pdf', 257096, NULL, NULL, '2026-11-20 15:38:10'),
-(6, 21, 'image', 'm21-a04e49476fdf8f07.png', NULL, 'Screenshot 2026-10-23 121757.png', 'image/png', 395583, 911, 902, '2026-11-20 15:38:10');
 
 -- --------------------------------------------------------
 
@@ -405,6 +332,7 @@ CREATE TABLE `notifications` (
 --
 
 INSERT INTO `notifications` (`id`, `user_id`, `title`, `body`, `link`, `read_at`, `created_at`);
+
 -- --------------------------------------------------------
 
 --
@@ -423,32 +351,6 @@ CREATE TABLE `password_resets` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `projects`
---
-
-CREATE TABLE `projects` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `title` varchar(150) NOT NULL,
-  `description` text NOT NULL,
-  `technologies` varchar(255) NOT NULL,
-  `image` varchar(500) DEFAULT NULL,
-  `project_url` varchar(500) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `projects`
---
-
-INSERT INTO `projects` (`id`, `title`, `description`, `technologies`, `image`, `project_url`, `created_at`) VALUES
-(1, 'Bakeshop Website', 'A friendly front-end website concept designed to improve customer engagement.', 'HTML, CSS, JavaScript', 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=900&q=80', 'https://drive.google.com/drive/folders/1x1cmwo_GXkbv3--IOjZ4E0WYpWzk7cJ7?usp=sharing', '2026-11-21 10:11:13'),
-(2, 'Wooden Perfume Bottle', 'An innovative product concept developed and presented as a team.', 'Research, Presentation, Design', 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=900&q=80', 'https://drive.google.com/drive/folders/1tiwzumF9iTp8SrpSbn3vqVrnbLfPrGKK?usp=sharing', '2026-11-21 10:11:13'),
-(3, 'Digital Content Projects', 'Social media and promotional graphics created for small business ideas.', 'Canva, Content Planning, AI Tools', 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?auto=format&fit=crop&w=900&q=80', 'https://drive.google.com/drive/folders/13AQiPXZFps0GQXkdQPmDbbFtpRQhavoY?usp=sharing', '2026-11-21 10:11:13'),
-(4, 'Web Development Portfolio', 'A collection of responsive web development work built with HTML, CSS, and JavaScript.', 'HTML, CSS, JavaScript', 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80', 'https://drive.google.com/drive/folders/11DS32zj3hPiS7ngc4R11gXnbi9aa09xv?usp=sharing', '2026-11-21 10:11:13');
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `recruitment_links`
 --
 
@@ -462,37 +364,6 @@ CREATE TABLE `recruitment_links` (
   `uses` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `services`
---
-
-CREATE TABLE `services` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `title` varchar(150) NOT NULL,
-  `description` text NOT NULL,
-  `icon` varchar(80) NOT NULL DEFAULT 'bi-stars',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `services`
---
-
-INSERT INTO `services` (`id`, `title`, `description`, `icon`, `created_at`) VALUES
-(1, 'Administrative Support', 'Keep calendars, documents, and recurring tasks organized and moving.', 'bi-kanban', '2026-11-21 10:11:13'),
-(2, 'Data Entry', 'Accurate data entry, cleanup, and spreadsheet support.', 'bi-table', '2026-11-21 10:11:13'),
-(3, 'Email & Client Communication', 'Professional, thoughtful responses and inbox assistance.', 'bi-chat-square-text', '2026-11-21 10:11:13'),
-(4, 'Internet Research', 'Clear, useful research summarized for action.', 'bi-search', '2026-11-21 10:11:13'),
-(5, 'File Management', 'Simple, consistent digital organization and file naming.', 'bi-folder2-open', '2026-11-21 10:11:13'),
-(6, 'Customer Support', 'Patient customer care and practical issue resolution.', 'bi-headset', '2026-11-21 10:11:13'),
-(7, 'Social Media Assistance', 'Content scheduling, captions, and day-to-day social support.', 'bi-share', '2026-11-21 10:11:13'),
-(8, 'Canva Design Support', 'Clean graphics for posts, presentations, and campaigns.', 'bi-palette', '2026-11-21 10:11:13'),
-(9, 'AI Content Creation', 'AI-assisted drafts, ideas, and workflow improvements.', 'bi-stars', '2026-11-21 10:11:13'),
-(10, 'Front-End Development', 'Responsive interfaces built with foundational web skills.', 'bi-code-slash', '2026-11-21 10:11:13'),
-(11, 'Graphic Design', 'Visual layouts shaped around your message and audience.', 'bi-vector-pen', '2026-11-21 10:11:13');
 
 -- --------------------------------------------------------
 
@@ -517,40 +388,6 @@ CREATE TABLE `site_feedback` (
 
 INSERT INTO `site_feedback` (`id`, `user_id`, `name`, `email`, `rating`, `comment`, `ip_hash`, `created_at`) VALUES
 (3, NULL, 'Alex', NULL, 5, 'Nice and better agency', 'adb655da9e8b387398aca1854192a9a4b15c44f96c11e910073078d595161b68', '2026-11-22 03:46:39');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `skills`
---
-
-CREATE TABLE `skills` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `category` varchar(100) NOT NULL,
-  `proficiency` tinyint(3) UNSIGNED NOT NULL DEFAULT 70,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `skills`
---
-
-INSERT INTO `skills` (`id`, `name`, `category`, `proficiency`, `created_at`) VALUES
-(1, 'Microsoft Office', 'Productivity', 82, '2026-11-21 10:11:13'),
-(2, 'Google Workspace', 'Productivity', 84, '2026-11-21 10:11:13'),
-(3, 'Canva', 'Design', 88, '2026-11-21 10:11:13'),
-(4, 'AI Tools', 'Digital', 82, '2026-11-21 10:11:13'),
-(5, 'Basic Web Development', 'Development', 72, '2026-11-21 10:11:13'),
-(6, 'HTML', 'Development', 78, '2026-11-21 10:11:13'),
-(7, 'CSS', 'Development', 76, '2026-11-21 10:11:13'),
-(8, 'JavaScript', 'Development', 68, '2026-11-21 10:11:13'),
-(9, 'PHP', 'Development', 65, '2026-11-21 10:11:13'),
-(10, 'MySQL', 'Development', 64, '2026-11-21 10:11:13'),
-(11, 'Data Entry', 'Administration', 90, '2026-11-21 10:11:13'),
-(12, 'Internet Research', 'Administration', 88, '2026-11-21 10:11:13'),
-(13, 'File Management', 'Administration', 86, '2026-11-21 10:11:13'),
-(14, 'Customer Support', 'Communication', 85, '2026-11-21 10:11:13');
 
 -- --------------------------------------------------------
 
@@ -600,13 +437,6 @@ CREATE TABLE `training_records` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `training_records`
---
-
-INSERT INTO `training_records` (`id`, `user_id`, `modules_completed`, `modules_total`, `hours_logged`, `status`, `notes`, `updated_at`) VALUES
-(21, 89, 0, 7, 0.0, 'in_training', NULL, '2026-11-21 08:10:55');
-
 -- --------------------------------------------------------
 
 --
@@ -641,17 +471,11 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `user_code`, `first_name`, `last_name`, `email`, `email_verified_at`, `username`, `pathway`, `pathway_chosen_at`, `password_hash`, `role`, `status`, `presence`, `last_seen_at`, `department_id`, `agent_id`, `referred_by`, `avatar_path`, `created_at`, `updated_at`) VALUES
-(1, 'ADM-0001', 'Test', 'Admin', 'admin@mentora.test', '2026-11-18 16:16:22', NULL, 'employee_va', '2026-11-18 16:16:22', '$2y$10$nte8t3aPrnFAP86SBU1lB.dTfpQo31SQXvItSbiA7lH//jyBJcTBi', 'admin', 'active', 'active', NULL, NULL, NULL, NULL, 'uploads/avatars/u1-5273335f70c9b712.jpg', '2026-11-18 08:16:22', '2026-11-21 09:24:23'),
+(1, 'ADM-0001', 'Test', 'Admin', 'admin@mentora.test', '2026-11-18 16:16:22', NULL, 'employee_va', '2026-11-18 16:16:22', '$2y$12$n.TafUDRpmawQdrowK22Ae76XHqvPvsp1wekzH7sq7RQA0r.CELXW', 'admin', 'active', 'active', '2026-11-24 15:37:29', NULL, NULL, NULL, 'uploads/avatars/u1-5273335f70c9b712.jpg', '2026-11-18 08:16:22', '2026-11-24 07:37:29'),
 (2, 'AGT-0002', 'Test', 'Agent', 'agent@mentora.test', '2026-11-18 16:16:22', NULL, 'employee_va', '2026-11-18 16:16:22', '$2y$10$a6ouZR/ov5EQEG7eJyKP0.wWgDmkkR7reNh6MaLqCpQ.r9/Eb9J6.', 'agent', 'active', 'active', NULL, NULL, NULL, NULL, 'uploads/avatars/u2-7a8580077e627358.jpg', '2026-11-18 08:16:22', '2026-11-21 09:25:05'),
-(3, 'INT-0003', 'Test', 'Intern', 'intern@mentora.test', '2026-11-18 16:16:23', NULL, 'internship', '2026-11-18 16:16:23', '$2y$10$tskvC.Kh/xI4fTksAHOCreYUzFaBUxFSP9sbsQ4YkV.tDx2QVtHjC', 'applicant', 'active', 'active', '2026-11-22 11:10:08', NULL, NULL, NULL, NULL, '2026-11-18 08:16:23', '2026-11-22 03:10:08'),
-(4, 'EMP-0004', 'Test', 'Employee', 'employee@mentora.test', '2026-11-18 16:16:23', NULL, 'employee_va', '2026-11-18 16:16:23', '$2y$10$g9ChTWnBYQgimH94sgiL1eSAlDmS1oIK6aDTtACaMXXMeI5Bnoq6i', 'applicant', 'active', 'active', NULL, NULL, NULL, NULL, NULL, '2026-11-18 08:16:23', '2026-11-21 07:34:46'),
-(34, 'INT-0034', 'Alex', 'Concepcion', 'lykemaeconcepcion@gmail.com', '2026-11-19 18:04:01', NULL, 'internship', '2026-11-19 18:04:01', '$2y$10$srS1/2RENymJYN04rgjOp.hfR4B0oxX2mPt7hWmqC1w6bYeIus6BW', 'applicant', 'active', 'active', NULL, NULL, NULL, NULL, NULL, '2026-11-19 10:04:01', '2026-11-21 10:16:26'),
-(41, 'EMP-0041', 'Lyke', 'Concepcion', 'alexandralykemae@gmail.com', '2026-11-19 18:58:55', 'lyke.concepcion', 'employee_va', '2026-11-19 18:58:55', '$2y$10$S77pObh2rCZAEqz3lRsvxOPytfCXauA7hUWaKAVPIhq09O3iXtXuK', 'applicant', 'active', 'active', NULL, NULL, NULL, NULL, NULL, '2026-11-19 10:58:55', '2026-11-21 09:26:26'),
-(85, 'INT-0085', 'Angel Marie', 'Palce', 'palceangel5@gmail.com', '2026-11-21 14:18:12', NULL, 'internship', '2026-11-21 14:18:12', '$2y$10$Ry6Mr5015LV8XCC5tm/T0eWNSUxeeCg17PpGPUMo6PIFcwrWWeMoC', 'applicant', 'pending', 'active', NULL, NULL, NULL, NULL, NULL, '2026-11-21 06:18:12', '2026-11-21 08:22:58'),
-(86, 'INT-0086', 'Angel Marie', 'Palce', 'palceangel1@gmail.com', '2026-11-21 14:45:03', NULL, 'internship', '2026-11-21 14:29:31', '$2y$10$yvBgdUHbwsU7m7MxFYA1q.Wc1dWqucwmU0dhsEnWW5UJuhcpgnoTG', 'applicant', 'pending', 'active', NULL, NULL, NULL, NULL, NULL, '2026-11-21 06:45:03', '2026-11-21 07:34:46'),
-(87, 'INT-0087', 'Zamara', 'Jarmin', 'zamaramikayla@gmail.com', '2026-11-21 14:47:07', NULL, 'internship', '2026-11-21 14:47:07', '$2y$10$GoCG/4g3HUrblr9AAJ4BiORY2iMvx6kh3RoxqzhGf6NZYHRKkoZ0O', 'applicant', 'pending', 'active', NULL, NULL, NULL, NULL, NULL, '2026-11-21 06:47:07', '2026-11-21 07:34:46'),
-(88, 'EMP-0088', 'Angel', 'Palce', 'angelmarieo652@gmail.com', '2026-11-21 15:30:15', 'angel.palce', 'employee_va', '2026-11-21 15:30:15', '$2y$10$AH/ZI5iLSV0fy7BvZdXBCeMsA0xKjMmOhjNtmJXNJtt4RCPLTL5.K', 'applicant', 'active', 'active', NULL, NULL, NULL, NULL, NULL, '2026-11-21 07:30:15', '2026-11-21 07:56:02'),
-(89, 'INT-0089', 'Angel', 'Marie', 'angelpalce90@gmail.com', NULL, 'angel.marie', 'internship', '2026-11-21 15:57:27', '$2y$10$.GpLaV8N1o35KUAv3qxSYOPRKdjci09tb2/b7J/NNMbkmxKVo7A2.', 'applicant', 'active', 'active', NULL, NULL, NULL, NULL, NULL, '2026-11-21 07:57:27', '2026-11-21 09:13:24');
+(94, 'EMP-0094', 'Alexandra', 'Concepcion', 'lykemaeconcepcion@gmail.com', '2026-11-23 21:58:49', 'alexandra.concepcion', 'employee_va', '2026-11-23 21:57:52', '$2y$12$/Of8Oev833XEpLD04TWFzOx7kbBk53UJiME990xR/X9I/GdcCXISu', 'applicant', 'active', 'active', NULL, NULL, NULL, NULL, NULL, '2026-11-23 13:57:52', '2026-11-23 15:22:40'),
+(95, 'EMP-0095', 'lans', 'oksilyo', 'wolfmazing205@gmail.com', '2026-11-23 23:14:43', NULL, 'employee_va', '2026-11-23 23:14:20', '$2y$12$tfW32EKY4UHQq1N9q9/yMe2HgvBj3b/nhRU/R1eymtgsEPLxYS7TW', 'applicant', 'approved', 'active', NULL, NULL, NULL, NULL, NULL, '2026-11-23 15:14:20', '2026-11-23 15:25:14'),
+(96, 'INT-0096', 'Zamara', 'Mikayla', 'zamaramikayla@gmail.com', '2026-11-23 23:48:08', 'zamara.mikayla', 'internship', '2026-11-23 23:47:23', '$2y$12$cD8gOCXQ5k0tCJj7wvLlZeTwTh779.q9heRIJoAeOB0CK96ZsIqN6', 'applicant', 'active', 'active', '2026-11-23 23:53:15', NULL, NULL, NULL, NULL, '2026-11-23 15:47:23', '2026-11-23 15:53:15');
 
 -- --------------------------------------------------------
 
@@ -687,21 +511,6 @@ ALTER TABLE `account_invites`
   ADD KEY `fk_account_invites_creator` (`created_by`);
 
 --
--- Indexes for table `admins`
---
-ALTER TABLE `admins`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `username` (`username`);
-
---
--- Indexes for table `admin_password_resets`
---
-ALTER TABLE `admin_password_resets`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `token_hash` (`token_hash`),
-  ADD KEY `idx_password_reset_lookup` (`admin_id`,`expires_at`,`used_at`);
-
---
 -- Indexes for table `agent_reports`
 --
 ALTER TABLE `agent_reports`
@@ -717,6 +526,15 @@ ALTER TABLE `ai_assessments`
   ADD KEY `idx_ai_assessments_user` (`user_id`,`id`);
 
 --
+-- Indexes for table `ai_reviews`
+--
+ALTER TABLE `ai_reviews`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_ai_reviews_user` (`user_id`,`id`),
+  ADD KEY `fk_ai_reviews_department` (`department_id`),
+  ADD KEY `fk_ai_reviews_dept_reviewer` (`dept_reviewer_id`);
+
+--
 -- Indexes for table `applications`
 --
 ALTER TABLE `applications`
@@ -729,12 +547,6 @@ ALTER TABLE `applications`
 ALTER TABLE `attendance`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uq_attendance_day` (`user_id`,`work_date`);
-
---
--- Indexes for table `certificates`
---
-ALTER TABLE `certificates`
-  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `departments`
@@ -803,24 +615,12 @@ ALTER TABLE `password_resets`
   ADD KEY `fk_password_resets_user` (`user_id`);
 
 --
--- Indexes for table `projects`
---
-ALTER TABLE `projects`
-  ADD PRIMARY KEY (`id`);
-
---
 -- Indexes for table `recruitment_links`
 --
 ALTER TABLE `recruitment_links`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `code` (`code`),
   ADD KEY `fk_recruitment_links_agent` (`agent_id`);
-
---
--- Indexes for table `services`
---
-ALTER TABLE `services`
-  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `site_feedback`
@@ -830,12 +630,6 @@ ALTER TABLE `site_feedback`
   ADD KEY `idx_site_feedback_created` (`created_at`),
   ADD KEY `idx_site_feedback_ip` (`ip_hash`,`created_at`),
   ADD KEY `fk_site_feedback_user` (`user_id`);
-
---
--- Indexes for table `skills`
---
-ALTER TABLE `skills`
-  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `social_profiles`
@@ -882,19 +676,7 @@ ALTER TABLE `work_reports`
 -- AUTO_INCREMENT for table `account_invites`
 --
 ALTER TABLE `account_invites`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
-
---
--- AUTO_INCREMENT for table `admins`
---
-ALTER TABLE `admins`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `admin_password_resets`
---
-ALTER TABLE `admin_password_resets`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT for table `agent_reports`
@@ -909,6 +691,12 @@ ALTER TABLE `ai_assessments`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `ai_reviews`
+--
+ALTER TABLE `ai_reviews`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `applications`
 --
 ALTER TABLE `applications`
@@ -919,12 +707,6 @@ ALTER TABLE `applications`
 --
 ALTER TABLE `attendance`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
-
---
--- AUTO_INCREMENT for table `certificates`
---
-ALTER TABLE `certificates`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `departments`
@@ -942,7 +724,7 @@ ALTER TABLE `documents`
 -- AUTO_INCREMENT for table `email_verifications`
 --
 ALTER TABLE `email_verifications`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `evaluations`
@@ -966,7 +748,7 @@ ALTER TABLE `message_attachments`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
@@ -975,34 +757,16 @@ ALTER TABLE `password_resets`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `projects`
---
-ALTER TABLE `projects`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
 -- AUTO_INCREMENT for table `recruitment_links`
 --
 ALTER TABLE `recruitment_links`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `services`
---
-ALTER TABLE `services`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
-
---
 -- AUTO_INCREMENT for table `site_feedback`
 --
 ALTER TABLE `site_feedback`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT for table `skills`
---
-ALTER TABLE `skills`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `training_records`
@@ -1014,7 +778,7 @@ ALTER TABLE `training_records`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=97;
 
 --
 -- AUTO_INCREMENT for table `work_reports`
@@ -1034,12 +798,6 @@ ALTER TABLE `account_invites`
   ADD CONSTRAINT `fk_account_invites_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `admin_password_resets`
---
-ALTER TABLE `admin_password_resets`
-  ADD CONSTRAINT `fk_password_reset_admin` FOREIGN KEY (`admin_id`) REFERENCES `admins` (`id`) ON DELETE CASCADE;
-
---
 -- Constraints for table `agent_reports`
 --
 ALTER TABLE `agent_reports`
@@ -1051,6 +809,14 @@ ALTER TABLE `agent_reports`
 --
 ALTER TABLE `ai_assessments`
   ADD CONSTRAINT `fk_ai_assessments_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `ai_reviews`
+--
+ALTER TABLE `ai_reviews`
+  ADD CONSTRAINT `fk_ai_reviews_department` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_ai_reviews_dept_reviewer` FOREIGN KEY (`dept_reviewer_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_ai_reviews_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `applications`
