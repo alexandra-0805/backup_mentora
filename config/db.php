@@ -381,7 +381,7 @@ try {
         $pdo->exec('ALTER TABLE training_progress ADD COLUMN quiz_score TINYINT UNSIGNED NULL AFTER module_key');
     }
     // Daily work / activity reports: submitted by interns and employees, approved or returned by an
-    // agent or HR. Approved hours make up training_records.hours_logged.
+    // agent or HR. Employees' approved hours make up training_records.hours_logged (interns' are tracked automatically).
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS work_reports (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -549,6 +549,19 @@ try {
             KEY idx_site_feedback_created (created_at),
             KEY idx_site_feedback_ip (ip_hash, created_at),
             CONSTRAINT fk_site_feedback_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // Internship hours, counted automatically (includes/intern_hours.php, account/activity.php): one row per minute
+    // in which an intern was clicking, typing or scrolling in Mentora (or had within the last few minutes). Only the number of
+    // clicks and keystrokes is kept, never what was typed. The primary key counts each minute once, whatever the tabs.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS intern_activity (
+            user_id INT UNSIGNED NOT NULL,
+            active_minute DATETIME NOT NULL,
+            clicks SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+            keystrokes SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+            PRIMARY KEY (user_id, active_minute),
+            CONSTRAINT fk_intern_activity_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
 } catch (PDOException $exception) {

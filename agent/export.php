@@ -19,7 +19,7 @@ switch ($type) {
         ], mentora_workspace_people($pdo));
         mentora_csv(
             "mentora-{$type}-{$stamp}.csv",
-            ['User ID', 'Name', 'Email', 'Team', 'Agent', 'School', 'Modules', 'Completion', 'Approved hours', 'Required hours', 'Training status', 'Joined'],
+            ['User ID', 'Name', 'Email', 'Team', 'Agent', 'School', 'Modules', 'Completion', 'Internship hours', 'Required hours', 'Training status', 'Joined'],
             $rows
         );
     case 'assessments':

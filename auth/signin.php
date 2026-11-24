@@ -68,7 +68,7 @@ require __DIR__ . '/../includes/header.php';
         <form method="post">
             <?= mentora_csrf_field() ?>
             <div class="field">
-                <label for="email">Username or email</label><input id="email" type="text" name="email" required autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. juan.delacruz or name@gmail.com" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"></div>
+                <label for="email">Username or email</label><input id="email" type="text" name="email" required autocomplete="username" autocapitalize="none" spellcheck="false" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"></div>
             <div class="field">
                 <label for="password">Password</label><input id="password"
                     type="password"

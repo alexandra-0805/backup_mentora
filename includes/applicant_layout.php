@@ -163,15 +163,15 @@ $now = new DateTimeImmutable(
 
     <link
         rel="stylesheet"
-        href="../../assets/css/admin.css?v=11">
+        href="../../assets/css/admin.css?v=12">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/applicant.css?v=9">
+        href="../../assets/css/applicant.css?v=10">
 
     <link
         rel="stylesheet"
-        href="../../assets/css/settings.css?v=31">
+        href="../../assets/css/settings.css?v=33">
 
     <link
         rel="stylesheet"
@@ -360,13 +360,19 @@ $now = new DateTimeImmutable(
                 </a>
 
 
-                <!-- Date -->
+                <!-- Internship hours tracker (signed-in interns) and live date and time (Philippine time) -->
 
-                <span class="topbar-date">
-
-                    <?= $e($now->format('D, d M Y')) ?> · PHT
-
-                </span>
+                <?php
+                $hoursTracker = null;
+                if ((int) $currentUser['id'] > 0) { // interns and employees
+                    require_once __DIR__ . '/intern_hours.php';
+                    $hoursTracker = mentora_intern_hours($pdo, (int) $currentUser['id'], 'all')[0] ?? null;
+                    if ($hoursTracker) {
+                        mentora_save_intern_hours($pdo, $hoursTracker); // keeps their internship hours up to date
+                    }
+                }
+                require __DIR__ . '/topbar_clock.php';
+                ?>
 
             </span>
 

@@ -113,7 +113,7 @@ $modulesTotal = count(mentora_training_modules($listType === 'intern' ? 'interns
                     : '' ?></td>
                 <td>
                     <?php if ($listType === 'agent'): ?><?= (int) $user['assigned_interns'] ?> assigned<?php else: ?><?= (int) $user['completed'] ?>/<?= $modulesTotal ?> modules<?= $listType === 'intern'
-                        ? '<br><small>' . mentora_hours($user['hours_logged']) . ' hrs approved</small>'
+                        ? '<br><small>' . mentora_hours($user['hours_logged']) . ' internship hrs</small>'
                         : '' ?><?php endif; ?>
                 </td>
                 <?php if ($listType !== 'agent'): $socialPercent = (int) round((int) $user['social_added'] / 7 * 100); ?>

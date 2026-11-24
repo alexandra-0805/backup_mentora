@@ -75,7 +75,7 @@ ksort($teams);
         <small>Training completion</small><strong><?= $total ? round($completed / $total * 100) : 0 ?>%</strong><span>Based on recorded modules</span>
     </div>
     <div class="metric-card">
-        <small>Approved hours</small><strong><?= mentora_hours($hours) ?></strong><span>From approved reports</span>
+        <small>Internship hours</small><strong><?= mentora_hours($hours) ?></strong><span>All interns, tracked automatically</span>
     </div>
     <div class="metric-card">
         <small>Average evaluation score</small><strong><?= $average !== null && $average !== false ? mentora_hours($average) . ' / 5' : '—' ?></strong><span><?= $average ? 'Published evaluations' : 'No published scores yet' ?></span>

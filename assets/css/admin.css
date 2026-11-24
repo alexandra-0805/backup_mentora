@@ -1860,3 +1860,145 @@ body.workspace-dark-mode :is(.screening-actions select, .screening-actions input
         margin-left: 0;
     }
 }
+/* ---------- Internship hours: topbar tracker (includes/topbar_clock.php) and report (includes/pages/intern_hours_report.php) ---------- */
+.hours-chip {
+    align-items: center;
+    background: color-mix(in srgb, var(--mentora-teal, #0b625d) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--mentora-teal, #0b625d) 18%, transparent);
+    border-radius: 999px;
+    color: inherit;
+    display: inline-flex;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    gap: 6px;
+    padding: 5px 10px 5px 9px;
+    position: relative;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.hours-chip:hover {
+    border-color: var(--mentora-teal, #0b625d);
+}
+
+.hours-chip small {
+    color: var(--workspace-muted);
+    font-size: 11px;
+}
+
+.hours-chip [data-hours-text] {
+    font-weight: 700;
+}
+
+.hours-chip-dot {
+    background: #a1a1a6;
+    border-radius: 50%;
+    flex: 0 0 8px;
+    height: 8px;
+    width: 8px;
+}
+
+.hours-chip.is-working .hours-chip-dot {
+    animation: hours-pulse 1.6s ease-in-out infinite;
+    background: #34c759;
+}
+
+.hours-chip.is-completed .hours-chip-dot {
+    background: var(--mentora-teal, #0b625d);
+}
+
+.hours-chip-bar {
+    background: color-mix(in srgb, var(--mentora-teal, #0b625d) 14%, transparent);
+    border-radius: 999px;
+    bottom: 2px;
+    height: 2px;
+    left: 12px;
+    overflow: hidden;
+    position: absolute;
+    right: 12px;
+}
+
+.hours-chip-bar b {
+    background: var(--mentora-teal, #0b625d);
+    display: block;
+    height: 100%;
+}
+
+@keyframes hours-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.55); }
+    50% { box-shadow: 0 0 0 5px rgba(52, 199, 89, 0); }
+}
+
+.live-pill {
+    align-items: center;
+    background: rgba(52, 199, 89, 0.12);
+    border-radius: 999px;
+    color: #1f8a3b;
+    display: inline-flex;
+    font-size: 11px;
+    font-weight: 700;
+    gap: 5px;
+    padding: 2px 9px;
+    vertical-align: middle;
+}
+
+.live-pill i {
+    animation: hours-pulse 1.6s ease-in-out infinite;
+    background: #34c759;
+    border-radius: 50%;
+    height: 7px;
+    width: 7px;
+}
+
+.hours-table td {
+    font-variant-numeric: tabular-nums;
+}
+
+.hours-progress {
+    min-width: 120px;
+}
+
+.hours-progress small {
+    color: var(--workspace-muted);
+}
+
+.hours-flag {
+    color: #b25000;
+    font-weight: 600;
+}
+
+body.workspace-dark-mode .hours-chip {
+    background: rgba(143, 239, 218, 0.08);
+    border-color: rgba(143, 239, 218, 0.2);
+}
+
+body.workspace-dark-mode :is(.hours-chip:hover) {
+    border-color: var(--mentora-mint, #8fefda);
+}
+
+body.workspace-dark-mode .hours-chip-bar b,
+body.workspace-dark-mode .hours-chip.is-completed .hours-chip-dot {
+    background: var(--mentora-mint, #8fefda);
+}
+
+body.workspace-dark-mode .live-pill {
+    color: #7ee29b;
+}
+
+body.workspace-dark-mode .hours-flag {
+    color: #ffb36b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hours-chip.is-working .hours-chip-dot,
+    .live-pill i {
+        animation: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .hours-chip small,
+    .hours-chip-bar {
+        display: none;
+    }
+}

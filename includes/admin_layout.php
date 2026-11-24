@@ -59,6 +59,8 @@ $adminNav = [
     'agent_list.php'             => 'Agent list',
     'department.php'             => 'Departments',
     'monitoring.php'             => 'Monitoring',
+    'intern_hours.php'           => 'Internship hours',
+    'employee_hours.php'         => 'Employee hours',
     'intern_reports.php'         => 'Intern reports',
     'consolidated_report.php'    => 'Reports',
     'user&access_management.php' => 'Users & access',
@@ -75,8 +77,8 @@ $adminNav = [
     <title><?= $e($pageTitle) ?></title>
     <link rel="icon" type="image/png" href="../assets/images/mentora-logo.png?v=1">
     <link rel="stylesheet" href="../assets/css/style.css?v=44">
-    <link rel="stylesheet" href="../assets/css/admin.css?v=11">
-    <link rel="stylesheet" href="../assets/css/settings.css?v=31">
+    <link rel="stylesheet" href="../assets/css/admin.css?v=12">
+    <link rel="stylesheet" href="../assets/css/settings.css?v=33">
     <link rel="stylesheet" href="../assets/css/theme.css?v=10">
     <link rel="stylesheet" href="../assets/css/dialog.css?v=2">
     <?php require __DIR__ . '/theme_boot.php'; ?>
@@ -144,7 +146,7 @@ $adminNav = [
                     aria-label="Profile"
                     title="Profile"><?= $avatarUrl ? '<img class="avatar-img" src="' . $e($avatarUrl) . '" alt="">' : $e($initials) ?></a>
 
-                <span class="topbar-date"><?= $e($now->format('D, d M Y')) ?> · PHT</span>
+                <?php require __DIR__ . '/topbar_clock.php'; ?>
             </span>
         </header>
 

@@ -3,10 +3,11 @@
 /**
  * Shared workflow for the applicant, agent and admin workspaces.
  *
- *   Training      training_progress (module done) -> training_records (counts, approved hours, status)
- *   Reporting     work_reports: submitted by interns/employees -> approved or returned by an agent/HR;
- *                 approved hours add up to training_records.hours_logged
- *   Attendance    attendance: time in / time out once a day (applicant Reporting) -> admin Monitoring
+ *   Training      training_progress (module done) -> training_records (counts, hours, status)
+ *   Hours         training_records.hours_logged: hours tracked automatically while interns and employees are
+ *                 active in Mentora (includes/intern_hours.php)
+ *   Reporting     work_reports: submitted by interns/employees -> approved or returned by an agent/HR
+ *   Attendance    attendance: first and last activity of the day (account/activity.php) -> admin Monitoring
  *   Evaluations   evaluations: created by an agent (pending) -> draft -> published (visible to the person)
  *   Documents     documents + uploads/documents/: team resources (agents/HR) and application documents
  *                 (applicants), downloaded through account/document.php after an access check
@@ -271,8 +272,9 @@ function mentora_departments(PDO $pdo): array
 /* ---------- Training ---------- */
 
 /**
- * Recalculate a person's training_records row: modules done (training_progress), approved report
- * hours (work_reports) and status (completed when every module is done, unless an agent put it on hold).
+ * Recalculate a person's training_records row: modules done (training_progress), hours and status (completed
+ * when every module is done, unless an agent put it on hold). Hours: tracked automatically while they're active in
+ * Mentora (includes/intern_hours.php), for interns and employees.
  */
 function mentora_sync_training(PDO $pdo, int $userId, string $pathway): void
 {
@@ -282,9 +284,16 @@ function mentora_sync_training(PDO $pdo, int $userId, string $pathway): void
     $done->execute([$userId, ...$modules]);
     $completed = (int) $done->fetchColumn();
 
-    $hours = $pdo->prepare("SELECT COALESCE(SUM(hours), 0) FROM work_reports WHERE user_id = ? AND status = 'approved'");
-    $hours->execute([$userId]);
-    $approvedHours = min(99999.9, (float) $hours->fetchColumn());
+    // Hours tracked automatically while they're active in Mentora (interns and employees).
+    require_once __DIR__ . '/intern_hours.php';
+    $tracked = mentora_intern_tracked_hours($pdo, $userId);
+    if ($tracked === null) {
+        // Not an active intern or employee: approved report hours.
+        $hours = $pdo->prepare("SELECT COALESCE(SUM(hours), 0) FROM work_reports WHERE user_id = ? AND status = 'approved'");
+        $hours->execute([$userId]);
+        $tracked = (float) $hours->fetchColumn();
+    }
+    $approvedHours = min(99999.9, $tracked);
 
     $current = $pdo->prepare('SELECT status FROM training_records WHERE user_id = ?');
     $current->execute([$userId]);
@@ -408,7 +417,7 @@ function mentora_render_review_table(array $reports, string $tableId, string $em
                                 name="decision"
                                 value="approve"
                                 data-confirm-title="Approve this report?"
-                                data-confirm="<?= mentora_h(mentora_hours($report['hours'])) ?> hrs will be added to <?= mentora_h($report['first_name']) ?>’s approved hours."
+                                data-confirm="<?= mentora_h(mentora_hours($report['hours'])) ?> hrs will be added to <?= mentora_h($report['first_name']) ?>’s approved report hours."
                                 data-confirm-action="Approve">Approve</button>
                             <button class="admin-btn"
                                 type="submit"

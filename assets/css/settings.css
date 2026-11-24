@@ -1030,6 +1030,36 @@ body.workspace-dark-mode a.notification-item:hover .notification-item-go {
     color: var(--mentora-mint);
 }
 
+/* Unread vs read: unread items are tinted with a bold title; read ones (e.g. after "Mark as done") are dimmed. */
+.notification-item {
+    transition: background 200ms ease, opacity 200ms ease;
+}
+
+.notification-item.unread {
+    background: color-mix(in srgb, var(--mentora-teal) 6%, transparent);
+}
+
+.notification-item.unread strong {
+    font-weight: 800;
+}
+
+.notification-item:not(.unread) {
+    opacity: 0.68;
+}
+
+.notification-item:not(.unread) strong {
+    font-weight: 600;
+}
+
+a.notification-item:not(.unread):hover,
+a.notification-item:not(.unread):focus-visible {
+    opacity: 1;
+}
+
+body.workspace-dark-mode .notification-item.unread {
+    background: rgba(143, 239, 218, 0.07);
+}
+
 /* ---------- Sidebar count (e.g. applications waiting for HR) ---------- */
 .nav-count {
     background: var(--mentora-mint);
@@ -1374,6 +1404,19 @@ body.workspace-dark-mode .avatar-xl {
     align-items: center;
     display: flex;
     gap: 20px;
+}
+
+/* "Add photo" with "Edit profile" under it, the same width. */
+.profile-hero-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.profile-hero-actions .admin-btn {
+    justify-content: center;
+    text-align: center;
 }
 
 .profile-hero-copy {

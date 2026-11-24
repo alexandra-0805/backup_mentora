@@ -21,8 +21,17 @@ $home = mentora_home_path($user);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = (string) ($_SESSION['notification_action_token'] ?? '');
-    if (isset($_POST['mark_notifications_done']) && $token !== '' && hash_equals($token, (string) ($_POST['notification_action_token'] ?? ''))) {
+    $valid = isset($_POST['mark_notifications_done']) && $token !== '' && hash_equals($token, (string) ($_POST['notification_action_token'] ?? ''));
+    if ($valid) {
         $pdo->prepare('UPDATE notifications SET read_at = NOW() WHERE (user_id = ? OR user_id IS NULL) AND read_at IS NULL')->execute([$userId]);
+    }
+
+    // The bell panel sends "Mark as done" in the background (Accept: application/json) and updates itself.
+    if (str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')) {
+        header('Content-Type: application/json');
+        http_response_code($valid ? 200 : 400);
+        echo json_encode(['ok' => $valid]);
+        exit;
     }
 
     // Back to the page the panel was opened on: a path on this site only (no other sites, no line breaks).

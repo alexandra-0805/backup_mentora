@@ -16,7 +16,6 @@ $stepDetail=array_column($progress['steps'],'detail','label');
         <h1>Employee pathway</h1>
         <p>Track your hiring progress, upcoming milestones, and next steps in one place.</p>
     </div>
-    <span class="badge info">Active pathway</span>
 </div>
 <div class="applicant-banner">
     <strong>Welcome to your Mentora workspace.</strong>Your application, evaluation, training, and department details are kept together here.</div>

@@ -2354,7 +2354,7 @@ require __DIR__ . '/../includes/header.php';
         <div class="dialog-body">
             <label class="chat-new-field">
                 <span>Topic <small>(optional)</small></span>
-                <input type="text" maxlength="120" placeholder="e.g. Weekly report, Training question" data-contact-topic>
+                <input type="text" maxlength="120" data-contact-topic>
             </label>
             <label class="chat-new-search">
                 <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>

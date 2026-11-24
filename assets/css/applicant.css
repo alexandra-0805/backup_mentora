@@ -574,3 +574,113 @@ body.workspace-dark-mode .presence-option[aria-pressed="true"] {
 body.workspace-dark-mode .presence-option[aria-pressed="true"] {
     border-color: var(--mentora-mint, #8fefda);
 }
+
+/* ---------- Typeable dropdowns (intern form: school, course, area of interest, city; includes/application_fields.php) ---------- */
+.combo {
+    position: relative;
+}
+
+.combo input {
+    padding-right: 44px;
+    width: 100%;
+}
+
+.combo-toggle {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: #6e6e73;
+    cursor: pointer;
+    display: flex;
+    height: 32px;
+    justify-content: center;
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+}
+
+.combo-toggle:hover {
+    background: color-mix(in srgb, var(--mentora-teal, #0b625d) 10%, transparent);
+    color: var(--mentora-teal, #0b625d);
+}
+
+.combo-toggle svg {
+    transition: transform 160ms ease;
+}
+
+.combo.is-open .combo-toggle svg {
+    transform: rotate(180deg);
+}
+
+.combo-list {
+    background: #fff;
+    border: 1px solid rgba(60, 60, 67, 0.16);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(20, 67, 65, 0.18);
+    left: 0;
+    list-style: none;
+    margin: 0;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 6px;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 40;
+}
+
+.combo-list[hidden] {
+    display: none;
+}
+
+.combo-option {
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.35;
+    padding: 9px 12px;
+}
+
+.combo-option:hover,
+.combo-option.is-active {
+    background: color-mix(in srgb, var(--mentora-teal, #0b625d) 10%, transparent);
+}
+
+.combo-option[aria-selected="true"] {
+    color: var(--mentora-teal, #0b625d);
+    font-weight: 700;
+}
+
+.combo-empty {
+    color: #6e6e73;
+    font-size: 13px;
+    padding: 9px 12px;
+}
+
+body.workspace-dark-mode .combo-list {
+    background: #253837;
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    color: #e4f1ef;
+}
+
+body.workspace-dark-mode .combo-option:hover,
+body.workspace-dark-mode .combo-option.is-active {
+    background: rgba(143, 239, 218, 0.1);
+}
+
+body.workspace-dark-mode .combo-option[aria-selected="true"] {
+    color: var(--mentora-mint, #8fefda);
+}
+
+body.workspace-dark-mode :is(.combo-toggle, .combo-empty) {
+    color: #b5ccc9;
+}
+
+body.workspace-dark-mode .combo-toggle:hover {
+    background: rgba(143, 239, 218, 0.1);
+    color: var(--mentora-mint, #8fefda);
+}

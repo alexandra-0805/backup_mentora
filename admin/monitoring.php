@@ -1,8 +1,8 @@
 <?php
 
 /**
- * Monitoring (HR): time in / time out for every intern and employee on a chosen day (attendance,
- * recorded on their Reporting page), and every daily report waiting for approval.
+ * Monitoring (HR): time in / time out for every intern and employee on a chosen day (attendance: their first and
+ * last activity in Mentora, recorded automatically by account/activity.php), and every daily report waiting for approval.
  */
 
 declare(strict_types=1);
@@ -118,7 +118,7 @@ $waiting = mentora_reports_waiting($pdo);
             </tr>
         <?php endforeach; ?>
     </tbody></table>
-    <div class="table-note">Showing <span data-filter-count="attendance-table"><?= count($roster) ?></span> people · open shift: interns and employees time in and out whenever they work, on their Reporting page.</div>
+    <div class="table-note">Showing <span data-filter-count="attendance-table"><?= count($roster) ?></span> people · open shift: time in and time out are each person’s first and last activity in Mentora that day, recorded automatically. Exact hours: <a href="intern_hours.php">Internship hours</a> · <a href="employee_hours.php">Employee hours</a>.</div>
 </section>
 <section class="admin-panel data-panel" id="reports" style="margin-top:16px">
     <h2>Daily reports to approve <span class="badge <?= $waiting ? 'warn' : '' ?>"><?= count($waiting) ?></span></h2>

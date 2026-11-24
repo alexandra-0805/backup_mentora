@@ -222,7 +222,7 @@ require __DIR__ . '/../includes/header.php';
                         <label for="username">Username *</label>
                         <input id="username" name="username" required minlength="3" maxlength="30" autocomplete="username"
                                autocapitalize="none" spellcheck="false" pattern="[A-Za-z][A-Za-z0-9._\-]{2,29}"
-                               placeholder="e.g. juan.delacruz" aria-describedby="username-hint username-error"<?= $invalid('username') ?> value="<?= $h($username) ?>">
+                               aria-describedby="username-hint username-error"<?= $invalid('username') ?> value="<?= $h($username) ?>">
                         <small id="username-hint">3–30 characters. Start with a letter; then letters, numbers, dots, dashes or underscores.</small>
                         <?= $fieldError('username') ?>
                     </div>

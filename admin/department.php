@@ -155,13 +155,13 @@ $lackingCount = count(array_filter($skillMap, static fn($d) => $d['lacking']));
         </div>
         <div class="dialog-body">
             <div class="field">
-                <label for="dept-name">Department name *</label><input id="dept-name" name="name" required maxlength="120" placeholder="e.g. Customer Support" data-dept-field="name">
+                <label for="dept-name">Department name *</label><input id="dept-name" name="name" required maxlength="120" data-dept-field="name">
             </div>
             <div class="field">
                 <label for="dept-description">Description</label><textarea id="dept-description" name="description" rows="3" maxlength="255" placeholder="What this department does for clients" data-dept-field="description"></textarea>
             </div>
             <div class="field">
-                <label for="dept-skills">Required skills</label><textarea id="dept-skills" name="required_skills" rows="3" maxlength="2000" placeholder="e.g. Bookkeeping, QuickBooks, Microsoft Excel, Payroll" data-dept-field="required_skills"></textarea>
+                <label for="dept-skills">Required skills</label><textarea id="dept-skills" name="required_skills" rows="3" maxlength="2000" placeholder="Separate with commas" data-dept-field="required_skills"></textarea>
                 <small>Separate with commas. The AI screening finds which of these the team is lacking and notifies you and the department when an applicant has them.</small>
             </div>
         </div>

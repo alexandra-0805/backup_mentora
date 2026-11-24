@@ -57,7 +57,7 @@ $employees = count(array_filter($people, static fn($p) => $p['pathway_chosen_at'
         <p class="panel-subtitle">Give it a name so you know where applicants came from, e.g. “KLD job fair” or “Facebook post”.</p>
         <form method="post" class="form-grid">
             <?= mentora_csrf_field() ?><input type="hidden" name="action" value="create">
-            <div class="field full"><label for="label">Link name</label><input id="label" name="label" maxlength="120" placeholder="e.g. KLD job fair · November"></div>
+            <div class="field full"><label for="label">Link name</label><input id="label" name="label" maxlength="120"></div>
             <div class="field">
                 <label for="expires">Works for</label>
                 <select id="expires" name="expires">

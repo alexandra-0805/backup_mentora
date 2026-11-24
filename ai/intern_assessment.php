@@ -6,7 +6,7 @@
  * Runs automatically when an intern finishes their last training module (includes/training_certificate.php),
  * and on demand from agent/intern_assessments.php. It scores the intern from their own records:
  *
- *   quiz scores 35 · training completion 15 · approved hours vs required 15 · daily report quality 15
+ *   quiz scores 35 · training completion 15 · internship hours vs required 15 · daily report quality 15
  *   · published evaluations 15 · attendance 5   (out of 100)
  *
  * and gives a tier (Top performer / Strong / Developing / Needs support). Interns who finished training

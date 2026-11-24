@@ -34,10 +34,9 @@ $role = ($person['desired_role'] ?? '') !== '' ? $person['desired_role'] : 'Virt
         <h1>Your assigned team & agent</h1>
         <p>Meet your placement team, know who you report to, and prepare for each shift.</p>
     </div>
-    <span class="badge info">Internship pathway</span>
 </div>
 <div class="applicant-banner">
-    <?php if ($department && $agent): ?><strong>Your placement is confirmed</strong>You’re on the <?= mentora_h($department['name']) ?> team with <?= mentora_h($agent['first_name']) ?> as your supervising agent.<?php else: ?><strong>Your placement is being prepared</strong>HR will show your team and supervising agent here once assigned. You’ll get a notification.<?php endif; ?>
+    <?php if ($department && $agent): ?><strong>Your placement is confirmed</strong>You’re on the <?= mentora_h($department['name']) ?> team with <?= mentora_h($agent['first_name']) ?> as your supervising agent.<?php else: ?><strong>Your placement is being prepared</strong><?php endif; ?>
 </div>
 <div class="admin-grid">
     <section class="pathway-card">

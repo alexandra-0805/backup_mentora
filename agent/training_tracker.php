@@ -1,5 +1,6 @@
 <?php
-// Training progress per intern: modules (training_progress) and approved hours (work_reports). Agents and HR.
+// Training progress per intern: modules (training_progress) and internship hours (tracked automatically,
+// includes/intern_hours.php). Agents and HR.
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/workflow.php';
 $pageTitle = 'Training tracker';
@@ -32,7 +33,7 @@ $attention = count(array_filter(
         <small>Modules completed</small><strong><?= $completed ?> / <?= $total ?></strong><span>Tracked in database</span>
     </div>
     <div class="metric-card">
-        <small>Approved hours</small><strong><?= mentora_hours($hours) ?></strong><span>From approved reports</span>
+        <small>Internship hours</small><strong><?= mentora_hours($hours) ?></strong><span>All interns, tracked automatically</span>
     </div>
     <div class="metric-card">
         <small>Needs attention</small><strong><?= $attention ?></strong><span>On hold or not started after 7 days</span>

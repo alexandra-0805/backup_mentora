@@ -51,11 +51,13 @@ foreach ($notificationItems as $notification) {
             <strong>Notifications</strong>
             <div class="notification-panel-actions">
                 <?php if ($userId && $unreadNotificationCount > 0): ?>
-                <form method="post" action="<?= htmlspecialchars($notificationPageUrl, ENT_QUOTES, 'UTF-8') ?>">
+                <?php // Marks everything read at once (no confirmation: nothing is deleted). The script below sends it
+                      // in the background and updates the list in place; without JavaScript the form reloads the page. ?>
+                <form method="post" action="<?= htmlspecialchars($notificationPageUrl, ENT_QUOTES, 'UTF-8') ?>" data-mark-done-form>
                     <input type="hidden" name="notification_action_token" value="<?= htmlspecialchars($notificationActionToken, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="back" value="<?= htmlspecialchars((string) ($_SERVER['REQUEST_URI'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                    <button class="notification-mark-done" type="submit" name="mark_notifications_done" value="1"
-                        data-confirm-title="Mark all as done?" data-confirm="All of your notifications will be marked as read." data-confirm-action="Mark as done">Mark as done</button>
+                    <input type="hidden" name="mark_notifications_done" value="1">
+                    <button class="notification-mark-done" type="submit">Mark as done</button>
                 </form>
                 <?php endif; ?>
                 <button class="notification-close" type="button" aria-label="Close notifications">×</button>
@@ -136,5 +138,35 @@ foreach ($notificationItems as $notification) {
                 toggle.focus();
             }
         });
+
+        // "Mark as done": mark every notification read right away, without leaving the page.
+        const markDoneForm = panel.querySelector('[data-mark-done-form]');
+        if (markDoneForm && window.fetch) {
+            markDoneForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const button = markDoneForm.querySelector('button');
+                button.disabled = true;
+                button.textContent = 'Marking…';
+                try {
+                    const response = await fetch(markDoneForm.action, {
+                        method: 'POST',
+                        body: new FormData(markDoneForm),
+                        headers: { Accept: 'application/json' },
+                        credentials: 'same-origin'
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !result.ok) {
+                        throw new Error('not marked');
+                    }
+                    panel.querySelectorAll('.notification-item.unread').forEach((item) => item.classList.remove('unread'));
+                    toggle.querySelector('.header-icon-badge')?.remove();
+                    toggle.classList.remove('has-unread');
+                    toggle.setAttribute('aria-label', 'Notifications');
+                    markDoneForm.remove();
+                } catch (error) {
+                    markDoneForm.submit(); // fall back to the normal form (reloads the page)
+                }
+            });
+        }
     })();
 </script>

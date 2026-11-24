@@ -49,7 +49,7 @@ switch ($type) {
                 'Department',
                 'Supervising agent',
                 'Modules done',
-                'Approved hours',
+                'Tracked hours',
                 'Status',
                 'Joined'
             ],

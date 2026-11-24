@@ -19,7 +19,6 @@ $progress = mentora_hiring_progress($pdo, $currentUser, 'intern');
     <h1>Your internship journey</h1>
     <p>Hi <?= htmlspecialchars($currentUser['first_name']) ?>, here’s your progress from application to hands-on experience.</p>
   </div>
-  <span class="badge info">Internship pathway</span>
 </div>
 <div class="applicant-banner">
   <?php if ($progress['current']): ?>
@@ -46,7 +45,7 @@ $progress = mentora_hiring_progress($pdo, $currentUser, 'intern');
     <p>Required internship hours</p>
     <strong class="kpi-large"><?= $requiredHours ?> hours</strong>
     <div class="bar"><i style="width:<?= min(100, round($hoursLogged / $requiredHours * 100, 1)) ?>%"></i></div>
-    <p><?= htmlspecialchars(rtrim(rtrim(number_format($hoursLogged, 1, '.', ''), '0'), '.')) ?> hours approved</p>
+    <p><?= htmlspecialchars(rtrim(rtrim(number_format($hoursLogged, 1, '.', ''), '0'), '.')) ?> hours rendered · tracked automatically</p>
   </section>
 </div>
 <?php require __DIR__ . '/../../includes/applicant_footer.php'; ?>

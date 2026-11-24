@@ -147,7 +147,6 @@ require __DIR__ . '/applicant_layout.php';
             ? 'Tell us about your school, your required hours and what you want to learn. Your training starts as soon as you submit.'
             : 'Fill in your qualifications or upload your resume, so we can match you with the department that needs your skills.' ?></p>
     </div>
-    <span class="badge info"><?= $application ? 'Submitted · ' . $e(ucfirst((string) $application['status'])) : 'Last step' ?></span>
 </div>
 
 <div class="applicant-banner">

@@ -197,7 +197,7 @@ $intern = $findIntern($pdo, $id);
                 <div class="field">
                     <label for="required_hours">Required hours *</label><input id="required_hours" name="required_hours" type="number" min="1" max="5000" required value="<?= mentora_required_hours($intern) ?>"></div>
                 <div class="field">
-                    <label>Approved hours</label><input value="<?= mentora_hours($training['hours_logged']) ?> hrs (from approved reports)" disabled></div>
+                    <label>Internship hours</label><input value="<?= mentora_hours($training['hours_logged']) ?> hrs (tracked automatically)" disabled></div>
             </div>
         </section>
         <div class="admin-grid" style="margin-top:16px">

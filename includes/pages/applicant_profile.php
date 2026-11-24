@@ -173,7 +173,6 @@ $docStatus = ['in_review' => ['info', 'In review'], 'published' => ['', 'Verifie
             ? 'Your personal information, application record and school requirements in one place.'
             : 'Manage your personal information, professional background, and employee documents.' ?></p>
     </div>
-    <a class="admin-btn" href="#profile-details">Edit profile</a>
 </div>
 <?= mentora_flash_html() ?>
 <?php if (!$signedIn): ?><div class="notice">You’re viewing a preview. <a href="../../auth/signin.php">Sign in</a> to edit your profile.</div><?php endif; ?>
@@ -193,9 +192,12 @@ $docStatus = ['in_review' => ['info', 'In review'], 'published' => ['', 'Verifie
                     aria-pressed="<?= $chosenPresence === $option ? 'true' : 'false' ?>"<?= $signedIn ? '' : ' disabled' ?>><i class="presence-dot is-<?= $option ?>" aria-hidden="true"></i><?= $label ?></button>
             <?php endforeach; ?>
         </form>
-        <small class="presence-hint">You show as Offline automatically when you sign out or are away for <?= MENTORA_ONLINE_MINUTES ?> minutes, and as <?= mentora_h($presenceLabels[$chosenPresence]) ?> again when you’re back.</small>
+        <small class="presence-hint">You show as Offline automatically when you sign out or are away for <?= MENTORA_ONLINE_MINUTES ?> minutes, and as <?= mentora_h($presenceLabels[$chosenPresence]) ?> again when you’re back. While your status is Offline, your <?= $isIntern ? 'internship' : 'work' ?> hours are paused.</small>
     </div>
-    <a class="admin-btn" href="settings.php#profile"><?= $avatarUrl ? 'Change photo' : 'Add photo' ?></a>
+    <div class="profile-hero-actions">
+        <a class="admin-btn" href="settings.php#profile"><?= $avatarUrl ? 'Change photo' : 'Add photo' ?></a>
+        <a class="admin-btn" href="#profile-details">Edit profile</a>
+    </div>
 </section>
 <div class="admin-grid">
     <section class="pathway-card applicant-form" id="profile-details">
@@ -206,9 +208,9 @@ $docStatus = ['in_review' => ['info', 'In review'], 'published' => ['', 'Verifie
                 <div class="field"><label>Full name</label><input value="<?= mentora_h($fullName) ?>" disabled></div>
                 <div class="field"><label>Email address</label><input value="<?= mentora_h($currentUser['email']) ?>" disabled></div>
                 <div class="field">
-                    <label for="mobile">Mobile number</label><input id="mobile" name="mobile" inputmode="tel" maxlength="40" value="<?= $value('mobile') ?>" placeholder="e.g. 0917 123 4567"></div>
+                    <label for="mobile">Mobile number</label><input id="mobile" name="mobile" inputmode="tel" maxlength="40" value="<?= $value('mobile') ?>"></div>
                 <div class="field">
-                    <label for="location">Current city / province</label><input id="location" name="location" maxlength="190" value="<?= $value('location') ?>" placeholder="e.g. Quezon City, Metro Manila"></div>
+                    <label for="location">Current city / province</label><input id="location" name="location" maxlength="190" value="<?= $value('location') ?>"></div>
                 <?php if ($isIntern): ?>
                     <div class="field">
                         <label for="school">School / university</label><input id="school" name="school" maxlength="190" value="<?= $value('school') ?>"></div>
@@ -220,7 +222,7 @@ $docStatus = ['in_review' => ['info', 'In review'], 'published' => ['', 'Verifie
                 <div class="field">
                     <label for="desired_role"><?= $isIntern ? 'Preferred role' : 'Role / title' ?></label><input id="desired_role" name="desired_role" maxlength="190" value="<?= $value('desired_role') ?>"></div>
                 <div class="field full">
-                    <label for="skills">Skills & tools</label><textarea id="skills" name="skills" rows="3" maxlength="2000" placeholder="Separate with commas, e.g. Google Workspace, Data entry, Canva"><?= $value('skills') ?></textarea>
+                    <label for="skills">Skills & tools</label><textarea id="skills" name="skills" rows="3" maxlength="2000" placeholder="Separate with commas"><?= $value('skills') ?></textarea>
                 </div>
             </div>
             <p class="panel-subtitle">Name and email changes are handled by HR.</p>
@@ -323,7 +325,7 @@ $vaType = mentora_va_type($folder);
             <strong>Add a link <span class="badge info">Google Drive</span></strong>
             <small>In Google Drive: Share → General access → “Anyone with the link” (Viewer) → Copy link, then paste it here.</small>
             <div class="table-toolbar">
-                <input name="link_name" maxlength="190" placeholder="Name, e.g. VA portfolio" aria-label="Link name">
+                <input name="link_name" maxlength="190" placeholder="Link name" aria-label="Link name">
                 <input name="link_url"
                     type="url"
                     inputmode="url"
@@ -339,7 +341,7 @@ $vaType = mentora_va_type($folder);
             <strong>Or upload a file</strong>
             <small>PDF, Word, JPG or PNG · up to 10 MB.</small>
             <div class="table-toolbar">
-                <input name="document_name" maxlength="190" placeholder="Document name, e.g. School endorsement" aria-label="Document name">
+                <input name="document_name" maxlength="190" placeholder="Document name" aria-label="Document name">
                 <input type="file" name="document" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" aria-label="File">
                 <button class="admin-btn" type="submit"<?= $signedIn ? '' : ' disabled' ?>><?= mentora_icon('upload') ?>Upload</button>
             </div>

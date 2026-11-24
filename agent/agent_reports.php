@@ -76,7 +76,7 @@ $reports = $reports->fetchAll();
     <form method="post">
         <?= mentora_csrf_field() ?><input type="hidden" name="action" value="create">
         <div class="form-grid">
-            <div class="field full"><label for="title">Title *</label><input id="title" name="title" required maxlength="190" placeholder="e.g. November cohort: employment recommendations" value="<?= mentora_h($draft['title']) ?>"></div>
+            <div class="field full"><label for="title">Title *</label><input id="title" name="title" required maxlength="190" value="<?= mentora_h($draft['title']) ?>"></div>
             <div class="field full">
                 <label>Recommend for employment<?= $mine ? '' : ' (no interns are assigned to you yet; showing all)' ?></label>
                 <?php if (!$interns): ?><small class="panel-subtitle">No active interns yet.</small><?php endif; ?>

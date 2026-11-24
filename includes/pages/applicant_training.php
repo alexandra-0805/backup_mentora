@@ -85,7 +85,7 @@ $readyCount = count(array_filter(array_column($readiness, 1)));
             ? 'Build practical skills, complete your learning plan, and keep your internship on track.'
             : 'Complete required training, review learning resources, and track your onboarding checks.' ?></p>
     </div>
-    <span class="badge info"><?= $isIntern ? 'Internship pathway' : 'Onboarding' ?></span>
+    <?php if (!$isIntern): ?><span class="badge info">Onboarding</span><?php endif; ?>
 </div>
 <?= mentora_flash_html() ?>
 <?php if ($onHold): ?>
@@ -103,14 +103,14 @@ $readyCount = count(array_filter(array_column($readiness, 1)));
     </div>
     <?php if ($isIntern): ?>
         <div class="metric-card">
-            <small>Approved internship hours</small><strong><?= mentora_hours($hours) ?> / <?= $requiredHours ?></strong><span>From approved reports</span>
+            <small>Internship hours</small><strong><?= mentora_hours($hours) ?> / <?= $requiredHours ?></strong><span>Tracked automatically</span>
         </div>
         <div class="metric-card"><small>Remaining</small><strong><?= mentora_hours(max(0, $requiredHours - $hours)) ?></strong><span>Hours to go</span></div>
     <?php else: ?>
         <div class="metric-card">
             <small>Onboarding readiness</small><strong><?= $readyCount ?> of <?= count($readiness) ?></strong><span><?= $readyCount === count($readiness) ? 'Ready' : 'In progress' ?></span>
         </div>
-        <div class="metric-card"><small>Hours logged</small><strong><?= mentora_hours($hours) ?></strong><span>Approved work hours</span></div>
+        <div class="metric-card"><small>Work hours</small><strong><?= mentora_hours($hours) ?></strong><span>Tracked automatically</span></div>
     <?php endif; ?>
 </div>
 <?php
@@ -200,10 +200,4 @@ $certificate = $signedIn ? mentora_training_certificate($pdo, $userId) : null;
         <?php endforeach; ?>
     </section>
 </div>
-<section class="applicant-banner">
-    <strong><?= $completeCount >= $total
-        ? 'All modules complete. Great work!'
-        : 'Your progress is saved automatically.' ?></strong><?= $completeCount >= $total
-            ? 'Your certificate is in the card above.'
-            : 'Work through each self-study module, then pass its short quiz to unlock the next. Your agent sees your progress right away.' ?></section>
 <?php require __DIR__ . '/../applicant_footer.php'; ?>

@@ -1,5 +1,7 @@
 # Profile photos only (written by account/avatar.php). Nothing in this folder may run as code.
-Options -Indexes -ExecCGI
+# No "-ExecCGI" here: InfinityFree doesn't allow that option in .htaccess and answers every photo with
+# "500 Internal Server Error" (broken profile pictures). Only .jpg/.png/.webp are served (below) anyway.
+Options -Indexes
 
 <IfModule mod_php.c>
     php_flag engine off

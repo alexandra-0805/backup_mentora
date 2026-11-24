@@ -254,11 +254,12 @@ $statusBadge = [
                 <?php if ($user['role'] === 'applicant'):
                     $records = $pdo->prepare("SELECT
                         (SELECT COALESCE(SUM(hours), 0) FROM work_reports WHERE user_id = ? AND status = 'approved') AS hours,
+                        (SELECT hours_logged FROM training_records WHERE user_id = ?) AS internship_hours,
                         (SELECT COUNT(*) FROM work_reports WHERE user_id = ? AND status = 'submitted') AS waiting,
                         (SELECT COUNT(*) FROM training_progress WHERE user_id = ?) AS modules,
                         (SELECT score FROM evaluations WHERE user_id = ? AND status = 'published' ORDER BY published_at DESC LIMIT 1) AS score,
                         (SELECT COUNT(*) FROM attendance WHERE user_id = ? AND work_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND time_in IS NOT NULL) AS days");
-                    $records->execute(array_fill(0, 5, $user['id']));
+                    $records->execute(array_fill(0, 6, $user['id']));
                     $r = $records->fetch(); ?>
                     <h2 style="margin-top:18px">Workspace records</h2>
                     <div class="notice-row">
@@ -274,9 +275,14 @@ $statusBadge = [
                     <div class="notice-row">
                         <span>Training modules</span><strong><?= (int) $r['modules'] ?> / <?= count(mentora_training_modules($user['pathway'])) ?></strong>
                     </div>
+                    <?php if ($user['pathway'] === 'internship'): ?>
                     <div class="notice-row">
-                        <span>Approved hours</span><strong><?= mentora_hours($r['hours']) ?><?= $user['pathway'] === 'internship' ? ' / ' . mentora_required_hours($user) : '' ?></strong>
+                        <span>Internship hours (tracked)</span><strong><?= mentora_hours($r['internship_hours'] ?? 0) ?> / <?= mentora_required_hours($user) ?></strong>
                     </div>
+                    <div class="notice-row"><span>Approved report hours</span><strong><?= mentora_hours($r['hours']) ?></strong></div>
+                    <?php else: ?>
+                    <div class="notice-row"><span>Approved hours</span><strong><?= mentora_hours($r['hours']) ?></strong></div>
+                    <?php endif; ?>
                     <div class="notice-row"><span>Reports waiting</span><strong><?= (int) $r['waiting'] ?></strong></div>
                     <div class="notice-row">
                         <span>Latest evaluation</span><strong><?= $r['score'] !== null ? mentora_hours($r['score']) . ' / 5' : '—' ?></strong>

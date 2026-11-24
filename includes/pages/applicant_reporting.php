@@ -2,10 +2,12 @@
 
 /**
  * Applicant Reporting (applicant/intern/reporting.php, applicant/employee/reporting.php; $pathway set there).
- *   - Time in / time out once a day                       -> attendance (admin Monitoring)
+ *   - Hours: automatic, while they click, type or scroll in Mentora (includes/intern_hours.php, account/activity.php);
+ *     their first and last activity become the day's time in / time out (attendance, admin Monitoring)
  *   - Daily report: date, hours, work done, blockers       -> work_reports "submitted"
  *     the supervising agent (interns) or HR (employees) is notified, approves or returns it
- *     (agent Reporting overview / admin Monitoring); approved hours count toward required hours.
+ *     (agent Reporting overview / admin Monitoring). Hours are the automatically tracked ones (interns: internship
+ *     hours; employees: work hours); approved reports are the work record.
  *   - A returned report can be corrected and sent again.
  */
 
@@ -22,25 +24,9 @@ if (mentora_is_post()) {
     $today = date('Y-m-d');
     $action = (string) ($_POST['action'] ?? '');
 
-    if ($action === 'time_in') {
-        $insert = $pdo->prepare('INSERT IGNORE INTO attendance (user_id, work_date, time_in) VALUES (?, ?, NOW())');
-        $insert->execute([$userId, $today]);
-        if ($insert->rowCount() === 0) {
-            // A row without time_in (shouldn't happen) gets one; otherwise you already timed in.
-            $update = $pdo->prepare('UPDATE attendance SET time_in = NOW() WHERE user_id = ? AND work_date = ? AND time_in IS NULL');
-            $update->execute([$userId, $today]);
-            $update->rowCount() > 0
-                ? mentora_flash('Timed in at ' . date('g:i A') . '. Have a great day!')
-                : mentora_flash('You already timed in today.', 'error');
-        } else {
-            mentora_flash('Timed in at ' . date('g:i A') . '. Have a great day!');
-        }
-    } elseif ($action === 'time_out') {
-        $update = $pdo->prepare('UPDATE attendance SET time_out = NOW() WHERE user_id = ? AND work_date = ? AND time_in IS NOT NULL AND time_out IS NULL');
-        $update->execute([$userId, $today]);
-        $update->rowCount() > 0
-            ? mentora_flash('Timed out at ' . date('g:i A') . '. Don’t forget your daily report.')
-            : mentora_flash('Time in first. You can time out once per day.', 'error');
+    if (in_array($action, ['time_in', 'time_out'], true)) {
+        // Hours are counted automatically (no Time in / Time out buttons); an old form from a cached page does nothing.
+        mentora_flash('Your hours are counted automatically while you click, type or scroll in Mentora.');
     } elseif ($action === 'submit_report') {
         $date = (string) ($_POST['report_date'] ?? '');
         $hours = round((float) ($_POST['hours'] ?? 0) * 2) / 2;
@@ -146,7 +132,7 @@ $statusBadge = ['submitted' => ['info', 'In review'], 'approved' => ['', 'Approv
             ? 'Track your assigned work, submit daily activity and keep your internship hours up to date.'
             : 'Record your daily work, share outcomes, and flag blockers for your manager.' ?></p>
     </div>
-    <span class="badge info"><?= $isIntern ? 'Internship pathway' : 'Daily work report' ?></span>
+    <?php if (!$isIntern): ?><span class="badge info">Daily work report</span><?php endif; ?>
 </div>
 <?= mentora_flash_html() ?>
 <?php if ($returned): ?>
@@ -189,41 +175,35 @@ $statusBadge = ['submitted' => ['info', 'In review'], 'approved' => ['', 'Approv
         </form>
     </section>
     <section class="pathway-card">
+        <?php
+        require_once __DIR__ . '/../intern_hours.php';
+        $myHours = $signedIn ? (mentora_intern_hours($pdo, $userId, 'all')[0] ?? null) : null;
+        $trackedHours = $myHours ? floor((int) $myHours['rendered_seconds'] / 360) / 10 : 0.0;
+        ?>
         <?php if ($isIntern): ?>
-            <h2 class="kpi-large"><?= mentora_hours($totals['approved']) ?> / <?= $requiredHours ?> hrs</h2>
-            <p>Approved internship hours</p>
-            <div class="bar"><i style="width:<?= min(100, round($totals['approved'] / $requiredHours * 100, 1)) ?>%"></i></div>
+            <h2 class="kpi-large"><?= mentora_hours($trackedHours) ?> / <?= $requiredHours ?> hrs</h2>
+            <p>Internship hours · tracked automatically</p>
+            <div class="bar"><i style="width:<?= min(100, round($trackedHours / $requiredHours * 100, 1)) ?>%"></i></div>
         <?php else: ?>
-            <h2 class="kpi-large"><?= mentora_hours($totals['week']) ?> hrs</h2>
-            <p>Approved this week</p>
+            <h2 class="kpi-large"><?= $myHours ? mentora_duration((int) $myHours['week_seconds']) : '0h 00m' ?></h2>
+            <p>Work hours this week · tracked automatically</p>
         <?php endif; ?>
-        <div class="notice-row"><span>This week</span><strong><?= mentora_hours($totals['week']) ?> approved hrs</strong></div>
-        <div class="notice-row"><span>In review</span><strong><?= mentora_hours($totals['review']) ?> hours</strong></div>
-        <h3>Today’s attendance</h3>
+        <div class="notice-row"><span>Approved reports this week</span><strong><?= mentora_hours($totals['week']) ?> hrs</strong></div>
+        <div class="notice-row"><span>Reports in review</span><strong><?= mentora_hours($totals['review']) ?> hours</strong></div>
+        <h3>Today’s hours <small class="badge info">Automatic</small></h3>
+        <p class="panel-subtitle">Your hours count automatically while you click, type or scroll in Mentora<?= $isIntern ? ': writing reports, reading lessons and answering modules' : '' ?>. After <?= MENTORA_ACTIVITY_IDLE_MINUTES ?> minutes with no activity, counting pauses until you’re active again. It also pauses while your status is Offline and when you sign out, and resumes when you sign in and use Mentora. Only the number of clicks and keystrokes is recorded, never what you type.</p>
+        <div class="notice-row"><span>Active today</span><strong><?= $myHours ? mentora_duration((int) $myHours['today_seconds']) : '—' ?></strong></div>
         <div class="notice-row">
-            <span>Time in</span><strong><?= !empty($attendance['time_in']) ? date('g:i A', strtotime($attendance['time_in'])) : '—' ?></strong>
+            <span>First activity</span><strong><?= !empty($attendance['time_in']) ? date('g:i A', strtotime($attendance['time_in'])) : '—' ?></strong>
         </div>
         <div class="notice-row">
-            <span>Time out</span><strong><?= !empty($attendance['time_out']) ? date('g:i A', strtotime($attendance['time_out'])) : '—' ?></strong>
+            <span>Last activity</span><strong><?= !empty($attendance['time_out']) ? date('g:i A', strtotime($attendance['time_out'])) : '—' ?></strong>
         </div>
-        <div class="notice-row"><span>Status</span><span class="badge <?= $attendanceBadge ?>"><?= mentora_h($attendanceLabel) ?></span></div>
-        <form method="post" class="attendance-actions">
-            <?= mentora_csrf_field() ?>
-            <?php if (empty($attendance['time_in'])): ?>
-                <button class="admin-btn primary" type="submit" name="action" value="time_in"<?= $signedIn ? '' : ' disabled' ?>>Time in</button>
-            <?php elseif (empty($attendance['time_out'])): ?>
-                <button class="admin-btn"
-                    type="submit"
-                    name="action"
-                    value="time_out"
-                    data-confirm-title="Time out now?"
-                    data-confirm="Your time out is recorded once per day.">Time out</button>
-            <?php else: ?>
-                <span class="badge">Done for today</span>
-            <?php endif; ?>
-        </form>
+        <div class="notice-row"><span><?= $isIntern ? 'Total rendered' : 'Total work hours' ?></span><strong><?= $myHours
+            ? mentora_duration((int) $myHours['rendered_seconds']) . ($isIntern ? ' / ' . $myHours['required'] . 'h' : '')
+            : '—' ?></strong></div>
         <h3>Your report approver</h3>
-        <p><?= mentora_h($approver) ?> reviews your reports<?= $isIntern ? ' and approves your hours' : '' ?>.</p>
+        <p><?= mentora_h($approver) ?> reviews your reports.</p>
     </section>
 </div>
 <section class="pathway-card data-panel">

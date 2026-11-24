@@ -62,6 +62,7 @@ $agentNav = [
     'intern_directory.php'      => 'Intern directory',
     'edit_intern.php'           => 'Edit intern',
     'training_tracker.php'      => 'Training tracker',
+    'intern_hours.php'          => 'Internship hours',
     'intern_assessments.php'    => 'AI assessments',
     'individual_evaluation.php' => 'Individual evaluation',
     'evaluation_list.php'       => 'Evaluation list',
@@ -106,11 +107,11 @@ $navCounts = ['candidates.php' => (int) $candidateCountQuery->fetchColumn()];
 
     <link
         rel="stylesheet"
-        href="../assets/css/admin.css?v=11">
+        href="../assets/css/admin.css?v=12">
 
     <link
         rel="stylesheet"
-        href="../assets/css/settings.css?v=31">
+        href="../assets/css/settings.css?v=33">
 
     <link
         rel="stylesheet"
@@ -268,10 +269,8 @@ $navCounts = ['candidates.php' => (int) $candidateCountQuery->fetchColumn()];
                 </a>
 
 
-                <!-- Date -->
-                <span class="topbar-date">
-                    <?= $e($now->format('D, d M Y')) ?> · PHT
-                </span>
+                <!-- Date and time (live, Philippine time) -->
+                <?php require __DIR__ . '/topbar_clock.php'; ?>
 
             </span>
 
