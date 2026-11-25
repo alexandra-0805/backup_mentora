@@ -49,7 +49,10 @@ function mentora_google_redirect_uri(): string
         return $configured;
     }
 
-    $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    // Also behind a host's HTTPS proxy (InfinityFree): auth/google.php doesn't load config/db.php, which
+    // otherwise marks those requests as HTTPS, and both steps must send Google the same address.
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
     $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
     $authDir = rtrim(str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/auth/google.php'))), '/');
 

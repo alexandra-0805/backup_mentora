@@ -395,7 +395,7 @@ function mentora_invite_email(string $firstName, string $pathway, string $link, 
     $text = "Hi {$firstName},\n\n"
         . "{$intro}\n\n"
         . "Create your username and password here:\n{$link}\n\n"
-        . ($code !== '' ? "Link not working? Open \"Activate your account\" on the Mentora sign-in page and enter your email with this code: {$code}\n\n" : '')
+        . ($code !== '' ? "Link not working? Open \"Track your application\" on the Mentora sign-in page, enter your email, and type this activation code: {$code}\n\n" : '')
         . "This link works once and expires in {$days} days.\n\n"
         . "Welcome to Mentora,\n{$adminName}\nMentora HR";
 
@@ -408,7 +408,7 @@ function mentora_invite_email(string $firstName, string $pathway, string $link, 
             : 'Your <strong>' . $e($pathwayLabel) . '</strong> application has been approved. Create your username and password to open your applicant workspace.') . '</p>',
         'Create my account',
         $link,
-        ($code !== '' ? 'Link not working? On the Mentora sign-in page, open “Activate your account” and enter your email with the code ' . $code . '. ' : '')
+        ($code !== '' ? 'Link not working? On the Mentora sign-in page, open “Track your application”, enter your email, and type the activation code ' . $code . '. ' : '')
             . 'This link works once and expires in ' . $days . ' days. Check your Spam or Promotions folder if you can’t find our emails.',
         $adminName . ' · Mentora HR'
     );

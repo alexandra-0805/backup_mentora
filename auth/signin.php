@@ -83,7 +83,7 @@ require __DIR__ . '/../includes/header.php';
         </form>
         <div class="notice">
             <strong>One sign-in. The right workspace for you.</strong><br>Your account opens your application, team, or HR workspace with private, role-based access.</div>
-        <div class="auth-links"><a href="forgot_password.php">Forgot your password? </a><br><br>New to Mentora? <a href="signup.php">Apply now</a><br><br><a href="track.php">Track your application</a><br><br>Approved? <a href="activate.php">Activate your account</a> with your code</div>
+        <div class="auth-links"><a href="forgot_password.php">Forgot your password? </a><br><br>New to Mentora? <a href="signup.php">Apply now</a><br><br><a href="track.php">Track your application</a></div>
     </section>
 </main>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

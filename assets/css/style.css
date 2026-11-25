@@ -2495,7 +2495,7 @@ iframe {
     background:
         radial-gradient(circle at 82% 18%, rgba(143, 239, 218, 0.42), transparent 20rem),
         linear-gradient(135deg, #063d3b 0%, #0b625d 55%, #147b71 100%);
-    min-height: 699px;
+    min-height: 740px;
     overflow: hidden;
     padding: 108px 24px 96px;
     position: relative;
