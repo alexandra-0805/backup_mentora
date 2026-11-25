@@ -682,51 +682,6 @@ button.settings-row:hover,
     color: #fff;
 }
 
-/* Appearance: preview card */
-.settings-preview {
-    align-items: center;
-    display: flex;
-    gap: 14px;
-    margin-top: 14px;
-    padding: 18px;
-}
-
-.settings-preview > div {
-    flex: 1;
-    min-width: 0;
-}
-
-.settings-preview-icon {
-    align-items: center;
-    background: var(--mentora-gradient);
-    border-radius: var(--ui-radius-item);
-    color: var(--mentora-mint);
-    display: inline-flex;
-    flex: 0 0 44px;
-    height: 44px;
-    justify-content: center;
-}
-
-.settings-preview strong {
-    color: #1d1d1f;
-    display: block;
-    font-size: 14px;
-}
-
-.settings-preview small {
-    color: var(--workspace-muted);
-    font-size: 12px;
-}
-
-.settings-preview-button {
-    background: var(--mentora-teal);
-    border-radius: var(--ui-radius-control);
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 8px 16px;
-}
-
 /* Appearance: theme color swatches */
 .settings-swatches {
     display: flex;
@@ -1501,7 +1456,7 @@ body.workspace-dark-mode .settings-card {
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
 }
 
-body.workspace-dark-mode :is(.settings-row-copy strong, .settings-view-header h2, .settings-preview strong, .settings-info-row strong, .settings-tile) {
+body.workspace-dark-mode :is(.settings-row-copy strong, .settings-view-header h2, .settings-info-row strong, .settings-tile) {
     color: #eef6f5;
 }
 

@@ -212,15 +212,6 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
         <section class="settings-view" data-view="appearance">
             <?= $settingsViewHeader('appearance', 'Appearance') ?>
 
-            <div class="settings-card settings-preview">
-                <span class="settings-preview-icon"><?= $settingsIcon('sparkle') ?></span>
-                <div>
-                    <strong data-i18n="previewTitle">Weekly summary</strong>
-                    <small data-i18n="previewText">Your plan for the week is ready.</small>
-                </div>
-                <span class="settings-preview-button" data-i18n="previewOpen">Open</span>
-            </div>
-
             <div class="settings-group-head">
                 <p class="settings-group-label" data-i18n="mode">Mode</p>
                 <span class="settings-current" data-current="theme"></span>
@@ -371,11 +362,6 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                     <span class="settings-row-copy"><strong data-i18n="password">Password</strong><small data-i18n="passwordHint">Change it with a code sent to your email</small></span>
                     <span class="settings-pill" data-i18n="passwordChange">Change</span>
                 </a>
-                <div class="settings-row">
-                    <span class="settings-row-icon"><?= $settingsIcon('shield') ?></span>
-                    <span class="settings-row-copy"><strong data-i18n="twoStep">Two-step verification</strong><small data-i18n="twoStepHint">An extra code when you sign in</small></span>
-                    <span class="badge info" data-i18n="comingSoon">Coming soon</span>
-                </div>
             </div>
             <p class="settings-group-label" data-i18n="groupAutoSignOut">Sign me out after inactivity</p>
             <div class="settings-card">
@@ -577,9 +563,6 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                 groupAccount: 'Account',
                 savedNote: 'Naka-save ang settings sa device at browser na ito.',
                 back: 'Bumalik',
-                previewTitle: 'Lingguhang buod',
-                previewText: 'Handa na ang plano mo para sa linggong ito.',
-                previewOpen: 'Buksan',
                 themeColor: 'Kulay ng tema',
                 accent_teal: 'Mentora teal',
                 accent_ocean: 'Karagatan',
@@ -646,9 +629,6 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                 password: 'Password',
                 passwordHint: 'Palitan gamit ang code na ipapadala sa email mo',
                 passwordChange: 'Palitan',
-                twoStep: 'Two-step verification',
-                twoStepHint: 'Dagdag na code tuwing magsa-sign in',
-                comingSoon: 'Malapit na',
                 groupAutoSignOut: 'I-sign out ako kapag walang aktibidad',
                 auto_off: 'Hindi kailanman',
                 auto_15: 'Pagkalipas ng 15 minuto',
@@ -731,9 +711,6 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                 groupAccount: 'Cuenta',
                 savedNote: 'La configuración se guarda en este dispositivo y navegador.',
                 back: 'Volver',
-                previewTitle: 'Resumen semanal',
-                previewText: 'Tu plan de la semana está listo.',
-                previewOpen: 'Abrir',
                 themeColor: 'Color del tema',
                 accent_teal: 'Verde azulado Mentora',
                 accent_ocean: 'Océano',
@@ -800,9 +777,6 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                 password: 'Contraseña',
                 passwordHint: 'Cámbiala con un código enviado a tu correo',
                 passwordChange: 'Cambiar',
-                twoStep: 'Verificación en dos pasos',
-                twoStepHint: 'Un código adicional al iniciar sesión',
-                comingSoon: 'Próximamente',
                 groupAutoSignOut: 'Cerrar sesión por inactividad',
                 auto_off: 'Nunca',
                 auto_15: 'Después de 15 minutos',

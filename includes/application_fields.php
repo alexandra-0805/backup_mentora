@@ -5,8 +5,8 @@
  *
  *   Intern       school, course, required OJT hours, area of interest (a virtual assistant role that fits the
  *                course, see MENTORA_COURSE_INTERESTS) -> straight to training
- *   Employee VA  fill in the form (role, education, experience, skills) OR upload a resume (role + file)
- *                -> AI-supported review (ai/resume_review.php)
+ *   Employee VA  fill in the form (role, education, experience, optional skills) OR upload a resume (role + file)
+ *                OR share a portfolio link (role + link, optional note) -> AI-supported review (ai/resume_review.php)
  *
  * Pathways use the database values: 'employee_va' or 'internship'.
  */
@@ -151,15 +151,20 @@ function mentora_choice_match(string $value, array $groups): ?string
 /**
  * A typeable dropdown: a text box with a list of choices that filters as you type (the form's script draws the list;
  * without JavaScript the browser's own suggestion list is used). Anything typed is kept, so nothing needs "Other".
- * $groups: lists of options (shown together in A–Z order, without group headings). $attributes: extra data-* attributes.
+ * $groups: lists of options (shown together in A–Z order, without group headings). $attributes: extra attributes.
+ * $sort: false keeps the options in the order given (e.g. grouped by team). $label '' prints no label (give
+ * an aria-label in $attributes instead).
  */
-function mentora_render_combo_field(string $name, string $label, array $groups, string $value, bool $required, string $placeholder, string $hint = '', array $attributes = []): void
+function mentora_render_combo_field(string $name, string $label, array $groups, string $value, bool $required, string $placeholder, string $hint = '', array $attributes = [], bool $sort = true): void
 {
     $h = static fn($text): string => htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
-    $options = mentora_sort_options(array_merge(...array_values($groups)));
+    $all = array_merge(...array_values($groups));
+    $options = $sort ? mentora_sort_options($all) : array_values(array_unique($all));
     $shown = mentora_choice_match($value, $groups) ?? $value;
     ?>
-    <label for="<?= $h($name) ?>"><?= $h($label) ?><?= $required ? ' *' : '' ?></label>
+    <?php if ($label !== ''): ?>
+        <label for="<?= $h($name) ?>"><?= $h($label) ?><?= $required ? ' *' : '' ?></label>
+    <?php endif; ?>
     <div class="combo" data-combo>
         <input id="<?= $h($name) ?>" name="<?= $h($name) ?>" type="text" maxlength="190" autocomplete="off" spellcheck="false"
             list="<?= $h($name) ?>-choices" placeholder="<?= $h($placeholder) ?>" value="<?= $h($shown) ?>"<?= $required ? ' required' : '' ?>
@@ -265,7 +270,227 @@ function mentora_course_interests(string $course): array
 
     return mentora_sort_options($match !== null && isset(MENTORA_COURSE_INTERESTS[$match]) ? MENTORA_COURSE_INTERESTS[$match] : MENTORA_VA_INTERESTS);
 }
-const MENTORA_APPLICATION_FIELDS = ['submission_mode', 'mobile', 'location', 'desired_role', 'school', 'course', 'required_hours', 'interest', 'education', 'experience_years', 'start_date', 'skills'];
+/**
+ * "Role you're applying for" on the Employee VA form: the VA niches (labels from MENTORA_VA_INTERESTS) each
+ * department does, keyed by the department's name in the `departments` table. Every niche appears once.
+ */
+const MENTORA_DEPARTMENT_ROLES = [
+    'Web Developer' => [
+        'Web Development', 'Website Maintenance', 'Technical Support (IT Helpdesk)', 'E-commerce Store Support (Shopify)',
+    ],
+    'Marketing Services' => [
+        'Social Media Management', 'SEO (Search Engine Optimization)', 'Content Writing & Copywriting', 'Email Marketing',
+        'Online Ads (Facebook / Google Ads)', 'Lead Generation', 'Graphic Design (Canva)', 'Video Editing',
+    ],
+    'Accounting' => [
+        'Accounting Assistant', 'Bookkeeping', 'Accounts Payable & Receivable', 'Bank & Account Reconciliation',
+        'Billing & Collections', 'Payroll & Invoicing', 'Expense Tracking & Management', 'Budgeting & Forecasting',
+        'Financial Reporting', 'Tax Preparation Assistant', 'Audit Assistant',
+    ],
+    'Psychotherapist' => [
+        'Medical Virtual Assistant (Client intake)', 'Healthcare Scheduling & Records',
+    ],
+];
+
+/** Admin and support niches every team uses: listed last, under their own heading. */
+const MENTORA_GENERAL_VA_ROLES = [
+    'General Virtual Assistant (Admin support)', 'Executive Assistant', 'Data Entry', 'Email & Calendar Management',
+    'Customer Service Support', 'Research Assistant', 'Transcription', 'Project Management Assistant',
+    'HR & Recruitment Assistant', 'Travel & Booking Assistant',
+];
+const MENTORA_GENERAL_ROLE_GROUP = 'Admin & general support';
+
+/**
+ * The role choices, grouped by department: [['name', 'about', 'skills', 'roles' => [...]], ...], A–Z by department,
+ * with "Admin & general support" last. Departments come from the database when $pdo is given, so a team HR adds
+ * shows up too (with one role, "<name> Virtual Assistant", until it is added to MENTORA_DEPARTMENT_ROLES).
+ * Roles of a listed department that no longer exists stay choosable under general support.
+ */
+function mentora_employee_role_groups(?PDO $pdo = null): array
+{
+    $departments = $pdo
+        ? $pdo->query('SELECT name, description, required_skills FROM departments ORDER BY name')->fetchAll()
+        : array_map(static fn(string $name): array => ['name' => $name, 'description' => '', 'required_skills' => ''], array_keys(MENTORA_DEPARTMENT_ROLES));
+
+    $groups = [];
+    $used = [];
+    foreach ($departments as $department) {
+        $roles = null;
+        foreach (MENTORA_DEPARTMENT_ROLES as $name => $list) {
+            if (strcasecmp($name, (string) $department['name']) === 0) {
+                $roles = $list;
+                $used[] = $name;
+            }
+        }
+        $groups[] = [
+            'name' => (string) $department['name'],
+            'about' => trim((string) ($department['description'] ?? '')),
+            'skills' => trim((string) ($department['required_skills'] ?? '')),
+            'roles' => mentora_sort_options($roles ?? [$department['name'] . ' Virtual Assistant']),
+        ];
+    }
+    $general = MENTORA_GENERAL_VA_ROLES;
+    foreach (MENTORA_DEPARTMENT_ROLES as $name => $list) {
+        if (!in_array($name, $used, true)) {
+            $general = array_merge($general, $list);
+        }
+    }
+    $groups[] = [
+        'name' => MENTORA_GENERAL_ROLE_GROUP,
+        'about' => 'Admin and support work that every Mentora team needs.',
+        'skills' => '',
+        'roles' => mentora_sort_options($general),
+    ];
+
+    return $groups;
+}
+
+/** Every role in $groups (from mentora_employee_role_groups), as one list. */
+function mentora_employee_role_options(array $groups): array
+{
+    return array_merge(...array_column($groups, 'roles'));
+}
+
+/** The department a role belongs to ("Bookkeeping" -> "Accounting"), or null for a general support role. */
+function mentora_role_department(string $role): ?string
+{
+    foreach (MENTORA_DEPARTMENT_ROLES as $name => $roles) {
+        if (in_array($role, $roles, true)) {
+            return $name;
+        }
+    }
+    if (preg_match('/^(.+) Virtual Assistant$/', $role, $match) && !in_array($role, MENTORA_GENERAL_VA_ROLES, true)) {
+        return $match[1]; // "<department> Virtual Assistant" for a department HR added
+    }
+
+    return null;
+}
+
+const MENTORA_APPLICATION_FIELDS = ['submission_mode', 'mobile', 'location', 'desired_role', 'school', 'course', 'required_hours', 'interest', 'education', 'experience_years', 'start_date', 'skills', 'portfolio_url'];
+
+/**
+ * Country codes for "Mobile number" on the Employee VA form: code => country. The Philippines comes first and
+ * is the default. The number is saved as "<code> <digits>", e.g. "+63 9171234567".
+ */
+const MENTORA_PHONE_COUNTRIES = [
+    '+63' => 'Philippines',
+    '+1' => 'United States / Canada',
+    '+44' => 'United Kingdom',
+    '+61' => 'Australia',
+    '+64' => 'New Zealand',
+    '+65' => 'Singapore',
+    '+852' => 'Hong Kong',
+    '+81' => 'Japan',
+    '+82' => 'South Korea',
+    '+971' => 'United Arab Emirates',
+    '+966' => 'Saudi Arabia',
+    '+974' => 'Qatar',
+];
+
+/**
+ * The typeable country code choices: code => "Philippines (+63)". Typing the country, "63" or "+63" picks one
+ * (mentora_choice_match also accepts the part in brackets).
+ */
+function mentora_phone_country_options(): array
+{
+    $options = [];
+    foreach (MENTORA_PHONE_COUNTRIES as $code => $country) {
+        $options[$code] = $country . ' (' . $code . ')';
+    }
+
+    return $options;
+}
+
+/** The country code a typed or chosen country stands for ("philippines", "63", "Philippines (+63)" -> "+63"), or null. */
+function mentora_phone_country_code(string $typed): ?string
+{
+    $options = mentora_phone_country_options();
+    $match = mentora_choice_match($typed, [array_values($options)]);
+
+    return $match !== null ? (string) array_search($match, $options, true) : null;
+}
+
+/**
+ * A saved mobile number split for the form: [country code, number]. "+63 9171234567" -> ['+63', '9171234567'].
+ * A number saved before the dropdown ("0917 123 4567") comes back under +63; one with a code that isn't
+ * listed keeps its own "+..." (mentora_phone_join then keeps that code).
+ */
+function mentora_phone_split(string $mobile): array
+{
+    $mobile = trim($mobile);
+    $codes = array_keys(MENTORA_PHONE_COUNTRIES);
+    usort($codes, static fn(string $a, string $b): int => strlen($b) <=> strlen($a)); // "+852" before "+8..."
+    foreach ($codes as $code) {
+        if (str_starts_with($mobile, $code)) {
+            return [$code, ltrim(substr($mobile, strlen($code)))];
+        }
+    }
+
+    return ['+63', $mobile];
+}
+
+/**
+ * The chosen country code and the typed number as one value to save: "+63" + "0917-123-4567" -> "+63 9171234567".
+ * Spaces, dashes and brackets are dropped, so is the leading 0 of a local number and a repeated country code
+ * ("639171234567"). A number typed with its own "+..." keeps that code. Returns '' when no digits were typed.
+ */
+function mentora_phone_join(string $code, string $number): string
+{
+    $number = trim($number);
+    $digits = (string) preg_replace('/\D/', '', $number);
+    if ($digits === '') {
+        return '';
+    }
+    if (str_starts_with($number, '+')) {
+        return '+' . $digits;
+    }
+    $countryDigits = ltrim($code, '+');
+    if (str_starts_with($digits, $countryDigits) && strlen($digits) > 10) {
+        $digits = substr($digits, strlen($countryDigits));
+    }
+    $digits = ltrim($digits, '0');
+
+    return $digits === '' ? '' : $code . ' ' . $digits;
+}
+
+/** A saved mobile number that can be called: a Philippine mobile is 9 + 9 digits; other countries 6 to 14 digits. */
+function mentora_phone_valid(string $mobile): bool
+{
+    if (preg_match('/^\+63 ?(\d+)$/', $mobile, $match)) {
+        return (bool) preg_match('/^9\d{9}$/', $match[1]);
+    }
+
+    return (bool) preg_match('/^\+\d{1,4} ?\d{6,14}$/', $mobile) && strlen((string) preg_replace('/\D/', '', $mobile)) <= 15;
+}
+
+/** Ways an Employee VA can apply (applications.submission_mode). */
+const MENTORA_SUBMISSION_MODES = ['form' => 'Form', 'resume' => 'Resume upload', 'portfolio' => 'Portfolio link'];
+
+/**
+ * A typed portfolio link made ready to save: "behance.net/maria" -> "https://behance.net/maria".
+ * Returns '' for an empty value; anything else is checked by mentora_portfolio_url_valid().
+ */
+function mentora_portfolio_url_normalize(string $url): string
+{
+    $url = trim($url);
+    if ($url !== '' && !preg_match('~^[a-z][a-z0-9+.-]*://~i', $url)) {
+        $url = 'https://' . $url;
+    }
+
+    return $url;
+}
+
+/** Only real web links (http / https with a host) are accepted, so the saved link is always safe to open. */
+function mentora_portfolio_url_valid(string $url): bool
+{
+    if (mb_strlen($url) > 500 || filter_var($url, FILTER_VALIDATE_URL) === false) {
+        return false;
+    }
+    $parts = parse_url($url);
+
+    return in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true)
+        && str_contains((string) ($parts['host'] ?? ''), '.');
+}
 
 /**
  * Form values for every application field, from a saved `applications` row (or defaults).
@@ -283,7 +508,7 @@ function mentora_application_values(?array $application = null): array
     if (!in_array($values['interest'], mentora_course_interests($values['course']), true)) {
         $values['interest'] = '';
     }
-    if ($values['submission_mode'] !== 'resume') {
+    if (!isset(MENTORA_SUBMISSION_MODES[$values['submission_mode']])) {
         $values['submission_mode'] = 'form';
     }
 
@@ -304,6 +529,16 @@ function mentora_application_from_post(array $values): array
     foreach ($lists as $field => $groups) {
         $values[$field] = mentora_choice_match($values[$field], $groups) ?? $values[$field];
     }
+    $values['portfolio_url'] = mentora_portfolio_url_normalize($values['portfolio_url']);
+    // Employee VA form: the country code and the number box are saved together ("+63 9171234567").
+    // An empty or unknown country counts as the Philippines. The number box takes digits only: spaces and dashes
+    // are tidied away, but letters or other symbols are kept so the check below rejects them.
+    if (array_key_exists('mobile_country', $_POST)) {
+        $code = mentora_phone_country_code(mentora_post_string('mobile_country')) ?? '+63';
+        $values['mobile'] = preg_match('/[^\d\s\-]/', $values['mobile'])
+            ? $code . ' ' . $values['mobile']
+            : mentora_phone_join($code, $values['mobile']);
+    }
 
     return $values;
 }
@@ -311,8 +546,9 @@ function mentora_application_from_post(array $values): array
 /**
  * Validation messages for the fields that apply to $pathway (empty array = valid).
  * $hasResume: an uploaded (or already saved) resume, required when an employee chooses "Upload my resume".
+ * $roleOptions: the employee roles that can be chosen (mentora_employee_role_options); null = the built-in list.
  */
-function mentora_application_errors(array $values, string $pathway, bool $hasResume = false): array
+function mentora_application_errors(array $values, string $pathway, bool $hasResume = false, ?array $roleOptions = null): array
 {
     $errors = [];
     if ($pathway === 'internship') {
@@ -329,19 +565,21 @@ function mentora_application_errors(array $values, string $pathway, bool $hasRes
         }
     } else {
         if ($values['desired_role'] === '') {
-            $errors[] = 'Please enter the employee VA role you want to apply for.';
+            $errors[] = 'Please choose the employee VA role you want to apply for.';
+        } elseif (!in_array($values['desired_role'], $roleOptions ?? mentora_employee_role_options(mentora_employee_role_groups()), true)) {
+            $errors[] = 'Please choose a role from the list.';
         }
-        if (!in_array($values['submission_mode'], ['form', 'resume'], true)) {
-            $errors[] = 'Please choose to fill in the form or upload your resume.';
+        if (!isset(MENTORA_SUBMISSION_MODES[$values['submission_mode']])) {
+            $errors[] = 'Please choose to fill in the form, upload your resume or share your portfolio link.';
         } elseif ($values['submission_mode'] === 'resume' && !$hasResume) {
             $errors[] = 'Please upload your resume (PDF, Word or text file).';
+        } elseif ($values['submission_mode'] === 'portfolio' && $values['portfolio_url'] === '') {
+            $errors[] = 'Please add the link to your portfolio.';
         } elseif ($values['submission_mode'] === 'form') {
             if ($values['education'] === '') {
                 $errors[] = 'Please choose your highest educational attainment.';
             }
-            if (mb_strlen($values['skills']) < 30) {
-                $errors[] = 'Please describe your skills and experience (at least 30 characters), or upload your resume instead.';
-            }
+            // Skills and experience is optional (the AI review notes it when it's short or empty).
         }
         if ($values['education'] !== '' && !isset(MENTORA_EDUCATION_LEVELS[$values['education']])) {
             $errors[] = 'Please choose an educational attainment from the list.';
@@ -349,6 +587,20 @@ function mentora_application_errors(array $values, string $pathway, bool $hasRes
         if ($values['experience_years'] !== '' && (!ctype_digit($values['experience_years']) || (int) $values['experience_years'] > 50)) {
             $errors[] = 'Years of experience must be a whole number from 0 to 50.';
         }
+        if ($values['submission_mode'] === 'portfolio' && $values['portfolio_url'] !== '' && !mentora_portfolio_url_valid($values['portfolio_url'])) {
+            $errors[] = 'Please enter a valid portfolio link, e.g. https://www.behance.net/yourname.';
+        }
+        // City / province is required for Employee VAs (optional for interns); the start date is optional for both.
+        if ($values['location'] === '') {
+            $errors[] = 'Please enter your city or province.';
+        }
+    }
+
+    // Mobile number: required on both forms (country code + digits, "+63 9171234567").
+    if ($values['mobile'] === '') {
+        $errors[] = 'Please enter your mobile number.';
+    } elseif (!mentora_phone_valid($values['mobile'])) {
+        $errors[] = 'Please enter a valid mobile number using numbers only, e.g. 9171234567 for a Philippine number.';
     }
 
     if ($values['start_date'] !== '') {
@@ -390,6 +642,8 @@ function mentora_application_row(array $values, string $pathway): array
         'education' => $isIntern ? null : $orNull($values['education']),
         'experience_years' => $isIntern || $values['experience_years'] === '' ? null : (int) $values['experience_years'],
         'skills' => $orNull($values['skills']),
+        // Kept when they switch to another way to apply, but only a valid link is ever saved.
+        'portfolio_url' => !$isIntern && mentora_portfolio_url_valid($values['portfolio_url']) ? $values['portfolio_url'] : null,
     ];
 }
 
@@ -412,12 +666,23 @@ function mentora_save_application(PDO $pdo, int $userId, array $row, ?int $exist
 
 /**
  * Print the qualifications questions for $pathway ('employee_va' or 'internship').
- * $resume: the employee's saved resume (documents row) or null. Used by includes/application_form.php.
+ * $resume: the employee's saved resume (documents row) or null. $roleGroups: the employee role choices
+ * (mentora_employee_role_groups($pdo)); empty = the built-in list. Used by includes/application_form.php.
  */
-function mentora_render_application_fields(array $values, string $pathway, ?array $resume = null): void
+function mentora_render_application_fields(array $values, string $pathway, ?array $resume = null, array $roleGroups = []): void
 {
     $h = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
     $isIntern = $pathway === 'internship';
+    $roleGroups = $roleGroups ?: mentora_employee_role_groups();
+    // The team of the role chosen now, for the hint under the dropdown.
+    $roleGroup = null;
+    foreach ($roleGroups as $group) {
+        if (in_array($values['desired_role'], $group['roles'], true)) {
+            $roleGroup = $group;
+        }
+    }
+    // An older typed answer that isn't in the list: they choose again, and are told what they wrote before.
+    $oldRole = !$isIntern && $values['desired_role'] !== '' && $roleGroup === null ? $values['desired_role'] : '';
     ?>
     <?php if (!$isIntern): ?>
         <fieldset class="application-mode">
@@ -431,8 +696,12 @@ function mentora_render_application_fields(array $values, string $pathway, ?arra
                     <input type="radio" name="submission_mode" value="resume" data-mode-toggle<?= $values['submission_mode'] === 'resume' ? ' checked' : '' ?>>
                     <span><strong>Upload my resume</strong><small>PDF, Word or text file. The AI reads it for you.</small></span>
                 </label>
+                <label>
+                    <input type="radio" name="submission_mode" value="portfolio" data-mode-toggle<?= $values['submission_mode'] === 'portfolio' ? ' checked' : '' ?>>
+                    <span><strong>Share my portfolio link</strong><small>Google Drive, Behance, Canva, your website or LinkedIn.</small></span>
+                </label>
             </div>
-            <small>Either way, an AI-supported review summarizes your skills and matches you to the department that needs them; the HR team makes the decision.</small>
+            <small>Whichever you choose, an AI-supported review summarizes your skills and matches you to the department that needs them; the HR team makes the decision.</small>
         </fieldset>
     <?php endif; ?>
     <div class="form-grid">
@@ -459,8 +728,30 @@ function mentora_render_application_fields(array $values, string $pathway, ?arra
             </div>
         <?php else: ?>
             <div class="field full">
-                <label for="desired_role">Role you’re applying for *</label>
-                <input id="desired_role" name="desired_role" required maxlength="190" value="<?= $h($values['desired_role']) ?>">
+                <?php
+                // Typeable dropdown, listed team by team (same order as mentora_employee_role_groups). The team the
+                // chosen role belongs to, what it does and the skills it looks for are shown under the field.
+                $roleTeams = [];
+                foreach ($roleGroups as $group) {
+                    $roleTeams[$group['name']] = ['about' => $group['about'], 'skills' => $group['skills'], 'roles' => $group['roles']];
+                }
+                mentora_render_combo_field('desired_role', 'Role you’re applying for', array_column($roleGroups, 'roles'), $values['desired_role'], true,
+                    'Type or choose a role, e.g. Bookkeeping or Social Media', '', [
+                        'data-strict' => 'Please choose a role from the list.',
+                        'data-empty-text' => 'No matching role. Choose one from the list.',
+                        'aria-describedby' => 'desired_role-hint',
+                        'data-role-teams' => json_encode($roleTeams, JSON_UNESCAPED_UNICODE),
+                    ], false);
+                ?>
+                <small id="desired_role-hint" class="role-hint" data-role-hint>
+                    <?php if ($roleGroup): ?>
+                        <strong><?= $h($roleGroup['name']) ?></strong><?= $roleGroup['about'] !== '' ? ': ' . $h($roleGroup['about']) : '' ?><?= $roleGroup['skills'] !== '' ? '. Skills this team looks for: ' . $h($roleGroup['skills']) . '.' : '' ?>
+                    <?php elseif ($oldRole !== ''): ?>
+                        “<?= $h($oldRole) ?>” isn’t one of the roles. Please choose the closest one from the list.
+                    <?php else: ?>
+                        Type part of a role to find it, or open the list to browse them all.
+                    <?php endif; ?>
+                </small>
             </div>
             <div class="field full" data-mode="resume">
                 <label for="resume">Resume<?= $resume ? '' : ' *' ?></label>
@@ -468,6 +759,13 @@ function mentora_render_application_fields(array $values, string $pathway, ?arra
                 <small><?= $resume
                     ? 'Saved: ' . $h($resume['original_name']) . '. Choose a new file only to replace it.'
                     : 'PDF, Word (.docx / .doc) or text, up to 10 MB. A text-based PDF works best; scanned images can’t be read by the AI.' ?></small>
+            </div>
+            <div class="field full" data-mode="portfolio">
+                <label for="portfolio_url">Portfolio link *</label>
+                <?php // type="text" (checked on the server): a hidden url field with a typo would block the other ways to apply. ?>
+                <input id="portfolio_url" type="text" name="portfolio_url" spellcheck="false" autocapitalize="off" maxlength="500" inputmode="url" autocomplete="url"
+                    placeholder="https://www.behance.net/yourname" value="<?= $h($values['portfolio_url']) ?>">
+                <small>Make sure anyone with the link can open it (for Google Drive: Share → “Anyone with the link”). The HR team opens it to see your work.</small>
             </div>
             <div class="field" data-mode="form">
                 <label for="education">Highest educational attainment *</label>
@@ -485,26 +783,42 @@ function mentora_render_application_fields(array $values, string $pathway, ?arra
         <?php endif; ?>
 
         <div class="field">
-            <label for="mobile">Mobile number</label>
-            <input id="mobile" type="tel" name="mobile" maxlength="40" autocomplete="tel" value="<?= $h($values['mobile']) ?>">
+            <?php
+            // Both pathways (required): a typeable country code beside the number, saved together ("+63 9171234567").
+            [$mobileCode, $mobileNumber] = mentora_phone_split($values['mobile']);
+            $countryOptions = mentora_phone_country_options(); ?>
+            <label for="mobile">Mobile number *</label>
+            <div class="phone-field">
+                <?php mentora_render_combo_field('mobile_country', '', [array_values($countryOptions)], $countryOptions[$mobileCode], true, 'Country', '', [
+                    'aria-label' => 'Country code',
+                    'data-strict' => 'Please choose a country code from the list.',
+                    'data-empty-text' => 'No matching country. Choose one from the list.',
+                ], false); ?>
+                <?php // Digits only (the page script blocks anything else and checks the length as you type). ?>
+                <input id="mobile" type="tel" name="mobile" required maxlength="16" inputmode="numeric" pattern="[0-9]*"
+                    autocomplete="tel-national" placeholder="9171234567" value="<?= $h(preg_replace('/\D/', '', $mobileNumber)) ?>"
+                    aria-describedby="mobile-hint mobile-error" data-phone-number>
+            </div>
+            <small id="mobile-hint">Numbers only. Philippines: the 10 digits after +63, starting with 9 (e.g. 9171234567).</small>
+            <small id="mobile-error" class="field-error" aria-live="polite"></small>
         </div>
         <div class="field">
-            <?php if ($isIntern): ?>
-                <?php mentora_render_combo_field('location', 'City / province', MENTORA_LOCATION_OPTIONS, $values['location'], false, 'Type or choose your city or province'); ?>
-            <?php else: ?>
-                <label for="location">City / province</label>
-                <input id="location" name="location" maxlength="190" autocomplete="address-level2" value="<?= $h($values['location']) ?>">
-            <?php endif; ?>
+            <?php mentora_render_combo_field('location', 'City / province', MENTORA_LOCATION_OPTIONS, $values['location'], !$isIntern, 'Type or choose your city or province'); ?>
         </div>
         <div class="field">
-            <label for="start_date">Preferred start date</label>
-            <input id="start_date" type="date" name="start_date" value="<?= $h($values['start_date']) ?>">
+            <label for="start_date">Preferred start date <span class="field-optional">(optional)</span></label>
+            <input id="start_date" type="date" name="start_date" value="<?= $h($values['start_date']) ?>" aria-describedby="start_date-hint">
+            <small id="start_date-hint">Leave it empty if you can start anytime.</small>
         </div>
-        <div class="field full"<?= $isIntern ? '' : ' data-mode="form"' ?>>
-            <label for="skills">Skills and experience<?= $isIntern ? '' : ' *' ?></label>
+        <?php // Optional everywhere. Employee VA: shown with the form and the portfolio link (it helps the AI match skills). ?>
+        <div class="field full"<?= $isIntern ? '' : ' data-mode="form portfolio"' ?>>
+            <label for="skills">Skills and experience <span class="field-optional">(optional)</span></label>
             <textarea id="skills" name="skills" rows="6" maxlength="5000" placeholder="<?= $isIntern
                 ? 'Tools you can use, school projects, organisations, and what you hope to learn during your internship.'
-                : 'Your work experience, tools and software you use, languages, and the kind of clients you have supported.' ?>"><?= $h($values['skills']) ?></textarea>
+                : 'Your work experience, tools and software you use, languages, and the kind of clients you have supported.' ?>"<?= $isIntern ? '' : ' aria-describedby="skills-hint"' ?>><?= $h($values['skills']) ?></textarea>
+            <?php if (!$isIntern): ?>
+                <small id="skills-hint">A few lines about your skills and tools help the AI match you with the right department.</small>
+            <?php endif; ?>
         </div>
     </div>
     <script>
@@ -580,7 +894,7 @@ function mentora_render_application_fields(array $values, string $pathway, ?arra
                     if (!shown.length) {
                         const empty = document.createElement('li');
                         empty.className = 'combo-empty';
-                        empty.textContent = input.dataset.strict ? 'No matching role. Choose one from the list.' : 'Not in the list. What you typed will be kept.';
+                        empty.textContent = input.dataset.strict ? (input.dataset.emptyText || 'No matching role. Choose one from the list.') : 'Not in the list. What you typed will be kept.';
                         list.append(empty);
                     }
                     setActive(-1);
@@ -707,17 +1021,130 @@ function mentora_render_application_fields(array $values, string $pathway, ?arra
     </script>
     <?php if (!$isIntern): ?>
         <script>
-            // Show the fields for the chosen way to apply (form or resume). Without JavaScript both stay visible.
+            // Show the fields for the chosen way to apply (form, resume or portfolio link). data-mode can list
+            // several ways ("form portfolio"). Without JavaScript every field stays visible.
             (() => {
                 const toggles = document.querySelectorAll('[data-mode-toggle]');
+                const portfolio = document.getElementById('portfolio_url');
                 const update = () => {
                     const mode = document.querySelector('[data-mode-toggle]:checked')?.value || 'form';
-                    document.querySelectorAll('[data-mode]').forEach((field) => { field.hidden = field.dataset.mode !== mode; });
+                    document.querySelectorAll('[data-mode]').forEach((field) => {
+                        field.hidden = !field.dataset.mode.split(' ').includes(mode);
+                    });
+                    // The link is required only for this way to apply (the browser then asks for it before sending).
+                    if (portfolio) {
+                        portfolio.required = mode === 'portfolio';
+                    }
                 };
+                // "behance.net/name" is fine: show the https:// the server adds.
+                portfolio?.addEventListener('blur', () => {
+                    const value = portfolio.value.trim();
+                    if (value !== '' && !/^[a-z][a-z0-9+.-]*:\/\//i.test(value)) {
+                        portfolio.value = 'https://' + value;
+                    }
+                });
                 toggles.forEach((toggle) => toggle.addEventListener('change', update));
                 update();
             })();
+
+            // Under the role dropdown: the team the chosen role belongs to, what it does and the skills it looks for.
+            (() => {
+                const role = document.getElementById('desired_role');
+                const hint = document.querySelector('[data-role-hint]');
+                if (!role?.dataset.roleTeams || !hint) {
+                    return;
+                }
+                const teams = JSON.parse(role.dataset.roleTeams);
+                const show = () => {
+                    const chosen = role.mentoraCombo ? role.mentoraCombo.match(role.value) : role.value;
+                    const name = Object.keys(teams).find((team) => teams[team].roles.includes(chosen));
+                    if (!name) {
+                        hint.textContent = 'Type part of a role to find it, or open the list to browse them all.';
+                        return;
+                    }
+                    const team = document.createElement('strong');
+                    team.textContent = name;
+                    const about = teams[name].about ? ': ' + teams[name].about : '';
+                    const skills = teams[name].skills ? '. Skills this team looks for: ' + teams[name].skills + '.' : '';
+                    hint.replaceChildren(team, document.createTextNode(about + skills));
+                };
+                role.addEventListener('change', show); // a role picked from the list, or typed and matched on leaving the field
+                role.addEventListener('input', () => { if (role.value.trim() === '') show(); });
+            })();
         </script>
     <?php endif; ?>
+    <script>
+            // Both pathways. Mobile number: digits only, checked as you type against the chosen country (same rules as
+            // mentora_phone_valid on the server). Philippines: 10 digits starting with 9; elsewhere 6 to 14 digits.
+            (() => {
+                const number = document.querySelector('[data-phone-number]');
+                const country = document.getElementById('mobile_country');
+                const error = document.getElementById('mobile-error');
+                if (!number || !country || !error) {
+                    return;
+                }
+                const chosen = () => (country.mentoraCombo ? country.mentoraCombo.match(country.value) : null) || 'Philippines (+63)';
+                const countryDigits = () => (chosen().match(/\(\+(\d+)\)$/) || [])[1] || '63';
+                const isPhilippines = () => countryDigits() === '63';
+                const maxDigits = () => (isPhilippines() ? 10 : 14);
+
+                // Keep only digits, and tidy what people often paste: "0917…" -> "917…", "63917…" -> "917…".
+                const clean = () => {
+                    let digits = number.value.replace(/\D/g, '');
+                    const code = countryDigits();
+                    if (digits.startsWith(code) && digits.length > maxDigits()) {
+                        digits = digits.slice(code.length);
+                    }
+                    if (isPhilippines()) {
+                        digits = digits.replace(/^0+/, '');
+                    }
+                    digits = digits.slice(0, maxDigits());
+                    if (number.value !== digits) {
+                        number.value = digits;
+                    }
+                };
+                const problem = () => {
+                    const digits = number.value;
+                    if (digits === '') {
+                        return 'Please enter your mobile number.';
+                    }
+                    if (isPhilippines()) {
+                        if (!digits.startsWith('9')) {
+                            return 'Philippine mobile numbers start with 9, e.g. 9171234567.';
+                        }
+                        if (digits.length < 10) {
+                            const left = 10 - digits.length;
+                            return `${left} more digit${left === 1 ? '' : 's'} needed (10 in total).`;
+                        }
+                        return '';
+                    }
+                    return digits.length < 6 ? 'Please enter at least 6 digits.' : '';
+                };
+
+                // Messages show once the field has been left (or the form sent); a wrong first digit shows right away.
+                let touched = number.value !== '';
+                const check = () => {
+                    const message = problem();
+                    const show = message !== '' && (touched || (number.value !== '' && !message.includes('more digit')));
+                    number.setCustomValidity(message);
+                    number.setAttribute('aria-invalid', show ? 'true' : 'false');
+                    number.classList.toggle('is-valid', message === '');
+                    error.textContent = show ? message : '';
+                };
+
+                // Block letters and symbols as they're typed (pasted text is cleaned instead).
+                number.addEventListener('beforeinput', (event) => {
+                    if (event.inputType === 'insertText' && event.data && /\D/.test(event.data)) {
+                        event.preventDefault();
+                    }
+                });
+                number.addEventListener('input', () => { clean(); check(); });
+                number.addEventListener('blur', () => { touched = true; check(); });
+                number.addEventListener('invalid', () => { touched = true; check(); }); // the browser stopped the form
+                country.addEventListener('change', () => { clean(); check(); });
+                clean();
+                check();
+            })();
+    </script>
     <?php
 }

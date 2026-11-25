@@ -125,7 +125,7 @@ CREATE TABLE `ai_reviews` (
 CREATE TABLE `applications` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `user_id` int(10) UNSIGNED NOT NULL,
-  `submission_mode` enum('form','resume') NOT NULL DEFAULT 'form',
+  `submission_mode` enum('form','resume','portfolio') NOT NULL DEFAULT 'form',
   `mobile` varchar(40) DEFAULT NULL,
   `location` varchar(190) DEFAULT NULL,
   `school` varchar(190) DEFAULT NULL,
@@ -138,6 +138,7 @@ CREATE TABLE `applications` (
   `experience_years` tinyint(3) UNSIGNED DEFAULT NULL,
   `skills` text DEFAULT NULL,
   `resume_document_id` int(10) UNSIGNED DEFAULT NULL,
+  `portfolio_url` varchar(500) DEFAULT NULL,
   `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
   `reviewed_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),

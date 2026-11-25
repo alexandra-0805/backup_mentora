@@ -1753,6 +1753,11 @@
     margin-top: 8px;
 }
 
+/* Three ways to apply: side by side when there's room, stacked on narrow screens. */
+.application-mode .pathway-choice {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+
 .application-mode .pathway-choice label {
     align-items: flex-start;
     display: flex;

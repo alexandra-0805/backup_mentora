@@ -107,6 +107,8 @@ function mentora_ai_candidate(PDO $pdo, array $person, array $application): arra
     return [
         'name' => trim($person['first_name'] . ' ' . $person['last_name']),
         'role' => trim((string) ($application['desired_role'] ?? '')),
+        // The department the chosen role belongs to ('' for a general support role or an older typed answer).
+        'role_department' => (string) mentora_role_department(trim((string) ($application['desired_role'] ?? ''))),
         'mode' => (string) ($application['submission_mode'] ?? 'form'),
         'education' => isset(MENTORA_EDUCATION_LEVELS[$educationKey]) ? $educationKey : '',
         'experience_years' => $application['experience_years'] !== null ? (int) $application['experience_years'] : null,
@@ -114,6 +116,8 @@ function mentora_ai_candidate(PDO $pdo, array $person, array $application): arra
         'resume_text' => $resumeText,
         'resume_name' => $resumeName,
         'has_resume' => !empty($application['resume_document_id']),
+        // Only the link is passed on: the review never opens it (HR does), so applicant links are never fetched by the server.
+        'portfolio_url' => (string) ($application['portfolio_url'] ?? ''),
         'mobile' => (string) ($application['mobile'] ?? ''),
         'location' => (string) ($application['location'] ?? ''),
         'start_date' => (string) ($application['start_date'] ?? ''),
@@ -128,6 +132,8 @@ function mentora_ai_rules_review(PDO $pdo, array $candidate): array
     $skills = mentora_detect_skills($text, $vocabulary);
     $departments = mentora_department_skill_map($pdo);
     $resumeUnreadable = $candidate['mode'] === 'resume' && $candidate['has_resume'] && mb_strlen($candidate['resume_text']) < 80;
+    // Applied with a portfolio link and little written about their skills: HR has to open the link to judge.
+    $portfolioOnly = $candidate['mode'] === 'portfolio' && mb_strlen($candidate['skills_text']) < 120;
 
     // Best-fit department: how many of its required skills they have, weighted toward the ones it lacks.
     $best = null;
@@ -136,7 +142,8 @@ function mentora_ai_rules_review(PDO $pdo, array $candidate): array
         $gap = mentora_skill_intersect($department['lacking'], $skills);
         $fit = ($department['required'] ? count($matched) / count($department['required']) : 0) * 0.7
             + ($department['lacking'] ? count($gap) / count($department['lacking']) : 0) * 0.3
-            + (stripos($candidate['role'], $department['name']) !== false ? 0.1 : 0);
+            // The role they chose belongs to this team (or names it).
+            + (strcasecmp($candidate['role_department'], $department['name']) === 0 || stripos($candidate['role'], $department['name']) !== false ? 0.1 : 0);
         if ($best === null || $fit > $best['fit'] || ($fit === $best['fit'] && count($gap) > count($best['gap']))) {
             $best = ['department' => $department, 'matched' => $matched, 'gap' => $gap, 'fit' => $fit];
         }
@@ -156,7 +163,7 @@ function mentora_ai_rules_review(PDO $pdo, array $candidate): array
         + (MENTORA_EDUCATION_POINTS[$education] ?? 2)
         + ($candidate['role'] !== '' ? 2 : 0) + ($length >= 300 ? 3 : ($length >= 120 ? 1.5 : 0))
         + ($candidate['mobile'] !== '' ? 2 : 0) + ($candidate['location'] !== '' ? 1 : 0)
-        + ($candidate['start_date'] !== '' ? 1 : 0) + ($candidate['has_resume'] ? 1 : 0);
+        + ($candidate['start_date'] !== '' ? 1 : 0) + ($candidate['has_resume'] || $candidate['portfolio_url'] !== '' ? 1 : 0);
     $score = (int) max(0, min(100, round($score)));
 
     $departmentName = $best && $best['fit'] > 0 ? $best['department']['name'] : null;
@@ -187,11 +194,15 @@ function mentora_ai_rules_review(PDO $pdo, array $candidate): array
     if ($education === '') {
         $concerns[] = 'Educational attainment isn’t stated.';
     }
-    if ($length < 120 && !$resumeUnreadable) {
+    if ($length < 120 && !$resumeUnreadable && !$portfolioOnly) {
         $concerns[] = 'The skills and experience description is very short.';
     }
     if ($resumeUnreadable) {
         $concerns[] = 'The resume’s text couldn’t be read automatically (it may be a scanned image). Open the file to review it.';
+    }
+    if ($portfolioOnly) {
+        // Kept last: the AI model's result keeps the last concern when HR has to look for themselves.
+        $concerns[] = 'Applied with a portfolio link and a short note, so the AI couldn’t judge their work. Open the portfolio to review it.';
     }
 
     $summary = ($candidate['role'] !== '' ? 'Applying as ' . $candidate['role'] . '. ' : '')
@@ -210,7 +221,8 @@ function mentora_ai_rules_review(PDO $pdo, array $candidate): array
         'strengths' => $strengths,
         'concerns' => $concerns,
         'engine' => MENTORA_AI_RULES_ENGINE,
-        'unreadable' => $resumeUnreadable,
+        // HR has to read the file or open the portfolio: never flag it unsuitable on too little text.
+        'unreadable' => $resumeUnreadable || $portfolioOnly,
     ]);
 }
 
@@ -245,10 +257,12 @@ function mentora_ai_model_review(PDO $pdo, array $candidate, array $rules): ?arr
         . mentora_ai_encode(array_values(array_map(static fn($d) => ['name' => $d['name'], 'required_skills' => $d['required'], 'lacking_skills' => $d['lacking']], $departments)))
         . "\n\nApplication:\n" . mentora_ai_encode([
             'desired_role' => $candidate['role'],
+            'role_department' => $candidate['role_department'] !== '' ? $candidate['role_department'] : 'general support (any team)',
             'educational_attainment' => MENTORA_EDUCATION_LEVELS[$candidate['education']] ?? 'not stated',
             'years_of_experience' => $candidate['experience_years'],
             'skills_and_experience' => mb_substr($candidate['skills_text'], 0, 4000),
             'resume_text' => mb_substr($candidate['resume_text'], 0, 12000),
+            'portfolio_link' => $candidate['portfolio_url'] !== '' ? 'provided (HR will open it; its content is not included here)' : 'none',
         ])
         . "\n\nRules-engine draft (check it, correct it if needed): " . mentora_ai_encode(['score' => $rules['score'], 'skills' => $rules['skills'], 'best_department' => $rules['department_name']])
         . "\n\nReturn JSON: {\"score\": 0-100 overall suitability for a Mentora VA role, \"skills\": [skills the applicant clearly has, using the department skill names where they match], "

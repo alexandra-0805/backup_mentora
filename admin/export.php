@@ -154,7 +154,7 @@ switch ($type) {
                 $rows[] = [
                     $row['user_code'], $row['name'], $row['email'], $row['desired_role'] ?? '',
                     MENTORA_EDUCATION_LEVELS[$row['education'] ?? ''] ?? '', $row['experience_years'] ?? '',
-                    $row['submission_mode'] === 'resume' ? 'Resume' : 'Form', $row['score'], MENTORA_AI_CATEGORIES[$row['category']][0],
+                    MENTORA_SUBMISSION_MODES[$row['submission_mode']] ?? 'Form', $row['score'], MENTORA_AI_CATEGORIES[$row['category']][0],
                     $row['department_name'] ?? '', implode(', ', $row['gap_skills']), implode(', ', $row['skills']), $row['summary'],
                     $row['dept_verdict'] ? ($row['dept_verdict'] === 'endorsed' ? 'Endorsed' : 'Not endorsed') : '',
                     ['pending' => 'Waiting', 'approved' => 'Accepted', 'rejected' => 'Declined'][$row['application_status']] ?? '',

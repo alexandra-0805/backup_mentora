@@ -2,7 +2,7 @@
 /**
  * Workspace "Form" page: the qualifications form for the applicant's chosen pathway.
  *   Intern       internship form -> straight to the Training page
- *   Employee VA  fill in the form OR upload a resume -> AI-supported review (ai/resume_review.php), which
+ *   Employee VA  fill in the form OR upload a resume OR share a portfolio link -> AI-supported review (ai/resume_review.php), which
  *                notifies HR (and the department whose lacking skills they have)
  * Sign-in sends applicants without a submitted form here (after choosing a pathway, auth/pathway.php).
  * After submitting, they can come back to update it; an employee's update is reviewed again while HR
@@ -48,11 +48,17 @@ if (!empty($application['resume_document_id'])) {
 
 $answers = mentora_application_values($application);
 $formErrors = [];
+// Employee VA: "Role you're applying for" choices, grouped by department (includes/application_fields.php).
+$roleGroups = $isIntern ? [] : mentora_employee_role_groups($pdo);
+$roleOptions = $isIntern ? null : mentora_employee_role_options($roleGroups);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $answers = mentora_application_from_post($answers);
     if ($isIntern) {
         $answers['submission_mode'] = 'form';
+    } else {
+        // Same spelling as the list ("bookkeeping" -> "Bookkeeping"); anything else is rejected below.
+        $answers['desired_role'] = mentora_choice_match($answers['desired_role'], [$roleOptions]) ?? $answers['desired_role'];
     }
 
     if (!mentora_csrf_valid($_POST['csrf_token'] ?? null)) {
@@ -64,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($newResume && !in_array(strtolower(pathinfo((string) $upload['name'], PATHINFO_EXTENSION)), MENTORA_RESUME_EXTENSIONS, true)) {
         $formErrors[] = 'Please upload your resume as a PDF, Word (.docx or .doc) or text file.';
     }
-    array_push($formErrors, ...mentora_application_errors($answers, $formPathway, $newResume || $resume !== null));
+    array_push($formErrors, ...mentora_application_errors($answers, $formPathway, $newResume || $resume !== null, $roleOptions));
     if (!isset($_POST['confirm'])) {
         $formErrors[] = 'Please confirm that the information you provided is accurate.';
     }
@@ -136,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = $isIntern ? 'Internship qualifications form' : 'Employee VA qualifications form';
+$pageTitle = $isIntern ? 'Internship Form' : 'Employee Form';
 $activePage = 'form.php';
 require __DIR__ . '/applicant_layout.php';
 ?>
@@ -145,7 +151,7 @@ require __DIR__ . '/applicant_layout.php';
         <h1><?= $isIntern ? 'Internship qualifications' : 'Employee VA qualifications' ?></h1>
         <p><?= $isIntern
             ? 'Tell us about your school, your required hours and what you want to learn. Your training starts as soon as you submit.'
-            : 'Fill in your qualifications or upload your resume, so we can match you with the department that needs your skills.' ?></p>
+            : 'Fill in your qualifications, upload your resume or share your portfolio link, so we can match you with the department that needs your skills.' ?></p>
     </div>
 </div>
 
@@ -165,7 +171,7 @@ require __DIR__ . '/applicant_layout.php';
     <?= mentora_csrf_field() ?>
     <input type="hidden" name="MAX_FILE_SIZE" value="<?= MENTORA_DOCUMENT_MAX_BYTES ?>">
     <h3>Your qualifications</h3>
-    <?php mentora_render_application_fields($answers, $formPathway, $resume); ?>
+    <?php mentora_render_application_fields($answers, $formPathway, $resume, $roleGroups); ?>
     <label><input type="checkbox" name="confirm" required> I confirm the information provided is accurate.</label>
     <div class="form-actions">
         <button class="admin-btn primary" type="submit"

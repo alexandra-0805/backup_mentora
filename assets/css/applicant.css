@@ -660,6 +660,45 @@ body.workspace-dark-mode .presence-option[aria-pressed="true"] {
     padding: 9px 12px;
 }
 
+/* Employee VA "Mobile number": typeable country code beside the number; stacked on narrow screens. */
+.phone-field {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: minmax(0, 13.5rem) minmax(0, 1fr);
+}
+
+.phone-field .combo-list {
+    min-width: 16rem;
+}
+
+@media (max-width: 480px) {
+    .phone-field {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.phone-field + small + .field-error {
+    display: block;
+    margin-top: 4px;
+}
+
+.phone-field + small + .field-error:empty {
+    display: none;
+}
+
+body.workspace-dark-mode .field-error {
+    color: #fda29b;
+}
+
+.field-optional {
+    color: #6e6e73;
+    font-weight: 400;
+}
+
+body.workspace-dark-mode .field-optional {
+    color: #b5ccc9;
+}
+
 body.workspace-dark-mode .combo-list {
     background: #253837;
     border-color: rgba(255, 255, 255, 0.14);

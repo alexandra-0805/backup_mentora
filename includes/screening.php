@@ -50,7 +50,7 @@ function mentora_screening_rows(PDO $pdo, string $view, ?int $departmentId = nul
                 CONCAT(ref.first_name, ' ', ref.last_name) AS referrer_name,
                 CONCAT(dr.first_name, ' ', dr.last_name) AS dept_reviewer_name,
                 a.status AS application_status, a.desired_role, a.education, a.experience_years, a.submission_mode,
-                a.resume_document_id, a.created_at AS applied_at, a.reviewed_at AS decided_at
+                a.resume_document_id, a.portfolio_url, a.created_at AS applied_at, a.reviewed_at AS decided_at
          " . MENTORA_SCREENING_FROM . "
          LEFT JOIN departments d ON d.id = r.department_id
          LEFT JOIN departments ad ON ad.id = u.department_id
@@ -127,7 +127,7 @@ function mentora_render_screening_card(array $row, string $mode, array $departme
         $row['email'],
         $row['desired_role'] ? 'Applying as ' . $row['desired_role'] : null,
         'Applied ' . date('d M Y', strtotime($row['applied_at'])),
-        $row['submission_mode'] === 'resume' ? 'Resume upload' : 'Form',
+        MENTORA_SUBMISSION_MODES[$row['submission_mode']] ?? 'Form',
         $row['referrer_name'] ? 'Referred by ' . $row['referrer_name'] : null,
     ]);
     ?>
@@ -177,6 +177,11 @@ function mentora_render_screening_card(array $row, string $mode, array $departme
         <footer class="screening-actions">
             <?php if ($row['resume_document_id']): ?>
                 <a class="admin-btn" href="../account/document.php?id=<?= (int) $row['resume_document_id'] ?>" target="_blank" rel="noopener"><?= mentora_icon('view') ?>Open resume</a>
+            <?php endif; ?>
+            <?php if (!empty($row['portfolio_url']) && mentora_portfolio_url_valid((string) $row['portfolio_url'])): ?>
+                <?php // The applicant's own link: opened in a new tab without passing on this page (noreferrer). ?>
+                <a class="admin-btn" href="<?= mentora_h($row['portfolio_url']) ?>" target="_blank" rel="noopener noreferrer nofollow"
+                    title="<?= mentora_h($row['portfolio_url']) ?>"><?= mentora_icon('view') ?>Open portfolio</a>
             <?php endif; ?>
             <a class="admin-btn" href="../account/messages.php?to=<?= $userId ?>">Message</a>
             <?php if ($mode === 'admin'): ?>

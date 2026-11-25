@@ -450,6 +450,12 @@ try {
             ADD COLUMN experience_years TINYINT UNSIGNED NULL AFTER education,
             ADD COLUMN resume_document_id INT UNSIGNED NULL AFTER skills");
     }
+    // Employee VA form: a third way to apply, with a link to an online portfolio (Drive, Behance, website...).
+    if (!in_array('portfolio_url', $applicationColumns, true)) {
+        $pdo->exec("ALTER TABLE applications
+            MODIFY COLUMN submission_mode ENUM('form', 'resume', 'portfolio') NOT NULL DEFAULT 'form',
+            ADD COLUMN portfolio_url VARCHAR(500) NULL AFTER resume_document_id");
+    }
     // Shareable recruitment links an agent sends to applicants (like a form link): opening one leads to
     // sign in / create an account, then the Intern or Employee VA choice (auth/join.php).
     $pdo->exec(
