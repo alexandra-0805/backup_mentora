@@ -21,6 +21,9 @@ $themeFollowsDevice = $themeFollowsDevice ?? true;
     <link rel="stylesheet" href="<?= $root ?>assets/css/style.css?v=51">
     <link rel="stylesheet" href="<?= $root ?>assets/css/theme.css?v=13">
     <link rel="stylesheet" href="<?= $root ?>assets/css/dialog.css?v=2">
+    <?php foreach ($pageStyles ?? [] as $pageStyle): // extra stylesheets for one page only, e.g. feedback.php ?>
+    <link rel="stylesheet" href="<?= $root . htmlspecialchars($pageStyle, ENT_QUOTES, 'UTF-8') ?>">
+    <?php endforeach; ?>
     <?php if ($inAccount): // account/*.php pages (Messages) ?>
     <link rel="stylesheet" href="<?= $root ?>assets/css/account.css?v=4">
     <?php endif; ?>

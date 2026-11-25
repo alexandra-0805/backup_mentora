@@ -1,0 +1,896 @@
+/* ==========================================================================
+   Feedback page (feedback.php only). Loaded through $pageStyles in includes/header.php.
+   The shared rating and review pieces (also used on index.php) live in style.css and theme.css;
+   everything here is scoped to .feedback-page so the landing page is not affected.
+   ========================================================================== */
+
+.feedback-page {
+    --fb-danger: #b42318;
+    --fb-danger-soft: #fdecec;
+    --fb-muted: #6e6e73;
+    --fb-ink: #1d1d1f;
+    --fb-field-bg: #fff;
+    --fb-soft: rgba(11, 98, 93, 0.06);
+}
+
+html[data-theme="dark"] .feedback-page {
+    --fb-danger: #ff9b8f;
+    --fb-danger-soft: rgba(255, 155, 143, 0.12);
+    --fb-muted: var(--dark-muted);
+    --fb-ink: var(--dark-heading);
+    --fb-field-bg: var(--dark-input);
+    --fb-soft: rgba(255, 255, 255, 0.04);
+}
+
+/* The small teal labels on the cards are too dark to read on dark cards. */
+html[data-theme="dark"] .feedback-page .rating-summary .eyebrow,
+html[data-theme="dark"] .feedback-page .feedback-form-card .eyebrow {
+    color: var(--mentora-mint);
+}
+
+.feedback-page [hidden] {
+    display: none !important;
+}
+
+.feedback-page :where(a, button, input, select, textarea):focus-visible {
+    outline: 3px solid rgba(11, 98, 93, 0.4);
+    outline-offset: 2px;
+}
+
+.feedback-page .hero :where(a, button):focus-visible,
+.feedback-page .pale :where(a, button, select):focus-visible {
+    outline-color: var(--mentora-mint);
+}
+
+/* ---------- Hero ---------- */
+.feedback-page .feedback-hero {
+    padding: 150px 24px 96px;
+}
+
+.feedback-page .feedback-hero .hero-copy {
+    margin: 0 auto;
+}
+
+.feedback-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.feedback-page .feedback-hero-primary {
+    background: #fff;
+    border-color: #fff;
+    color: var(--mentora-deep);
+}
+
+.feedback-page .feedback-hero-primary:hover {
+    background: var(--mentora-pale);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+    color: var(--mentora-deep);
+}
+
+.feedback-page .feedback-hero-actions svg,
+.feedback-page .review-more svg {
+    fill: none;
+    height: 16px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 16px;
+}
+
+.feedback-hero-stats {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    list-style: none;
+    margin: 40px auto 0;
+    max-width: 560px;
+    padding: 0;
+}
+
+.feedback-hero-stats li {
+    display: grid;
+    gap: 4px;
+    padding: 18px 12px;
+}
+
+.feedback-hero-stats li + li {
+    border-left: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.feedback-hero-stats strong {
+    align-items: center;
+    color: #fff;
+    display: inline-flex;
+    font-size: 28px;
+    font-weight: 800;
+    gap: 6px;
+    justify-content: center;
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.feedback-hero-stats strong svg {
+    fill: var(--star);
+    height: 20px;
+    width: 20px;
+}
+
+.feedback-hero-stats span {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+}
+
+/* ---------- Layout: rating card + form ---------- */
+.feedback-page .feedback-layout {
+    gap: 32px;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+}
+
+.feedback-page .feedback-layout > * {
+    min-width: 0;
+}
+
+/* Wide screens: rating card on the left (and kept in view while filling in the longer form), form on the right.
+   The form comes first in the HTML so it is first on phones. */
+@media (min-width: 901px) {
+    .feedback-page .rating-summary {
+        grid-column: 1;
+        grid-row: 1;
+        position: sticky;
+        top: 108px;
+    }
+
+    .feedback-page .feedback-form-card {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}
+
+/* Rating bars double as filter links (buttons added by the page script). */
+.feedback-page .rating-bars li.is-linked {
+    border-radius: 8px;
+    margin: -4px -8px;
+    padding: 4px 8px;
+    position: relative;
+    transition: background 150ms ease;
+}
+
+.feedback-page .rating-bars li.is-linked:hover {
+    background: var(--fb-soft);
+}
+
+.feedback-page .rating-bar-link {
+    background: transparent;
+    border: 0;
+    border-radius: inherit;
+    cursor: pointer;
+    inset: 0;
+    position: absolute;
+}
+
+/* ---------- Form card ---------- */
+.feedback-page .feedback-form-card {
+    overflow: hidden;
+    position: relative;
+}
+
+.feedback-page .feedback-form-card::before {
+    background: var(--mentora-gradient);
+    content: "";
+    height: 4px;
+    inset: 0 0 auto;
+    position: absolute;
+}
+
+.feedback-page .feedback-form {
+    gap: 22px;
+}
+
+.feedback-page .feedback-required {
+    color: var(--fb-danger);
+    font-weight: 700;
+}
+
+/* Labels (the form now uses <label for> so each field can carry its own error). */
+.feedback-page .feedback-field > label {
+    color: var(--fb-ink);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.feedback-page .feedback-field > label em {
+    color: var(--fb-muted);
+    font-style: normal;
+    font-weight: 400;
+}
+
+.feedback-page .feedback-field input,
+.feedback-page .feedback-field textarea {
+    font-size: 15px;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.feedback-page .feedback-field input::placeholder,
+.feedback-page .feedback-field textarea::placeholder {
+    color: #a1a1a6;
+}
+
+.feedback-page .feedback-field textarea {
+    min-height: 140px;
+}
+
+/* Star picker. */
+.feedback-page .star-input-row {
+    background: var(--fb-soft);
+    border: 1px solid transparent;
+    border-radius: 16px;
+    padding: 10px 14px;
+    transition: border-color 150ms ease;
+}
+
+.feedback-page .star-input-options label {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-grid;
+    place-items: center;
+}
+
+.feedback-page .star-input-text {
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 12px;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.feedback-page .star-input-text.is-chosen {
+    background: rgba(229, 168, 35, 0.16);
+    color: #8a5a00;
+}
+
+html[data-theme="dark"] .feedback-page .star-input-text.is-chosen {
+    background: rgba(229, 168, 35, 0.16);
+    color: #f5c862;
+}
+
+/* Errors under each field. */
+.feedback-page .feedback-error {
+    color: var(--fb-danger);
+    font-size: 13px;
+    margin: 6px 0 0;
+}
+
+.feedback-page .feedback-error:empty {
+    display: none;
+}
+
+.feedback-page .has-error input,
+.feedback-page .has-error textarea {
+    border-color: var(--fb-danger);
+}
+
+.feedback-page .has-error input:focus,
+.feedback-page .has-error textarea:focus {
+    border-color: var(--fb-danger);
+    box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.15);
+}
+
+.feedback-page .star-input.has-error .star-input-row {
+    background: var(--fb-danger-soft);
+    border-color: var(--fb-danger);
+}
+
+html[data-theme="dark"] .feedback-page .has-error input,
+html[data-theme="dark"] .feedback-page .has-error textarea {
+    border-color: var(--fb-danger);
+}
+
+/* Comment: error on the left, character count on the right. */
+.feedback-page .feedback-field-meta {
+    align-items: flex-start;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.feedback-page .feedback-counter {
+    color: var(--fb-muted);
+    flex: none;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    margin: 6px 0 0 auto;
+}
+
+.feedback-page .feedback-counter.is-near {
+    color: #a15c00;
+}
+
+.feedback-page .feedback-counter.is-full {
+    color: var(--fb-danger);
+    font-weight: 700;
+}
+
+html[data-theme="dark"] .feedback-page .feedback-counter.is-near {
+    color: #f5c862;
+}
+
+/* Submit row. */
+.feedback-page .feedback-form-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 20px;
+    margin-top: 4px;
+}
+
+.feedback-page .feedback-submit {
+    font-size: 14px;
+    min-height: 50px;
+    padding: 14px 26px;
+    position: relative;
+}
+
+.feedback-page .feedback-submit:disabled {
+    cursor: progress;
+    opacity: 0.85;
+    transform: none;
+}
+
+.feedback-page .feedback-spinner {
+    animation: feedback-spin 700ms linear infinite;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    border-top-color: #fff;
+    display: none;
+    height: 16px;
+    width: 16px;
+}
+
+.feedback-page .feedback-submit.is-loading .feedback-spinner {
+    display: inline-block;
+}
+
+.feedback-page .feedback-submit.is-loading .feedback-submit-icon {
+    display: none;
+}
+
+@keyframes feedback-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.feedback-page .feedback-form-note {
+    align-items: center;
+    color: var(--fb-muted);
+    display: inline-flex;
+    font-size: 13px;
+    gap: 6px;
+    margin: 0;
+}
+
+.feedback-page .feedback-form-note svg {
+    fill: none;
+    flex: none;
+    height: 15px;
+    stroke: var(--mentora-teal);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 15px;
+}
+
+html[data-theme="dark"] .feedback-page .feedback-form-note svg {
+    stroke: var(--mentora-mint);
+}
+
+/* Alerts with an icon. */
+.feedback-page .feedback-alert {
+    align-items: flex-start;
+    display: flex;
+    gap: 12px;
+    line-height: 1.5;
+    padding: 14px 16px;
+}
+
+.feedback-page .feedback-alert > svg {
+    fill: none;
+    flex: none;
+    height: 20px;
+    margin-top: 1px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 20px;
+}
+
+.feedback-page .feedback-alert a {
+    color: inherit;
+    display: inline-block;
+    font-weight: 700;
+    margin-top: 2px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* style.css gives these their own margins, which undid the centring of the reviews column on wide screens. */
+.feedback-page .feedback-reviews > .feedback-alert {
+    margin: 0 auto 24px;
+}
+
+.feedback-page .feedback-reviews > .review-empty.is-boxed {
+    margin: 0 auto;
+}
+
+/* ---------- Reviews ---------- */
+.feedback-page .review-head {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    justify-content: space-between;
+    margin-bottom: 28px;
+}
+
+.feedback-page .feedback-reviews .review-head h2 {
+    margin: 8px 0 0;
+}
+
+.feedback-page .review-head-meta {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    display: inline-flex;
+    flex-wrap: wrap;
+    font-size: 14px;
+    gap: 10px;
+    margin: 0;
+    padding: 8px 16px;
+}
+
+.feedback-page .review-head-meta strong {
+    color: #fff;
+}
+
+/* Filter chips + sort. */
+.feedback-page .review-toolbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 20px;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.feedback-page .review-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+
+.feedback-page .review-chip {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 999px;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    gap: 6px;
+    min-height: 40px;
+    padding: 8px 14px;
+    transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.feedback-page .review-chip:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.feedback-page .review-chip.is-active {
+    background: #fff;
+    border-color: #fff;
+    color: var(--mentora-deep);
+}
+
+.feedback-page .review-chip:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.feedback-page .review-chip-star {
+    color: var(--star);
+}
+
+.feedback-page .review-chip-count {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    font-size: 11px;
+    min-width: 22px;
+    padding: 2px 7px;
+    text-align: center;
+}
+
+.feedback-page .review-chip.is-active .review-chip-count {
+    background: var(--mentora-pale);
+    color: var(--mentora-teal);
+}
+
+.feedback-page .review-sort {
+    align-items: center;
+    color: rgba(255, 255, 255, 0.8);
+    display: inline-flex;
+    font-size: 13px;
+    gap: 10px;
+}
+
+.feedback-page .review-sort select {
+    -webkit-appearance: none;
+    appearance: none;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230b625d' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 14px;
+    border: 0;
+    border-radius: 999px;
+    color: var(--mentora-deep);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    min-height: 40px;
+    padding: 8px 36px 8px 16px;
+}
+
+html[data-theme="dark"] .feedback-page .review-sort select {
+    background-color: var(--dark-surface-solid);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238fefda' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    color: var(--dark-heading);
+}
+
+.feedback-page .review-status {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 13px;
+    margin: 0 auto 20px;
+    min-height: 1em;
+}
+
+.feedback-page .review-status:empty {
+    margin-bottom: 12px;
+}
+
+/* Cards (each wrapped in .review-item so it can be filtered and sorted). */
+.feedback-page .review-item {
+    display: flex;
+    min-width: 0;
+}
+
+.feedback-page .review-item:focus {
+    outline: none;
+}
+
+.feedback-page .review-item:focus-visible .review-card {
+    outline: 3px solid var(--mentora-mint);
+    outline-offset: 3px;
+}
+
+.feedback-page .review-item > .review-card {
+    flex: 1;
+    min-width: 0;
+}
+
+.feedback-page .review-item.is-entering {
+    animation: review-in 320ms ease both;
+}
+
+@keyframes review-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+.feedback-page .review-card blockquote {
+    font-size: 15px;
+}
+
+.feedback-page .review-card blockquote.is-clamped {
+    -webkit-box-orient: vertical;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    overflow: hidden;
+}
+
+.feedback-page .review-toggle {
+    align-self: flex-start;
+    background: none;
+    border: 0;
+    border-radius: 6px;
+    color: var(--mentora-teal);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: -8px;
+    padding: 2px 0;
+}
+
+.feedback-page .review-toggle:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+html[data-theme="dark"] .feedback-page .review-toggle {
+    color: var(--mentora-mint);
+}
+
+/* Empty states. */
+.feedback-page .pale.feedback-reviews .review-empty.is-boxed {
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.feedback-page .review-none {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.feedback-page .review-reset {
+    background: #fff;
+    border: 0;
+    border-radius: 999px;
+    color: var(--mentora-deep);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    min-height: 40px;
+    padding: 8px 18px;
+}
+
+.feedback-page .review-first {
+    align-items: center;
+    color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 48px 24px;
+}
+
+.feedback-page .review-first p {
+    margin: 0;
+}
+
+.feedback-page .review-first strong {
+    color: #fff;
+}
+
+.feedback-page .review-first > svg {
+    fill: none;
+    height: 40px;
+    stroke: var(--mentora-mint);
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+    width: 40px;
+}
+
+/* Show more. */
+.feedback-page .review-more-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 36px;
+}
+
+.feedback-page .review-more {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+    font-size: 14px;
+}
+
+.feedback-page .review-more:hover {
+    background: #fff;
+    border-color: #fff;
+    color: var(--mentora-deep);
+}
+
+/* ---------- Touch screens ---------- */
+@media (hover: none) {
+    .feedback-page .review-card:hover {
+        transform: none;
+    }
+
+    .feedback-page .review-remove button {
+        height: 40px;
+        width: 40px;
+    }
+}
+
+/* ---------- Tablet ---------- */
+@media (max-width: 900px) {
+    .feedback-page .feedback-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 700px) {
+    .feedback-page .feedback-hero {
+        padding: 118px 20px 64px;
+    }
+
+    .feedback-hero-stats {
+        margin-top: 32px;
+    }
+
+    .feedback-hero-stats li {
+        padding: 14px 8px;
+    }
+
+    .feedback-hero-stats strong {
+        font-size: 22px;
+    }
+
+    .feedback-hero-stats strong svg {
+        height: 16px;
+        width: 16px;
+    }
+
+    .feedback-hero-stats span {
+        font-size: 11px;
+        line-height: 1.3;
+    }
+
+    .feedback-page .review-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    /* Chips scroll sideways instead of wrapping into many rows. */
+    .feedback-page .review-filters {
+        flex-wrap: nowrap;
+        margin: 0 -20px;
+        overflow-x: auto;
+        padding: 2px 20px 6px;
+        scroll-padding: 0 20px;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+    }
+
+    .feedback-page .review-filters::-webkit-scrollbar {
+        display: none;
+    }
+
+    .feedback-page .review-chip {
+        scroll-snap-align: start;
+    }
+
+    .feedback-page .review-sort {
+        justify-content: space-between;
+    }
+
+    .feedback-page .review-sort select {
+        flex: 1;
+        max-width: 240px;
+    }
+
+    .feedback-page .review-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 640px) {
+    .feedback-page .rating-summary,
+    .feedback-page .feedback-form-card {
+        border-radius: 18px;
+        padding: 28px 20px 24px;
+    }
+
+    .feedback-page .rating-average {
+        font-size: 48px;
+    }
+
+    .feedback-page .rating-summary-score {
+        gap: 16px;
+    }
+
+    /* 16px stops iPhones zooming in when a field gets focus. */
+    .feedback-page .feedback-field input,
+    .feedback-page .feedback-field textarea {
+        font-size: 16px;
+    }
+
+    .feedback-page .star-input-row {
+        padding: 8px 10px;
+    }
+
+    .feedback-page .feedback-form-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .feedback-page .feedback-submit {
+        justify-self: stretch;
+        width: 100%;
+    }
+
+    .feedback-page .feedback-form-note {
+        justify-content: center;
+    }
+
+    .feedback-page .review-card {
+        padding: 22px 20px;
+    }
+
+    .feedback-page .review-more {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .feedback-hero-actions {
+        align-items: stretch;
+        flex-direction: column;
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 300px;
+    }
+
+    .feedback-page .star-input-options {
+        gap: 0;
+    }
+
+    .feedback-page .star-input-options label {
+        min-height: 40px;
+        min-width: 40px;
+    }
+
+    .feedback-page .star-input-options svg {
+        height: 30px;
+        width: 30px;
+    }
+}
+
+@media (max-width: 360px) {
+    .feedback-page .star-input-options label {
+        min-width: 36px;
+    }
+
+    .feedback-page .star-input-options svg {
+        height: 27px;
+        width: 27px;
+    }
+
+    .feedback-hero-stats span {
+        font-size: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .feedback-page .review-item.is-entering {
+        animation: none;
+    }
+
+    .feedback-page .feedback-spinner {
+        animation-duration: 2s;
+    }
+}
