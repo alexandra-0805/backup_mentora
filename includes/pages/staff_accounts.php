@@ -35,11 +35,10 @@ if (mentora_is_post()) {
 
     /** Create a fresh one-time link for $person, email it, and keep the result for the panel shown next. */
     $sendInvite = static function (array $person, bool $resent) use ($pdo, $me): void {
-        $code = null;
-        $link = mentora_create_invite($pdo, (int) $person['id'], (int) $me['id'], $code);
+        $link = mentora_create_invite($pdo, (int) $person['id'], (int) $me['id']);
         $fullName = trim($person['first_name'] . ' ' . $person['last_name']);
         $mail = mentora_mail_enabled()
-            ? mentora_send_invite_email($person['email'], $fullName, $person['first_name'], $person['pathway'], $link, $me['name'], $me['email'], $person['role'], (string) $code)
+            ? mentora_send_invite_email($person['email'], $fullName, $person['first_name'], $person['pathway'], $link, $me['name'], $me['email'], $person['role'])
             : ['ok' => false, 'error' => '', 'not_configured' => true];
         $_SESSION['staff_invite'] = [
             'user_id' => (int) $person['id'], 'name' => $person['first_name'], 'full_name' => $fullName, 'email' => $person['email'],

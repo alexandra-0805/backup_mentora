@@ -51,7 +51,7 @@ require __DIR__ . '/includes/header.php';
 
         </div>
         <div class="card-grid two">
-            <article class="feature-card">
+            <a class="feature-card pathway-card" href="auth/signup.php?pathway=employee_va" aria-label="Apply as an Employee VA">
                 <div class="card-topline">
                     <span class="icon"><?= $icon('briefcase') ?></span>
                     <span class="tag">Build your career</span>
@@ -66,8 +66,8 @@ require __DIR__ . '/includes/header.php';
                     <li>40 hours per week with virtual support</li>
                     <li>Comfortable collaborating in English</li>
                 </ul>
-            </article>
-            <article class="feature-card">
+            </a>
+            <a class="feature-card pathway-card" href="auth/signup.php?pathway=internship" aria-label="Apply as an Intern">
                 <div class="card-topline">
                     <span class="icon"><?= $icon('graduation') ?></span>
                     <span class="tag">Learn by doing</span>
@@ -82,11 +82,6 @@ require __DIR__ . '/includes/header.php';
                     <li>School-accredited internship</li>
                     <li>Can commit at least 20 hours per week</li>
                 </ul>
-            </article>
-        </div>
-        <div class="pathways-apply">
-            <a class="text-button" href="auth/signup.php">
-                Apply now
             </a>
         </div>
     </section>

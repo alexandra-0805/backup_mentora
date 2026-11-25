@@ -79,17 +79,53 @@ function mentora_notify_admins_new_applicant(PDO $pdo, string $name, string $ema
     $label = mentora_pathway_label($pathway);
     mentora_notify_roles($pdo, ['admin'], 'New application: ' . $name, $label . ' · ' . $email . ' is waiting for confirmation in Applications.', 'admin/applications.php?view=pending');
     $alertTo = getenv('MENTORA_APPROVAL_EMAIL') ?: (mentora_mail_enabled() ? mentora_mail_config()['from_email'] : '');
-    if (filter_var($alertTo, FILTER_VALIDATE_EMAIL)) {
-        mentora_deliver_mail($alertTo, 'Mentora application pending approval: ' . $name, implode("\n", [
-            'A new Mentora application is waiting for confirmation.', '', 'Applicant: ' . $name, 'Email: ' . $email,
-            'Pathway: ' . $label, '', 'Approve it so they get their confirmation link: ' . mentora_app_url('admin/applications.php?view=pending'),
-        ]));
+    if (!filter_var($alertTo, FILTER_VALIDATE_EMAIL)) {
+        return;
+    }
+
+    $reviewUrl = mentora_app_url('admin/applications.php?view=pending');
+    $appliedAt = date('M j, Y · g:i A');
+    $subject = 'Mentora application pending approval: ' . $name;
+    $text = implode("\n", [
+        'A new Mentora application is waiting for your approval.', '',
+        'Applicant: ' . $name, 'Email: ' . $email, 'Pathway: ' . $label, 'Applied: ' . $appliedAt, '',
+        'Review it in Applications: ' . $reviewUrl, '',
+        'Once you approve it, the applicant gets a link to create their username and password.',
+    ]);
+    if (!mentora_mail_enabled()) {
+        mentora_deliver_mail($alertTo, $subject, $text);   // no SMTP / relay: plain text through mail()
+        return;
+    }
+
+    // Same branded layout as the applicant emails (mentora_email_html), with the applicant's details in a card.
+    $e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $row = static fn(string $field, string $valueHtml, bool $last = false): string =>
+        '<tr><td style="padding:10px 14px;' . ($last ? '' : 'border-bottom:1px solid #e5eeec;') . 'font-size:13px;color:#6e6e73;width:96px;vertical-align:top;">' . $field . '</td>'
+        . '<td style="padding:10px 14px;' . ($last ? '' : 'border-bottom:1px solid #e5eeec;') . 'font-size:14px;color:#1d1d1f;font-weight:bold;word-break:break-all;">' . $valueHtml . '</td></tr>';
+    $html = mentora_email_html(
+        'New application',
+        $e($name) . ' is waiting for approval',
+        '<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#3a3a3c;">A new <strong>' . $e($label) . '</strong> application has arrived and needs an HR admin to review it.</p>'
+            . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;background:#f4f8f7;border:1px solid #d5e4e2;border-radius:12px;border-collapse:separate;">'
+            . $row('Applicant', $e($name))
+            . $row('Email', '<a href="mailto:' . $e($email) . '" style="color:#0b625d;text-decoration:none;">' . $e($email) . '</a>')
+            . $row('Pathway', $e($label))
+            . $row('Applied', $e($appliedAt), true)
+            . '</table>',
+        'Review application',
+        $reviewUrl,
+        'Once you approve it, the applicant gets an email with a link to create their username and password.',
+        'Mentora HR · Application alerts'
+    );
+    $result = mentora_send_mail($alertTo, 'Mentora HR', $subject, $text, $html);
+    if (!$result['ok']) {
+        error_log('Mentora new-application alert to ' . $alertTo . ' failed: ' . $result['error']);
     }
 }
 
 /**
  * Right after someone applies (auth/signup.php, auth/google_callback.php).
- *   - Email already confirmed (Google sign-up, or a reopened application): straight to HR.
+ *   - Email already confirmed (staff adding an applicant): straight to HR.
  *   - Otherwise: email a "confirm your email" code (mentora_use_verification_code). HR is told once it's entered.
  *   - Email not set up / not sent: nothing to confirm with, so straight to HR as before.
  * Returns ['verify_sent' => bool, 'emailed' => bool (any email reached them)].
@@ -353,20 +389,20 @@ function mentora_email_html(string $eyebrow, string $headingHtml, string $bodyHt
 }
 
 /**
- * Approve (or re-send for) an applicant: a new one-time link replaces any earlier unused one.
- * Returns the full confirmation link (only ever shown to the admin who made it).
+ * Approve (or re-send for) an applicant: a new one-time link replaces any earlier unused one (and any activation
+ * code asked for with it). Returns the full confirmation link (only ever shown to the admin who made it).
+ * The backup activation code isn't made here: the applicant asks for it on Activate your account, and it comes in
+ * its own email (mentora_send_activation_code).
  */
-function mentora_create_invite(PDO $pdo, int $userId, ?int $createdBy, ?string &$code = null): string
+function mentora_create_invite(PDO $pdo, int $userId, ?int $createdBy): string
 {
     $token = bin2hex(random_bytes(32));
-    // A 6-digit activation code goes in the same email as the link, as a backup for when the link is filtered or blocked.
-    $code = sprintf('%06d', random_int(0, 999999));
     $pdo->beginTransaction();
     try {
         $pdo->prepare('DELETE FROM account_invites WHERE user_id = ? AND used_at IS NULL')->execute([$userId]);
-        $pdo->prepare('INSERT INTO account_invites (user_id, token_hash, code_hash, created_by, expires_at)
-            VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ' . MENTORA_INVITE_DAYS . ' DAY))')
-            ->execute([$userId, hash('sha256', $token), mentora_invite_code_hash($userId, $code), $createdBy]);
+        $pdo->prepare('INSERT INTO account_invites (user_id, token_hash, created_by, expires_at)
+            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ' . MENTORA_INVITE_DAYS . ' DAY))')
+            ->execute([$userId, hash('sha256', $token), $createdBy]);
         $pdo->prepare("UPDATE users SET status = 'approved' WHERE id = ? AND status IN ('pending', 'approved')")->execute([$userId]);
         $pdo->commit();
     } catch (Throwable $exception) {
@@ -378,14 +414,11 @@ function mentora_create_invite(PDO $pdo, int $userId, ?int $createdBy, ?string &
 }
 
 /**
- * The confirmation email: [subject, plain text, HTML]. Also used to pre-fill "Open in Gmail".
- */
-/**
  * The "approved / invited: create your account" email: [subject, plain text, HTML], with the "Create my account"
- * button and the copyable link. $code (optional) adds one small backup line with the activation code, for when
- * the link is filtered or blocked; it's typed on the "Activate your account" page instead.
+ * button and the copyable link. Also used to pre-fill "Open in Gmail" (includes/invite_panel.php).
+ * If the link won't open, the backup line points to Activate your account, which emails a code separately.
  */
-function mentora_invite_email(string $firstName, string $pathway, string $link, string $adminName, string $role = 'applicant', string $code = ''): array
+function mentora_invite_email(string $firstName, string $pathway, string $link, string $adminName, string $role = 'applicant'): array
 {
     $staff = in_array($role, ['agent', 'admin'], true);
     $pathwayLabel = $staff ? ($role === 'admin' ? 'HR administrator' : 'Agent') : ($pathway === 'internship' ? 'Intern' : 'Employee VA');
@@ -395,7 +428,7 @@ function mentora_invite_email(string $firstName, string $pathway, string $link, 
     $text = "Hi {$firstName},\n\n"
         . "{$intro}\n\n"
         . "Create your username and password here:\n{$link}\n\n"
-        . ($code !== '' ? "Link not working? Open \"Track your application\" on the Mentora sign-in page, enter your email, and type this activation code: {$code}\n\n" : '')
+        . "Link not working? On Mentora, open \"Track your application\", enter your email and click \"Activate your account\": we'll email you an activation code.\n\n"
         . "This link works once and expires in {$days} days.\n\n"
         . "Welcome to Mentora,\n{$adminName}\nMentora HR";
 
@@ -408,8 +441,9 @@ function mentora_invite_email(string $firstName, string $pathway, string $link, 
             : 'Your <strong>' . $e($pathwayLabel) . '</strong> application has been approved. Create your username and password to open your applicant workspace.') . '</p>',
         'Create my account',
         $link,
-        ($code !== '' ? 'Link not working? On the Mentora sign-in page, open “Track your application”, enter your email, and type the activation code ' . $code . '. ' : '')
-            . 'This link works once and expires in ' . $days . ' days. Check your Spam or Promotions folder if you can’t find our emails.',
+        'Link not working? On Mentora, open “Track your application”, enter your email and click “Activate your account”: '
+            . 'we’ll email you an activation code. This link works once and expires in ' . $days . ' days. '
+            . 'Check your Spam or Promotions folder if you can’t find our emails.',
         $adminName . ' · Mentora HR'
     );
 
@@ -425,13 +459,11 @@ function mentora_send_invite_email(
     string $link,
     string $adminName,
     string $adminEmail = '',
-    string $role = 'applicant',
-    string $code = ''
+    string $role = 'applicant'
 ): array
 {
     // The "Create my account" button + link email (it opens auth/activate.php, then the applicant workspace).
-    // $code, when given, is added as a small backup line for when the link is filtered or blocked.
-    [$subject, $text, $html] = mentora_invite_email($firstName, $pathway, $link, $adminName, $role, $code);
+    [$subject, $text, $html] = mentora_invite_email($firstName, $pathway, $link, $adminName, $role);
 
     return mentora_send_mail($email, $fullName, $subject, $text, $html, $adminEmail);
 }
@@ -442,38 +474,115 @@ function mentora_invite_code_hash(int $userId, string $code): string
     return hash('sha256', 'invite:' . $userId . ':' . $code);
 }
 
-/** Wrong activation codes allowed per invite before it stops working (HR can send a new one). */
+/** Wrong tries allowed per activation code before it stops working (the applicant can ask for a new code). */
 const MENTORA_INVITE_CODE_ATTEMPTS = 5;
+/** How long an emailed activation code works. */
+const MENTORA_ACTIVATION_CODE_MINUTES = 30;
 
 /**
- * Check an emailed activation code. Returns ['ok' => true, 'invite' => row like mentora_find_invite()] or
- * ['ok' => false, 'error' => message]. Wrong codes count against the invite; too many and it stops working.
+ * "Activate your account": email the approved applicant (or invited staff member) a 6-digit activation code, in its
+ * own email, for when the "Create my account" link won't open. A new code replaces any earlier one; the link keeps
+ * working. At most one email a minute per person. Returns ['ok' => bool, 'error' => string, 'too_soon' => bool].
  */
-function mentora_use_invite_code(PDO $pdo, string $email, string $code): array
+function mentora_send_activation_code(PDO $pdo, string $email): array
 {
-    $code = preg_replace('/[\s-]+/', '', $code) ?? '';
     $query = $pdo->prepare(
-        "SELECT i.id AS invite_id, i.code_hash, i.attempts, u.id, u.first_name, u.last_name, u.email, u.pathway
+        "SELECT i.id AS invite_id, (i.code_sent_at > NOW() - INTERVAL 60 SECOND) AS sent_recently,
+                u.id, u.first_name, u.last_name, u.email
          FROM account_invites i JOIN users u ON u.id = i.user_id
          WHERE LOWER(u.email) = ? AND u.status = 'approved' AND i.used_at IS NULL AND i.expires_at > NOW()
          ORDER BY i.id DESC LIMIT 1"
     );
     $query->execute([strtolower(trim($email))]);
     $invite = $query->fetch();
-    if (!$invite || $invite['code_hash'] === null) {
-        return ['ok' => false, 'error' => 'There’s no active activation code for this email. It may have expired or been used already. Ask HR for a new one on Track your application.'];
+    if (!$invite) {
+        return ['ok' => false, 'too_soon' => false, 'error' => 'There’s no approved application waiting for an account with this email. '
+            . 'Check the spelling, or open Track your application: if your link expired, you can ask HR for a new one there.'];
+    }
+    if ((int) $invite['sent_recently'] === 1) {
+        return ['ok' => false, 'too_soon' => true, 'error' => 'We just emailed you a code. Please wait a minute before asking for another one.'];
+    }
+    if (!mentora_mail_enabled()) {
+        return ['ok' => false, 'too_soon' => false, 'error' => 'Automatic email isn’t set up yet, so we can’t send a code. Please ask the HR team for a new link.'];
+    }
+
+    $code = sprintf('%06d', random_int(0, 999999));
+    $pdo->prepare('UPDATE account_invites SET code_hash = ?, attempts = 0, code_sent_at = NOW() WHERE id = ?')
+        ->execute([mentora_invite_code_hash((int) $invite['id'], $code), $invite['invite_id']]);
+
+    [$subject, $text, $html] = mentora_activation_code_email($invite['first_name'], $code);
+    $result = mentora_send_mail($invite['email'], trim($invite['first_name'] . ' ' . $invite['last_name']), $subject, $text, $html);
+    if (!$result['ok']) {
+        error_log('Mentora activation code email to ' . $invite['email'] . ' failed: ' . $result['error']);
+        // Nobody received this code: clear it so the applicant can try again straight away.
+        $pdo->prepare('UPDATE account_invites SET code_hash = NULL, code_sent_at = NULL WHERE id = ?')->execute([$invite['invite_id']]);
+        return ['ok' => false, 'too_soon' => false, 'error' => 'We couldn’t send the email right now. Please try again in a few minutes.'];
+    }
+
+    return ['ok' => true, 'too_soon' => false, 'error' => ''];
+}
+
+/** The activation code email: [subject, plain text, HTML]. Code only, no link (like the confirm-your-email code). */
+function mentora_activation_code_email(string $firstName, string $code): array
+{
+    $minutes = MENTORA_ACTIVATION_CODE_MINUTES;
+    $subject = $code . ' is your Mentora activation code';
+    $text = "Hi {$firstName},\n\n"
+        . "Your Mentora activation code is:\n\n"
+        . "    {$code}\n\n"
+        . "Type it on the \"Activate your account\" page to create your username and password.\n\n"
+        . "This code expires in {$minutes} minutes. If you didn't ask for it, you can ignore this email.\n\nMentora HR";
+
+    $e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $html = mentora_email_html(
+        'Activate your account',
+        'Hi ' . $e($firstName) . ', here’s your code',
+        '<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#3a3a3c;">Type this code on the <strong>Activate your account</strong> page to create your username and password:</p>'
+            . '<p style="margin:0 0 18px;padding:16px;background:#f4f8f7;border:1px solid #d5e4e2;border-radius:12px;text-align:center;'
+            . 'font-family:Consolas,Menlo,monospace;font-size:32px;font-weight:bold;letter-spacing:8px;color:#063d3b;">' . $e($code) . '</p>',
+        '',
+        '',
+        'This code expires in ' . $minutes . ' minutes. If you didn’t ask for it, you can ignore this email.',
+        'Mentora HR'
+    );
+
+    return [$subject, $text, $html];
+}
+
+/**
+ * Check an emailed activation code. Returns ['ok' => true, 'invite' => row like mentora_find_invite()] or
+ * ['ok' => false, 'error' => message]. Wrong tries count against the code; too many and it stops working.
+ */
+function mentora_use_invite_code(PDO $pdo, string $email, string $code): array
+{
+    $code = preg_replace('/[\s-]+/', '', $code) ?? '';
+    $query = $pdo->prepare(
+        "SELECT i.id AS invite_id, i.code_hash, i.attempts,
+                (i.code_sent_at > NOW() - INTERVAL " . MENTORA_ACTIVATION_CODE_MINUTES . " MINUTE) AS code_live,
+                u.id, u.first_name, u.last_name, u.email, u.pathway
+         FROM account_invites i JOIN users u ON u.id = i.user_id
+         WHERE LOWER(u.email) = ? AND u.status = 'approved' AND i.used_at IS NULL AND i.expires_at > NOW()
+         ORDER BY i.id DESC LIMIT 1"
+    );
+    $query->execute([strtolower(trim($email))]);
+    $invite = $query->fetch();
+    if (!$invite) {
+        return ['ok' => false, 'error' => 'There’s no approved application waiting for an account with this email. Open Track your application to check it.'];
+    }
+    if ($invite['code_hash'] === null || (int) $invite['code_live'] !== 1) {
+        return ['ok' => false, 'error' => 'This code has expired or was replaced. Send yourself a new code below.'];
     }
     if ((int) $invite['attempts'] >= MENTORA_INVITE_CODE_ATTEMPTS) {
-        return ['ok' => false, 'error' => 'Too many wrong codes. Ask the HR team to send you a new one.'];
+        return ['ok' => false, 'error' => 'Too many wrong codes. Send yourself a new code below.'];
     }
     if (!preg_match('/^\d{6}$/', $code) || !hash_equals((string) $invite['code_hash'], mentora_invite_code_hash((int) $invite['id'], $code))) {
         $pdo->prepare('UPDATE account_invites SET attempts = attempts + 1 WHERE id = ?')->execute([$invite['invite_id']]);
         $left = MENTORA_INVITE_CODE_ATTEMPTS - (int) $invite['attempts'] - 1;
         return ['ok' => false, 'error' => $left > 0
-            ? 'That code isn’t right. Check the latest email from Mentora HR (' . $left . ' ' . ($left === 1 ? 'try' : 'tries') . ' left).'
-            : 'Too many wrong codes. Ask the HR team to send you a new one.'];
+            ? 'That code isn’t right. Check the latest “Mentora activation code” email (' . $left . ' ' . ($left === 1 ? 'try' : 'tries') . ' left).'
+            : 'Too many wrong codes. Send yourself a new code below.'];
     }
-    unset($invite['code_hash'], $invite['attempts']);
+    unset($invite['code_hash'], $invite['attempts'], $invite['code_live']);
 
     return ['ok' => true, 'invite' => $invite];
 }

@@ -58,7 +58,7 @@ require __DIR__ . '/../includes/header.php';
                 required
                 placeholder="you@example.com"
                 value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"></div>
-        <div class="form-actions"><button class="button button-primary" type="submit">Send verification code <span>→</span></button></div>
+        <div class="form-actions"><button class="button button-primary" type="submit">Send verification code </button></div>
     </form>
     <div class="notice">
         <strong>A secure way back to your workspace.</strong><br>If an account exists for this email, you’ll receive a password reset code.</div>

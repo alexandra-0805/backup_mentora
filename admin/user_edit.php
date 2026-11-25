@@ -20,10 +20,10 @@ $pathways = ['internship' => 'Internship', 'employee_va' => 'Employee VA'];
 
 /** Send a fresh invite link to $user and keep the result for the panel. */
 $sendInvite = static function (PDO $pdo, array $user, array $admin, bool $resent): void {
-    $link = mentora_create_invite($pdo, (int) $user['id'], (int) $admin['id'], $code);
+    $link = mentora_create_invite($pdo, (int) $user['id'], (int) $admin['id']);
     $fullName = trim($user['first_name'] . ' ' . $user['last_name']);
     $mail = mentora_mail_enabled()
-        ? mentora_send_invite_email($user['email'], $fullName, $user['first_name'], $user['pathway'], $link, $admin['name'], $admin['email'], $user['role'], (string) $code)
+        ? mentora_send_invite_email($user['email'], $fullName, $user['first_name'], $user['pathway'], $link, $admin['name'], $admin['email'], $user['role'])
         : ['ok' => false, 'error' => '', 'not_configured' => true];
     $_SESSION['user_invite'] = [
         'user_id' => (int) $user['id'], 'name' => $user['first_name'], 'full_name' => $fullName, 'email' => $user['email'], 'pathway' => $user['pathway'],

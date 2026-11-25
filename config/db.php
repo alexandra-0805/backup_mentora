@@ -2,13 +2,6 @@
 
 declare(strict_types=1);
 
-/*
- * Hosting settings: config/config.local.php (not in git; holds the live database password).
- *   return ['app' => ['url' => 'https://...', 'debug' => false],
- *           'db'  => ['host' => ..., 'port' => '3306', 'name' => ..., 'user' => ..., 'password' => ...]];
- * It's ignored on localhost (XAMPP), so the same files work locally with the local database.
- * MENTORA_* environment variables, when set, still win over both.
- */
 $requestHost = strtolower((string) preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
 $runningLocally = PHP_SAPI === 'cli' || in_array($requestHost, ['', 'localhost', '127.0.0.1', '[::1]'], true);
 $localConfigFile = __DIR__ . '/config.local.php';
@@ -146,12 +139,17 @@ try {
             ADD COLUMN code_hash CHAR(64) NULL AFTER token_hash,
             ADD COLUMN attempts TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER code_hash');
     }
-    // Activation emails carry a 6-digit code instead of a link (links to free-hosting domains land in Spam):
-    // the approved applicant types it on the Track / Activate page. attempts = wrong tries on this invite.
-    if (!in_array('code_hash', $pdo->query('SHOW COLUMNS FROM account_invites')->fetchAll(PDO::FETCH_COLUMN), true)) {
+    // Backup for when the approval link won't open: on Activate your account (auth/activate.php) the approved
+    // applicant asks for a 6-digit activation code, which comes in its own email. attempts = wrong tries on this
+    // code; code_sent_at = when it was emailed (codes last 30 minutes, at most one email a minute).
+    $inviteColumns = $pdo->query('SHOW COLUMNS FROM account_invites')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('code_hash', $inviteColumns, true)) {
         $pdo->exec('ALTER TABLE account_invites
             ADD COLUMN code_hash CHAR(64) NULL AFTER token_hash,
             ADD COLUMN attempts TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER code_hash');
+    }
+    if (!in_array('code_sent_at', $inviteColumns, true)) {
+        $pdo->exec('ALTER TABLE account_invites ADD COLUMN code_sent_at DATETIME NULL AFTER attempts');
     }
     // Give every user without a code one: role prefix + their id, e.g. ADM-0001, AGT-0002, INT-0003, EMP-0004.
     // Covers app sign-ups and rows added by hand (e.g. in phpMyAdmin). The id part keeps codes unique.

@@ -18,7 +18,7 @@ $themeFollowsDevice = $themeFollowsDevice ?? true;
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="icon" type="image/png" href="<?= $root ?>assets/images/mentora-logo.png?v=1">
-    <link rel="stylesheet" href="<?= $root ?>assets/css/style.css?v=49">
+    <link rel="stylesheet" href="<?= $root ?>assets/css/style.css?v=51">
     <link rel="stylesheet" href="<?= $root ?>assets/css/theme.css?v=13">
     <link rel="stylesheet" href="<?= $root ?>assets/css/dialog.css?v=2">
     <?php if ($inAccount): // account/*.php pages (Messages) ?>

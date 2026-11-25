@@ -28,8 +28,9 @@ function mentora_render_invite_panel(array $invite, string $adminName): void
                 ? 'New link emailed'
                 : ($staff ? 'Invitation emailed' : 'Approved and emailed') ?> to <?= $h($invite['full_name']) ?></h2>
             <p class="panel-subtitle">
-                The confirmation link was sent automatically to <strong><?= $h($invite['email']) ?></strong>,
-                with an activation code as a backup. It works once and expires in <?= MENTORA_INVITE_DAYS ?> days.<?= $invite['resent'] ? ' Any link or code sent earlier no longer works.' : '' ?>
+                The confirmation link was sent automatically to <strong><?= $h($invite['email']) ?></strong>.
+                It works once and expires in <?= MENTORA_INVITE_DAYS ?> days. If it won’t open, they can get an activation code by email
+                from “Activate your account” on Track your application.<?= $invite['resent'] ? ' Any link or code sent earlier no longer works.' : '' ?>
             </p>
             <details class="invite-backup">
                 <summary>Didn’t arrive? Send it another way</summary>

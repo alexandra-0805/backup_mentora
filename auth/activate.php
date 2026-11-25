@@ -2,9 +2,11 @@
 
 /**
  * Activate your account: the approved applicant (or invited staff member) creates their username and password,
- * then goes straight to their workspace. Two ways in, both single-use and valid MENTORA_INVITE_DAYS days:
- *   - the 6-digit activation code from the email (typed here or on Track your application), or
- *   - the link HR can copy from the approval panel and send themselves (?token=...).
+ * then goes straight to their workspace. Two ways in:
+ *   - the "Create my account" link from the approval email (?token=...; single-use, MENTORA_INVITE_DAYS days), or
+ *   - when that link won't open: they enter their email here ("Activate your account" on Track your application
+ *     sends them here with it), we email a 6-digit activation code in its own email, and they type it here
+ *     (valid MENTORA_ACTIVATION_CODE_MINUTES minutes; see mentora_send_activation_code).
  */
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
@@ -20,25 +22,61 @@ $token = $_SERVER['REQUEST_METHOD'] === 'POST'
     ? mentora_post_string('token')
     : (is_string($_GET['token'] ?? null) ? $_GET['token'] : '');
 $invite = $token !== '' ? mentora_find_invite($pdo, $token) : null;
-$codeEmail = strtolower(trim($action === 'use_code' ? mentora_post_string('email') : (is_string($_GET['email'] ?? null) ? $_GET['email'] : '')));
-$codeError = '';
 
-// The activation code from the email (this page's code form, or the one on Track your application).
-if (!$invite && $action === 'use_code') {
+// "Use a different email" on the code screen.
+if (isset($_GET['change'])) {
+    unset($_SESSION['activate_code_email']);
+}
+// The email an activation code was sent to from this browser: the page then asks for the code.
+$sentTo = is_string($_SESSION['activate_code_email'] ?? null) ? $_SESSION['activate_code_email'] : '';
+$codeEmail = strtolower(trim(in_array($action, ['send_code', 'use_code'], true)
+    ? mentora_post_string('email')
+    : (is_string($_GET['email'] ?? null) ? $_GET['email'] : $sentTo)));
+$codeError = '';   // wrong / expired code (code screen)
+$sendError = '';   // couldn't send a code (email screen)
+$codeNotice = is_array($_SESSION['activate_notice'] ?? null) ? $_SESSION['activate_notice'] : null;   // after sending
+unset($_SESSION['activate_notice']);
+
+// "Email me a code" and the code itself share one limit per visitor, so emails can't be swept or codes guessed.
+if (!$invite && in_array($action, ['send_code', 'use_code'], true)) {
     $tries = array_filter((array) ($_SESSION['activate_tries'] ?? []), static fn($t) => is_int($t) && $t > time() - MENTORA_ACTIVATE_WINDOW);
+    $problem = '';
     if (!mentora_csrf_valid($_POST['csrf_token'] ?? null)) {
-        $codeError = 'Your session expired. Please try again.';
+        $problem = 'Your session expired. Please try again.';
     } elseif (count($tries) >= MENTORA_ACTIVATE_TRIES) {
-        $codeError = 'Too many tries in a short time. Please wait a few minutes and try again.';
+        $problem = 'Too many tries in a short time. Please wait a few minutes and try again.';
     } else {
         $tries[] = time();
         $_SESSION['activate_tries'] = array_values($tries);
-        $checked = mentora_use_invite_code($pdo, $codeEmail, mentora_post_string('code'));
-        if ($checked['ok']) {
-            $_SESSION['activate_invite_id'] = (int) $checked['invite']['invite_id'];
-            mentora_redirect('auth/activate.php');
+        if ($action === 'send_code') {
+            // Email a new activation code in its own email, then ask for it on the code screen.
+            if (($emailProblem = mentora_email_error($codeEmail)) !== null) {
+                $problem = $emailProblem;
+            } else {
+                $sent = mentora_send_activation_code($pdo, $codeEmail);
+                if ($sent['ok'] || $sent['too_soon']) {   // too_soon: the code sent a minute ago still works
+                    $_SESSION['activate_code_email'] = $codeEmail;
+                    $_SESSION['activate_notice'] = $sent['ok']
+                        ? ['ok' => true, 'text' => 'We emailed a new activation code. It works for ' . MENTORA_ACTIVATION_CODE_MINUTES . ' minutes; codes sent earlier no longer work.']
+                        : ['ok' => false, 'text' => $sent['error']];
+                    mentora_redirect('auth/activate.php');
+                }
+                $problem = $sent['error'];
+            }
+        } else {
+            // The activation code from that email.
+            $checked = mentora_use_invite_code($pdo, $codeEmail, mentora_post_string('code'));
+            if ($checked['ok']) {
+                $_SESSION['activate_invite_id'] = (int) $checked['invite']['invite_id'];
+                mentora_redirect('auth/activate.php');
+            }
+            $problem = $checked['error'];
         }
-        $codeError = $checked['error'];
+    }
+    if ($action === 'send_code') {
+        $sendError = $problem;
+    } else {
+        $codeError = $problem;
     }
 }
 // Code already checked on this browser: continue to the create-account form.
@@ -98,7 +136,7 @@ if ($invite && $_SERVER['REQUEST_METHOD'] === 'POST' && $action !== 'use_code') 
             $row = $pdo->prepare('SELECT id, user_code, username, first_name, last_name, email, pathway, password_hash, role FROM users WHERE id = ?');
             $row->execute([$invite['id']]);
             mentora_sign_in($row->fetch());
-            unset($_SESSION['applied'], $_SESSION['activate_invite_id'], $_SESSION['activate_tries']);
+            unset($_SESSION['applied'], $_SESSION['activate_invite_id'], $_SESSION['activate_tries'], $_SESSION['activate_code_email']);
             $_SESSION['flash_notice'] = 'Welcome to Mentora, ' . $invite['first_name'] . '! Your account is ready. Next, tell us about your qualifications.';
             mentora_redirect(mentora_after_sign_in_path($pdo, $_SESSION['user']));
         }
@@ -128,8 +166,50 @@ $fieldError = static fn(string $field): string => '<small class="field-error" id
 require __DIR__ . '/../includes/header.php';
 ?>
 <main class="auth-shell account-shell">
-    <?php if (!$invite): ?>
-        <!-- Same layout as the "Confirm your email" screen (auth/signup.php): icon, heading, code form, steps. -->
+    <?php if (!$invite && $sentTo !== ''): ?>
+        <!-- Code screen: an activation code was emailed (same layout as "Confirm your email" in auth/signup.php). -->
+        <section class="auth-card account-card application-status" aria-labelledby="activate-title">
+            <span class="application-status-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <rect x="3" y="5" width="18" height="14" rx="2"/>
+                    <path d="m3 7 9 6 9-6"/>
+                </svg>
+            </span>
+            <h1 id="activate-title">Check your email.</h1>
+            <p class="intro">
+                We sent a 6-digit activation code to <strong><?= $h($sentTo) ?></strong>.
+                Type it below to create your username and password.
+            </p>
+            <?php if ($codeNotice): ?>
+                <div class="alert<?= $codeNotice['ok'] ? ' success' : '' ?>" role="status"><?= $h($codeNotice['text']) ?></div>
+            <?php endif; ?>
+            <form method="post" class="verify-code-form" action="activate.php">
+                <?= mentora_csrf_field() ?>
+                <input type="hidden" name="action" value="use_code">
+                <input type="hidden" name="email" value="<?= $h($sentTo) ?>">
+                <div class="field">
+                    <label for="code">Activation code</label>
+                    <input id="code" class="code-input" type="text" name="code" required inputmode="numeric" pattern="[0-9 \-]{6,8}" maxlength="8"
+                           autocomplete="one-time-code" placeholder="123456" aria-describedby="code-error"<?= $codeError !== '' ? ' aria-invalid="true"' : '' ?> autofocus>
+                    <small class="field-error" id="code-error" role="alert"><?= $h($codeError) ?></small>
+                </div>
+                <div class="form-actions"><button class="button button-primary" type="submit">Continue</button></div>
+            </form>
+            <form method="post" class="notice activate-hint" action="activate.php">
+                <?= mentora_csrf_field() ?>
+                <input type="hidden" name="action" value="send_code">
+                <input type="hidden" name="email" value="<?= $h($sentTo) ?>">
+                <span><strong>No email?</strong><br>Search your inbox, Spam and Promotions for “Mentora activation code”.</span>
+                <button class="activate-hint-link" type="submit">Send a new code</button>
+            </form>
+            <div class="auth-links">
+                Wrong email? <a href="activate.php?change=1">Use a different email</a><br><br>
+                Already created your account? <a href="signin.php">Sign in</a><br><br>
+                <a href="../index.php">Back to home</a>
+            </div>
+        </section>
+    <?php elseif (!$invite): ?>
+        <!-- Email screen: we email an activation code (same layout as "Confirm your email" in auth/signup.php). -->
         <section class="auth-card account-card application-status" aria-labelledby="activate-title">
             <?php if ($token !== ''): ?>
                 <span class="application-status-icon is-warning" aria-hidden="true">
@@ -141,7 +221,7 @@ require __DIR__ . '/../includes/header.php';
                 <h1 id="activate-title">This link can’t be used.</h1>
                 <p class="intro">
                     It may have expired (links last <?= MENTORA_INVITE_DAYS ?> days), been used already, or been replaced by a newer one.
-                    If you have an activation code from Mentora HR, type it below instead.
+                    If your application was approved, enter your email and we’ll email you an activation code instead.
                 </p>
             <?php else: ?>
                 <span class="application-status-icon" aria-hidden="true">
@@ -153,48 +233,28 @@ require __DIR__ . '/../includes/header.php';
                 <h1 id="activate-title">Activate your account.</h1>
                 <p class="intro">
                     Good news: your application was approved! Click <strong>Create my account</strong> in the email from Mentora HR.
-                    Link not working? Type your email and the activation code from that email below.
+                    Link not working? Enter your email and we’ll email you an activation code.
                 </p>
+            <?php endif; ?>
+            <?php if ($codeError !== ''): ?>
+                <div class="alert" role="alert"><?= $h($codeError) ?></div>
             <?php endif; ?>
 
             <form method="post" class="verify-code-form" action="activate.php">
                 <?= mentora_csrf_field() ?>
-                <input type="hidden" name="action" value="use_code">
+                <input type="hidden" name="action" value="send_code">
                 <div class="field">
                     <label for="email">Email address</label>
-                    <input id="email" type="email" name="email" required maxlength="190" autocomplete="email" placeholder="name@gmail.com" value="<?= $h($codeEmail) ?>">
+                    <input id="email" type="email" name="email" required maxlength="190" autocomplete="email" placeholder="name@gmail.com"
+                           aria-describedby="email-error"<?= $sendError !== '' ? ' aria-invalid="true" autofocus' : '' ?> value="<?= $h($codeEmail) ?>">
+                    <small class="field-error" id="email-error" role="alert"><?= $h($sendError) ?></small>
                 </div>
-                <div class="field">
-                    <label for="code">Activation code</label>
-                    <input id="code" class="code-input" type="text" name="code" required inputmode="numeric" pattern="[0-9 \-]{6,8}" maxlength="8"
-                           autocomplete="one-time-code" placeholder="123456" aria-describedby="code-error"<?= $codeError !== '' ? ' aria-invalid="true" autofocus' : '' ?>>
-                    <small class="field-error" id="code-error" role="alert"><?= $h($codeError) ?></small>
-                </div>
-                <div class="form-actions"><button class="button button-primary" type="submit">Continue</button></div>
+                <div class="form-actions"><button class="button button-primary" type="submit">Email me a code</button></div>
             </form>
 
-            <ol class="application-steps">
-                <li class="is-done">
-                    <b aria-hidden="true">✓</b>
-                    <span><strong>Application sent</strong><small>Your application was received.</small></span>
-                </li>
-                <li class="is-done">
-                    <b aria-hidden="true">✓</b>
-                    <span><strong>Confirm your email</strong><small>Your email is confirmed.</small></span>
-                </li>
-                <li class="is-done">
-                    <b aria-hidden="true">✓</b>
-                    <span><strong>HR confirms your application</strong><small>Approved by the HR team.</small></span>
-                </li>
-                <li class="is-current" aria-current="step">
-                    <b aria-hidden="true">4</b>
-                    <span><strong>Create your username and password</strong><small>Use the link in the email “Your Mentora application is approved”, or its activation code. Both expire in <?= MENTORA_INVITE_DAYS ?> days.</small></span>
-                </li>
-            </ol>
-
-            <div class="notice">
-                <strong>Can’t find it?</strong> Check your Spam or Promotions folder for “Mentora”. Code expired or lost?
-                <a href="track.php">Track your application</a> to ask HR for a new one.
+            <div class="notice activate-hint">
+                <span><strong>Can’t find it?</strong><br>Track your application to ask HR for a new one.</span>
+                <a class="activate-hint-link" href="track.php">Track your application</a>
             </div>
             <div class="auth-links">
                 Already created your account? <a href="signin.php">Sign in</a><br><br>

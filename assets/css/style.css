@@ -2715,35 +2715,15 @@ iframe {
     transform: translateY(-1px);
 }
 
-/* Pathway cards are information only; one shared Apply link sits below them. */
+/* Each pathway card links to the signup form with that pathway preselected. */
 .landing-page #pathways .feature-card ul {
     border-bottom: 0;
     margin-bottom: 0;
     padding-bottom: 0;
 }
 
-.landing-page .pathways-apply {
-    display: flex;
-    justify-content: center;
-    margin-top: 32px;
-}
-
-/* Mentora theme colours (from the header / hero): deep teal #063d3b, teal #0b625d, green-teal #147b71, mint #8fefda. */
-.landing-page .pathways-apply .text-button {
-    border-color: #0b625d;
-    color: #0b625d;
-    font-size: 15px;
-    padding: 12px 28px;
-}
-
-.landing-page .pathways-apply .text-button:hover {
-    background: linear-gradient(135deg, #063d3b 0%, #0b625d 55%, #147b71 100%);
-    border-color: #0b625d;
-    box-shadow: 0 10px 22px rgba(11, 98, 93, 0.28);
-    color: #fff;
-}
-
 /* ---- Pathway section hover effects ---- */
+/* Mentora theme colours (from the header / hero): deep teal #063d3b, teal #0b625d, green-teal #147b71, mint #8fefda. */
 
 /* Card: lifts, glows teal, and a teal-to-mint accent bar sweeps in along the top. */
 .landing-page #pathways .feature-card {
@@ -2809,21 +2789,14 @@ iframe {
     transform: translateX(4px);
 }
 
-/* Apply now: arrow slides forward, button presses in when clicked, clear keyboard focus. */
-.landing-page .pathways-apply .text-button span {
-    display: inline-block;
-    transition: transform 200ms ease;
+/* Pathway cards are links: keep card styling, show a pointer and a clear keyboard focus ring. */
+.landing-page #pathways a.pathway-card {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: none;
 }
 
-.landing-page .pathways-apply .text-button:hover span {
-    transform: translateX(5px);
-}
-
-.landing-page .pathways-apply .text-button:active {
-    transform: translateY(0) scale(0.97);
-}
-
-.landing-page .pathways-apply .text-button:focus-visible {
+.landing-page #pathways a.pathway-card:focus-visible {
     outline: 3px solid rgba(20, 123, 113, 0.4);
     outline-offset: 3px;
 }
@@ -2832,8 +2805,7 @@ iframe {
 @media (prefers-reduced-motion: reduce) {
     .landing-page #pathways .feature-card:hover,
     .landing-page #pathways .feature-card:hover .icon,
-    .landing-page #pathways .feature-card li:hover,
-    .landing-page .pathways-apply .text-button:hover span {
+    .landing-page #pathways .feature-card li:hover {
         transform: none;
     }
 
@@ -4129,6 +4101,56 @@ html[data-theme="dark"] body .track-summary .badge.warn {
 
 html[data-theme="dark"] body .track-result {
     border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Notice box with text on the left and an outlined pill link/button on the right: "Link not working?" on
+   Track your application (auth/track.php); "Can't find it?" and "No email?" on Activate your account (auth/activate.php). */
+.activate-hint {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    justify-content: space-between;
+    line-height: 1.5;
+}
+
+.activate-hint > span {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.activate-hint-link {
+    background: transparent;
+    border: 1px solid var(--teal);
+    cursor: pointer;
+    font: inherit;
+    border-radius: 999px;
+    color: var(--teal);
+    font-weight: bold;
+    padding: 8px 16px;
+    text-decoration: none;
+    transition: background-color 180ms ease, color 180ms ease;
+    white-space: nowrap;
+}
+
+.activate-hint-link:hover {
+    background: var(--teal);
+    color: #fff;
+}
+
+.activate-hint-link:focus-visible {
+    outline: 3px solid rgba(20, 123, 113, 0.4);
+    outline-offset: 2px;
+}
+
+html[data-theme="dark"] body .activate-hint-link {
+    border-color: #8fefda;
+    color: #8fefda;
+}
+
+html[data-theme="dark"] body .activate-hint-link:hover {
+    background: #8fefda;
+    color: #063d3b;
 }
 
 /* Footer (includes/footer.php): "Mentora" beside the logo, with the tagline under it. */

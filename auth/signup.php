@@ -209,24 +209,6 @@ require __DIR__ . '/../includes/header.php';
                 Thanks, <?= $h($applied['name']) ?>! Your <?= $applied['pathway'] === 'internship' ? 'Intern' : 'Employee VA' ?> application
                 was sent to the Mentora HR team.
             </p>
-            <ol class="application-steps">
-                <li class="is-done">
-                    <b aria-hidden="true">✓</b>
-                    <span><strong>Application sent</strong><small>We have your details.</small></span>
-                </li>
-                <li class="is-current" aria-current="step">
-                    <b aria-hidden="true">2</b>
-                    <span><strong>HR confirms your application</strong><small>An HR admin reviews and approves it.</small></span>
-                </li>
-                <li>
-                    <b aria-hidden="true">3</b>
-                    <span><strong>Check your email</strong><small>You’ll get a confirmation link at <?= $h($applied['email']) ?>.</small></span>
-                </li>
-                <li>
-                    <b aria-hidden="true">4</b>
-                    <span><strong>Create your username and password</strong><small>Then your applicant workspace opens.</small></span>
-                </li>
-            </ol>
             <div class="notice">
                 <?php if (!empty($applied['emailed'])): ?>
                     <strong>We emailed you a confirmation of your application.</strong><br>
@@ -249,7 +231,7 @@ require __DIR__ . '/../includes/header.php';
                 <?= $isStaff
                     ? 'The application joins the approval queue. Once an HR admin approves it, they send the applicant a link to create their username and password.'
                     : (mentora_mail_enabled()
-                        ? 'Choose your pathway and tell us who you are. We’ll email you a link to confirm your email; once HR approves your application, we’ll email you a link to create your username and password.'
+                        ? 'Choose your pathway and tell us who you are. We’ll email you a code to confirm your email; once HR approves your application, we’ll email you a link to create your username and password.'
                         : 'Choose your pathway and tell us who you are. Once HR confirms your application, we’ll email you a link to create your username and password.') ?>
             </p>
             <?php if ($created): ?>
@@ -301,7 +283,7 @@ require __DIR__ . '/../includes/header.php';
                             <label for="email">Email address *</label>
                             <input id="email" type="email" name="email" required maxlength="190" autocomplete="email" placeholder="name@gmail.com"
                                    data-check="email" aria-describedby="email-hint email-error"<?= $invalid('email') ?> value="<?= $h($account['email']) ?>">
-                            <small id="email-hint">Your confirmation link will be sent here, so use an email you can open.</small>
+                            <small id="email-hint">Your confirmation code will be sent here, so use an email you can open.</small>
                             <?= $fieldError('email') ?>
                         </div>
                     </div>
@@ -329,7 +311,7 @@ require __DIR__ . '/../includes/header.php';
                         <input type="hidden" name="pathway" value="<?= $h($account['pathway']) ?>" data-pathway-from="signup-form">
                         <?php mentora_google_button('signup'); ?>
                     </form>
-                    <small>With Google, your email is already confirmed. Your application still waits for HR to approve it.</small>
+                    <small>With Google, we fill in your name and email for you. We’ll still email you a code to confirm it.</small>
                 </div>
                 <div class="auth-links">Already have an account? <a href="signin.php">Sign in</a></div>
             <?php endif; ?>

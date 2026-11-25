@@ -58,10 +58,22 @@ require __DIR__ . '/../includes/header.php';
             <h1 id="verify-title">This link can’t be used.</h1>
             <p class="intro">
                 It may have expired (links last <?= MENTORA_VERIFY_HOURS ?> hours), been used already, or been replaced by a newer one.
+                Enter the email you applied with and we’ll sort it out.
             </p>
-            <div class="notice">
-                <strong>Already confirmed?</strong> Your application is with HR. <a href="track.php">Track your application</a> to see where it is.<br>
-                <strong>Not confirmed yet?</strong> <a href="track.php">Track your application</a> with your email, then type your code or choose “Email me a new code”.
+            <?php // Track your application does both: emails a new code if the email isn't confirmed yet (then asks for it), otherwise shows the application's status. ?>
+            <form method="post" action="track.php" class="verify-code-form">
+                <?= mentora_csrf_field() ?>
+                <input type="hidden" name="action" value="resend_verification">
+                <div class="field">
+                    <label for="email">Email address</label>
+                    <input id="email" type="email" name="email" required maxlength="190" autocomplete="email" placeholder="name@gmail.com" aria-describedby="email-hint">
+                    <small id="email-hint">Not confirmed yet? We’ll email you a new code. Already confirmed? You’ll see where your application is.</small>
+                </div>
+                <div class="form-actions"><button class="button button-primary" type="submit">Continue</button></div>
+            </form>
+            <div class="notice activate-hint">
+                <span><strong>Already confirmed?</strong><br>Your application is with HR. See where it is any time.</span>
+                <a class="activate-hint-link" href="track.php">Track your application</a>
             </div>
             <div class="auth-links"><a href="../index.php">Back to home</a></div>
         </section>

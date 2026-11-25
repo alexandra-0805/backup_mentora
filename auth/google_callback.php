@@ -99,8 +99,8 @@ if ($intent !== 'signup' || !in_array($pathway, ['employee_va', 'internship'], t
     $fail('There’s no Mentora account for ' . $email . ' yet. Choose Employee VA or Intern, then apply with Google.', 'auth/signup.php');
 }
 
-// New application from the Google profile. Google has already verified the email, so it goes straight
-// to HR for approval (no "confirm your email" step).
+// New application from the Google profile. Like the form, the applicant is emailed a 6-digit
+// "confirm your email" code and HR is told once they type it in (signup.php -> verify_email.php).
 $firstName = trim((string) ($profile['given_name'] ?? ''));
 $lastName = trim((string) ($profile['family_name'] ?? ''));
 if ($firstName === '') {
@@ -115,14 +115,19 @@ try {
     error_log('Mentora Google application failed: ' . $exception->getMessage());
     $result = ['ok' => false, 'error' => 'We couldn’t send your application right now. Please try again.'];
 }
-// Applied with the form before but never confirmed the email: signing in with Google confirms it.
+// Applied before but never confirmed the email: send a fresh code and open the code screen again.
 if (!$result['ok'] && !empty($result['id']) && !mentora_email_is_verified($pdo, (int) $result['id'])) {
     $pending = $pdo->prepare("SELECT first_name, last_name, pathway FROM users WHERE id = ? AND status = 'pending'");
     $pending->execute([(int) $result['id']]);
     if ($row = $pending->fetch()) {
-        mentora_mark_email_verified($pdo, (int) $result['id']);
-        mentora_notify_admins_new_applicant($pdo, trim($row['first_name'] . ' ' . $row['last_name']), $email, $row['pathway']);
-        $_SESSION['applied'] = ['user_id' => (int) $result['id'], 'name' => $row['first_name'], 'email' => $email, 'pathway' => $row['pathway']];
+        $sent = mentora_send_verification_email($pdo, (int) $result['id']);
+        $codeSent = $sent['ok'] || $sent['too_soon'];   // too_soon: the code sent a minute ago still works
+        if (!$codeSent) {
+            // Email can't be sent: nothing to confirm with, so it goes straight to HR as before.
+            mentora_mark_email_verified($pdo, (int) $result['id']);
+            mentora_notify_admins_new_applicant($pdo, trim($row['first_name'] . ' ' . $row['last_name']), $email, $row['pathway']);
+        }
+        $_SESSION['applied'] = ['user_id' => (int) $result['id'], 'name' => $row['first_name'], 'email' => $email, 'pathway' => $row['pathway'], 'verify_sent' => $codeSent];
         mentora_redirect('auth/signup.php?applied=1');
     }
 }
@@ -130,6 +135,9 @@ if (!$result['ok']) {
     $fail($result['error'], 'auth/signup.php');
 }
 
-$outcome = mentora_process_new_application($pdo, $result['id'], $firstName, $lastName, $email, $pathway, true);
-$_SESSION['applied'] = ['user_id' => $result['id'], 'name' => $firstName, 'email' => $email, 'pathway' => $pathway, 'emailed' => $outcome['emailed']];
+$outcome = mentora_process_new_application($pdo, $result['id'], $firstName, $lastName, $email, $pathway);
+$_SESSION['applied'] = [
+    'user_id' => $result['id'], 'name' => $firstName, 'email' => $email, 'pathway' => $pathway,
+    'emailed' => $outcome['emailed'], 'verify_sent' => $outcome['verify_sent'],
+];
 mentora_redirect('auth/signup.php?applied=1');

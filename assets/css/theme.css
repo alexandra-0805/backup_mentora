@@ -430,16 +430,6 @@ html[data-theme="dark"] .landing-page .tag {
     color: var(--mentora-mint);
 }
 
-html[data-theme="dark"] .landing-page .pathways-apply .text-button {
-    border-color: var(--mentora-mint);
-    color: var(--mentora-mint);
-}
-
-html[data-theme="dark"] .landing-page .pathways-apply .text-button:hover {
-    border-color: var(--mentora-mint);
-    color: #fff;
-}
-
 html[data-theme="dark"] .landing-page .preparation-list div {
     border-bottom-color: var(--dark-line);
 }
