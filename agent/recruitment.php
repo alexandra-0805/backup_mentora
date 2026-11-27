@@ -27,7 +27,7 @@ if (mentora_is_post()) {
 }
 
 $pageTitle = 'Recruitment links';
-$activePage = 'recruitment.php';
+$activePage = 'dashboard.php'; // not in the sidebar; highlight the Dashboard it's opened from
 require __DIR__ . '/../includes/agent_layout.php';
 
 $me = $_SESSION['user'];

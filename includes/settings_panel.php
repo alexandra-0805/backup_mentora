@@ -299,7 +299,7 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
 
             <div data-language-group>
                 <p class="settings-group-label" data-i18n="groupAllLanguages">All languages</p>
-                <div class="settings-card settings-collapsible is-collapsed" id="settings-all-languages" data-language-collapsible>
+                <div class="settings-card settings-language-list" id="settings-all-languages" data-language-list>
                     <?php foreach ($worldLanguages as $value => $englishName): ?>
                         <button class="settings-row settings-choice" type="button" data-setting="language" data-value="<?= $se($value) ?>"
                             data-search="<?= $se(strtolower($englishName . ' ' . $value)) ?>">
@@ -308,14 +308,18 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                             <span class="settings-check"><?= $settingsIcon('check') ?></span>
                         </button>
                     <?php endforeach; ?>
-                    <button class="settings-row settings-collapse-toggle"
-                        type="button"
-                        aria-expanded="false"
-                        aria-controls="settings-all-languages"
-                        data-language-toggle>
-                        <span class="settings-row-copy"><strong data-language-toggle-label>Show all <?= count($worldLanguages) ?> languages</strong></span>
-                        <span class="settings-collapse-chevron"><?= $settingsIcon('chevron') ?></span>
-                    </button>
+                    <!-- Shows 10 languages at a time (script below); the buttons page through the list, or through the search matches. -->
+                    <div class="settings-pager" data-language-pager>
+                        <button class="settings-pager-btn" type="button" data-language-prev aria-controls="settings-all-languages">
+                            <span class="settings-pager-icon settings-pager-icon-prev"><?= $settingsIcon('chevron') ?></span>
+                            <span data-i18n="languagePrev">Previous</span>
+                        </button>
+                        <span class="settings-pager-info" data-language-page-info aria-live="polite"></span>
+                        <button class="settings-pager-btn" type="button" data-language-next aria-controls="settings-all-languages">
+                            <span data-i18n="languageNext">Next</span>
+                            <span class="settings-pager-icon"><?= $settingsIcon('chevron') ?></span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -479,8 +483,7 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
         const I18N = {
             'en-US': {
                 darkModeAuto: 'Matching your device setting',
-                showAllLanguages: 'Show all {n} languages',
-                showFewerLanguages: 'Show fewer languages',
+                languagePageInfo: '{from}–{to} of {total}',
                 avatar_saved: 'Your profile photo was updated.',
                 avatar_removed: 'Your profile photo was removed.',
                 avatar_too_big: 'That image is larger than 2 MB. Please choose a smaller one.',
@@ -583,8 +586,9 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                 groupTranslated: 'May salin',
                 groupAllLanguages: 'Lahat ng wika',
                 noLanguages: 'Walang wikang tumugma sa hinanap mo.',
-                showAllLanguages: 'Ipakita ang lahat ng {n} wika',
-                showFewerLanguages: 'Ipakita ang mas kaunti',
+                languagePrev: 'Nakaraan',
+                languageNext: 'Susunod',
+                languagePageInfo: '{from}–{to} ng {total}',
                 groupInApp: 'Sa workspace',
                 badges: 'Mga badge ng hindi pa nababasa',
                 badgesHint: 'Ipakita ang bilang sa mga icon ng mensahe at notification',
@@ -731,8 +735,9 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                 groupTranslated: 'Traducidos',
                 groupAllLanguages: 'Todos los idiomas',
                 noLanguages: 'Ningún idioma coincide con tu búsqueda.',
-                showAllLanguages: 'Mostrar los {n} idiomas',
-                showFewerLanguages: 'Mostrar menos idiomas',
+                languagePrev: 'Anterior',
+                languageNext: 'Siguiente',
+                languagePageInfo: '{from}–{to} de {total}',
                 groupInApp: 'En el espacio de trabajo',
                 badges: 'Insignias de no leídos',
                 badgesHint: 'Mostrar contadores en los íconos de mensajes y notificaciones',
@@ -839,38 +844,51 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
         const languageSearch = shell.querySelector('[data-language-search]');
         const languageGroups = [...shell.querySelectorAll('[data-language-group]')];
         const languageEmpty = shell.querySelector('[data-language-empty]');
-        // "All languages" starts collapsed (only the chosen language stays visible); searching looks through all of them.
-        const languageCollapsible = shell.querySelector('[data-language-collapsible]');
-        const languageToggle = shell.querySelector('[data-language-toggle]');
-        const worldLanguageCount = languageCollapsible ? languageCollapsible.querySelectorAll('[data-setting="language"]').length : 0;
-        const labelLanguageToggle = () => {
-            if (!languageToggle) {
+        // "All languages" shows LANGUAGE_PAGE_SIZE at a time with Previous / Next; while searching, it pages through the matches.
+        const LANGUAGE_PAGE_SIZE = 10;
+        const languageList = shell.querySelector('[data-language-list]');
+        const languagePager = shell.querySelector('[data-language-pager]');
+        const languagePrev = shell.querySelector('[data-language-prev]');
+        const languageNext = shell.querySelector('[data-language-next]');
+        const languagePageInfo = shell.querySelector('[data-language-page-info]');
+        const languageRows = languageList ? [...languageList.querySelectorAll('[data-setting="language"]')] : [];
+        let languageMatches = languageRows;
+        let languagePage = 0;
+        const showLanguagePage = () => {
+            if (!languagePager) {
                 return;
             }
-            const expanded = !languageCollapsible.classList.contains('is-collapsed');
-            languageToggle.setAttribute('aria-expanded', String(expanded));
-            languageToggle.querySelector('[data-language-toggle-label]').textContent = expanded
-                ? t('showFewerLanguages')
-                : t('showAllLanguages').replace('{n}', worldLanguageCount);
-        };
-        if (languageToggle) {
-            languageToggle.addEventListener('click', () => {
-                const collapsing = !languageCollapsible.classList.contains('is-collapsed');
-                languageCollapsible.classList.toggle('is-collapsed', collapsing);
-                labelLanguageToggle();
-                if (collapsing) {
-                    languageCollapsible.closest('[data-language-group]').scrollIntoView({ block: 'nearest' });
-                }
+            const pageCount = Math.max(1, Math.ceil(languageMatches.length / LANGUAGE_PAGE_SIZE));
+            languagePage = Math.min(Math.max(languagePage, 0), pageCount - 1);
+            const start = languagePage * LANGUAGE_PAGE_SIZE;
+            const onPage = languageMatches.slice(start, start + LANGUAGE_PAGE_SIZE);
+            languageRows.forEach((row) => {
+                row.hidden = !onPage.includes(row);
+                row.classList.toggle('is-page-first', row === onPage[0]);
             });
+            languagePager.hidden = languageMatches.length <= LANGUAGE_PAGE_SIZE;
+            languagePrev.disabled = languagePage === 0;
+            languageNext.disabled = languagePage >= pageCount - 1;
+            languagePageInfo.textContent = t('languagePageInfo')
+                .replace('{from}', start + 1)
+                .replace('{to}', start + onPage.length)
+                .replace('{total}', languageMatches.length);
+        };
+        const turnLanguagePage = (step) => {
+            languagePage += step;
+            showLanguagePage();
+            languageList.closest('[data-language-group]').scrollIntoView({ block: 'nearest' });
+        };
+        if (languagePager) {
+            languagePrev.addEventListener('click', () => turnLanguagePage(-1));
+            languageNext.addEventListener('click', () => turnLanguagePage(1));
         }
 
         if (languageSearch) {
             languageSearch.addEventListener('input', () => {
                 const query = languageSearch.value.trim().toLowerCase();
-                if (languageCollapsible) {
-                    languageCollapsible.classList.toggle('is-searching', query !== '');
-                    languageToggle.hidden = query !== '';
-                }
+                languageMatches = languageRows.filter((row) => !query || row.dataset.search.includes(query));
+                languagePage = 0;
                 let anyVisible = false;
                 languageGroups.forEach((group) => {
                     let groupVisible = false;
@@ -883,11 +901,17 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                     anyVisible = anyVisible || groupVisible;
                 });
                 languageEmpty.hidden = anyVisible;
+                showLanguagePage();
             });
         }
 
         let saved = api.read();
         let draft = { ...saved };
+        // Open "All languages" on the page that holds the saved language.
+        const savedLanguageIndex = languageRows.findIndex((row) => row.dataset.value === saved.language);
+        if (savedLanguageIndex >= 0) {
+            languagePage = Math.floor(savedLanguageIndex / LANGUAGE_PAGE_SIZE);
+        }
         const t = (key) => (I18N[draft.language] && I18N[draft.language][key])
             ?? englishText[key]
             ?? I18N['en-US'][key]
@@ -906,7 +930,7 @@ $settingsChoiceRows = static function (string $setting, array $options, string $
                 el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder));
                 el.setAttribute('aria-label', t(el.dataset.i18nPlaceholder));
             });
-            labelLanguageToggle();
+            showLanguagePage();
             // Only this page is translated, so only it carries the chosen language (screen readers, spell check).
             page.lang = TRANSLATED.includes(draft.language) ? draft.language : 'en-US';
 

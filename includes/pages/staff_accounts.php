@@ -211,7 +211,7 @@ $countWhere = static fn(string $key, string $value): int => count(array_filter($
         </form>
     </section>
 
-<section class="admin-panel data-panel">
+<section class="admin-panel data-panel" style="margin-top:16px">
     <h2>Staff</h2>
     <div class="table-toolbar" data-table-filter="staff-table">
         <input type="search" data-filter="search" placeholder="Search name, email, username or ID" aria-label="Search staff accounts">

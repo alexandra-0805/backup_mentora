@@ -373,21 +373,21 @@ function mentora_reports_waiting(PDO $pdo, ?string $pathway = null, ?int $agentI
     return $query->fetchAll();
 }
 
-/** Table of reports waiting for review, each with a note box and Approve / Return (posts action=review_report). */
+/**
+ * Table of reports waiting for review, each with a note box and Approve / Return (posts action=review_report).
+ * With nothing to review it still shows the table (with $emptyText as its only row) so the Previous / Next bar
+ * (assets/js/table-filter.js) appears in the same place as when there are reports.
+ */
 function mentora_render_review_table(array $reports, string $tableId, string $emptyText): void
 {
-    if (!$reports) {
-        echo '<p class="panel-subtitle">' . mentora_h($emptyText) . '</p>';
-        return;
-    }
-    ?>
+    if ($reports): ?>
     <div class="table-toolbar"
         data-table-filter="<?= mentora_h($tableId) ?>"><input type="search" data-filter="search" placeholder="Search name or work" aria-label="Search reports"><select data-filter="pathway" aria-label="Pathway">
             <option value="all">Interns &amp; employees</option>
             <option value="intern">Interns</option>
             <option value="employee">Employees</option>
         </select>
-    </div>
+    </div><?php endif; ?>
     <table class="admin-table review-table" id="<?= mentora_h($tableId) ?>"><thead>
             <tr>
                 <th>Person</th>
@@ -398,6 +398,9 @@ function mentora_render_review_table(array $reports, string $tableId, string $em
             </tr>
         </thead>
         <tbody>
+        <?php if (!$reports): ?>
+            <tr class="table-empty-row"><td colspan="5"><?= mentora_h($emptyText) ?></td></tr>
+        <?php endif; ?>
         <?php foreach ($reports as $report): $name = trim($report['first_name'] . ' ' . $report['last_name']); ?>
             <tr data-pathway="<?= mentora_pathway_folder($report['pathway']) ?>">
                 <td><?= mentora_h($name) ?><br><small><?= mentora_pathway_label($report['pathway']) ?></small></td>

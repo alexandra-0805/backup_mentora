@@ -56,11 +56,9 @@ $now = new DateTimeImmutable(
 );
 
 $agentNav = [
-    'dashboard.php'             => 'Dashboard',
-    'recruitment.php'           => 'Recruitment links',
+    'dashboard.php'             => 'Dashboard', // recruitment.php opens from the Dashboard / Department candidates buttons, so it isn't listed
     'candidates.php'            => 'Department candidates',
-    'intern_directory.php'      => 'Intern directory',
-    'edit_intern.php'           => 'Edit intern',
+    'intern_directory.php'      => 'Intern directory', // edit_intern.php opens from here (Edit buttons), so it isn't listed
     'training_tracker.php'      => 'Training tracker',
     'intern_hours.php'          => 'Internship hours',
     'intern_assessments.php'    => 'AI assessments',
@@ -107,11 +105,11 @@ $navCounts = ['candidates.php' => (int) $candidateCountQuery->fetchColumn()];
 
     <link
         rel="stylesheet"
-        href="../assets/css/admin.css?v=12">
+        href="../assets/css/admin.css?v=15">
 
     <link
         rel="stylesheet"
-        href="../assets/css/settings.css?v=33">
+        href="../assets/css/settings.css?v=35">
 
     <link
         rel="stylesheet"

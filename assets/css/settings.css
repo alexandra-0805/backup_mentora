@@ -1183,50 +1183,69 @@ body.workspace-dark-mode .admin-btn.danger {
     color: #fda29b;
 }
 
-/* ---------- Collapsible "All languages" list ---------- */
-/* Collapsed: only the chosen language (if it is in this list) and the toggle show. Searching shows every match. */
-.settings-collapsible.is-collapsed:not(.is-searching) .settings-choice:not(.is-selected) {
-    display: none;
-}
-
-.settings-collapsible.is-collapsed:not(.is-searching) .settings-choice.is-selected {
+/* ---------- "All languages" list: 10 at a time with Previous / Next ---------- */
+/* The first row on the page sits against the card's top edge, like a card's first child. */
+.settings-language-list > .settings-row.is-page-first {
     border-top: 0;
 }
 
-.settings-collapsible.is-collapsed:not(.is-searching):not(:has(.settings-choice.is-selected)) .settings-collapse-toggle {
-    border-top: 0;
-}
-
-.settings-collapse-toggle {
+.settings-pager {
+    align-items: center;
+    border-top: 1px solid var(--workspace-line);
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
     min-height: 52px;
+    padding: 8px 10px;
 }
 
-.settings-collapse-toggle strong {
+.settings-pager-btn {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: var(--ui-radius-control, 10px);
     color: var(--mentora-teal);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-weight: 700;
+    gap: 4px;
+    min-height: 36px;
+    padding: 6px 10px;
+    transition: background 160ms ease;
 }
 
-.settings-collapse-chevron {
-    color: var(--mentora-teal);
+.settings-pager-btn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--mentora-teal) 8%, transparent);
+}
+
+.settings-pager-btn:focus-visible {
+    outline: 2px solid var(--mentora-teal);
+    outline-offset: 1px;
+}
+
+.settings-pager-btn:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+.settings-pager-icon {
     display: inline-flex;
 }
 
-.settings-collapse-chevron .settings-svg {
-    transform: rotate(90deg);
-    transition: transform 200ms ease;
+.settings-pager-icon-prev .settings-svg {
+    transform: rotate(180deg);
 }
 
-.settings-collapse-toggle[aria-expanded="true"] .settings-collapse-chevron .settings-svg {
-    transform: rotate(-90deg);
+.settings-pager-info {
+    color: var(--workspace-muted, #6b7b79);
+    font-size: 0.9em;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
 }
 
-body.workspace-dark-mode :is(.settings-collapse-toggle strong, .settings-collapse-chevron) {
+body.workspace-dark-mode .settings-pager-btn {
     color: var(--mentora-mint);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .settings-collapse-chevron .settings-svg {
-        transition: none;
-    }
 }
 
 /* ---------- Avatars: <span class="avatar"><img class="avatar-img"></span> or initials ---------- */
@@ -1573,9 +1592,11 @@ body.workspace-dark-mode .settings-changes {
     margin: 12px 0 4px;
 }
 
-.table-filter-empty td {
+.table-filter-empty td,
+.table-empty-row td {
     text-align: center;
     color: var(--workspace-muted, #6e6e73);
+    font-weight: normal;
     padding: 18px 8px !important;
 }
 

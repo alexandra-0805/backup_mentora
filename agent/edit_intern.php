@@ -127,7 +127,7 @@ if (mentora_is_post()) {
 }
 
 $pageTitle = 'Edit intern';
-$activePage = 'edit_intern.php';
+$activePage = 'intern_directory.php'; // not in the sidebar; highlight the directory it's opened from
 require __DIR__ . '/../includes/agent_layout.php';
 
 $id = (int) ($_GET['id'] ?? 0);

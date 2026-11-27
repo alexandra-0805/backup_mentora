@@ -623,6 +623,101 @@
     padding: 12px 16px;
 }
 
+/* ---------- Paging: 10 rows or cards at a time with Previous / Next (assets/js/table-filter.js) ---------- */
+@media screen {
+    .is-paged-out {
+        display: none !important;
+    }
+}
+
+/* Same look as the language list's pager in Settings: plain teal text buttons with chevrons, count in the middle. */
+.data-pager {
+    align-items: center;
+    border-top: 1px solid var(--workspace-line);
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    min-height: 52px;
+    padding: 8px 10px;
+}
+
+.data-pager[hidden] {
+    display: none;
+}
+
+/* A pager under a list of cards (not inside a table card) sits on the page, without the divider. */
+.screening-card ~ .data-pager {
+    border-top: 0;
+    padding: 4px 0 16px;
+}
+
+.data-pager-btn {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 10px;
+    color: var(--mentora-teal, #0b625d);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    gap: 4px;
+    min-height: 36px;
+    padding: 6px 10px;
+    transition: background 160ms ease;
+}
+
+.data-pager-btn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--mentora-teal, #0b625d) 8%, transparent);
+}
+
+.data-pager-btn:focus-visible {
+    outline: 2px solid var(--mentora-teal, #0b625d);
+    outline-offset: 1px;
+}
+
+.data-pager-btn:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+.data-pager-icon {
+    fill: none;
+    flex: 0 0 auto;
+    height: 18px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    width: 18px;
+}
+
+.data-pager-prev .data-pager-icon {
+    transform: rotate(180deg);
+}
+
+.data-pager-info {
+    color: var(--workspace-muted);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+body.workspace-dark-mode .data-pager-btn {
+    color: var(--mentora-mint, #9be8d8);
+}
+
+body.workspace-dark-mode .data-pager-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+@media print {
+    .data-pager {
+        display: none !important;
+    }
+}
+
 .progress {
     background: #e1eeec;
     border-radius: 5px;
