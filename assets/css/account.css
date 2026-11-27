@@ -1627,6 +1627,1375 @@ html[data-theme="dark"] .chat-bubble-theirs .chat-file:hover {
     background: rgba(255, 255, 255, 0.12);
 }
 
+/* ---------- Messages: archive, delete, video call (account/messages.php) ---------- */
+.account-page .chat-icon-button[hidden],
+.account-page .chat-thread-actions[hidden] {
+    display: none;
+}
+
+.account-page .chat-thread-actions {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
+/* Conversation rows: the conversation on top; Archive / Delete underneath on the right */
+.chat-conversation-row {
+    overflow: hidden;
+    position: relative;
+}
+
+.chat-conversation-row[hidden] {
+    display: none;
+}
+
+.account-page .chat-conversation-row > .chat-conversation {
+    position: relative;
+    transition: transform 200ms ease;
+    width: 100%;
+    z-index: 1;
+}
+
+.account-page .chat-conversation-row:is(.is-open, .is-dragging) > .chat-conversation {
+    background: var(--pale); /* solid while sliding, so the buttons don't show through */
+}
+
+html[data-theme="dark"] .account-page .chat-conversation-row:is(.is-open, .is-dragging) > .chat-conversation {
+    background: var(--dark-input);
+}
+
+.account-page .chat-conversation-row.is-dragging > .chat-conversation {
+    transition: none;
+    user-select: none;
+}
+
+.account-page .chat-conversation-row.is-open > .chat-conversation {
+    transform: translateX(-112px); /* SWIPE_OPEN in the page's script */
+}
+
+/* Phones and tablets: slide left for the two round buttons */
+.chat-row-actions {
+    align-items: center;
+    bottom: 0;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    position: absolute;
+    right: 0;
+    top: 0;
+    visibility: hidden;
+    width: 112px;
+}
+
+.chat-conversation-row:is(.is-open, .is-dragging) .chat-row-actions {
+    visibility: visible;
+}
+
+.chat-row-action {
+    align-items: center;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--teal);
+    cursor: pointer;
+    display: inline-flex;
+    height: 42px;
+    justify-content: center;
+    padding: 0;
+    transition: transform 120ms ease, background 120ms ease;
+    width: 42px;
+}
+
+.chat-row-action.is-danger {
+    color: #d92d20;
+}
+
+.chat-row-action:active {
+    transform: scale(0.92);
+}
+
+html[data-theme="dark"] .chat-row-action {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #e4f1ef;
+}
+
+html[data-theme="dark"] .chat-row-action.is-danger {
+    color: #fda29b;
+}
+
+/* Every device: the ⋯ button (always visible) opens the menu, and sliding left (finger, mouse or trackpad)
+   shows the two round buttons. */
+.chat-row-more {
+    align-items: center;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(15, 72, 71, 0.12);
+    color: var(--deep);
+    cursor: pointer;
+    display: inline-flex;
+    height: 30px;
+    justify-content: center;
+    padding: 0;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: background 120ms ease, color 120ms ease;
+    width: 30px;
+    z-index: 2;
+}
+
+/* Room for the ⋯ on the right of each conversation, so it never covers the time or the unread count */
+.account-page .chat-conversation-row:has(.chat-row-more) > .chat-conversation {
+    padding-right: 48px;
+}
+
+/* While the row is slid open, the round buttons take over */
+.chat-conversation-row:is(.is-open, .is-dragging) .chat-row-more {
+    display: none;
+}
+
+.chat-row-more:hover,
+.chat-conversation-row.menu-open .chat-row-more {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
+}
+
+.chat-row-more:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+}
+
+html[data-theme="dark"] .chat-row-more {
+    background: #253837;
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #e4f1ef;
+}
+
+html[data-theme="dark"] :is(.chat-row-more:hover, .chat-conversation-row.menu-open .chat-row-more) {
+    background: var(--mentora-teal);
+    color: #fff;
+}
+
+.account-page .chat-conversation-row:not(.is-draft):not(.is-empty) > .chat-conversation {
+    touch-action: pan-y; /* the list still scrolls; sideways is the slide */
+}
+
+.account-page .chat-conversation-row.is-dragging > .chat-conversation {
+    cursor: grabbing;
+}
+
+.chat-row-menu {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 14px 34px rgba(15, 72, 71, 0.2);
+    display: flex;
+    flex-direction: column;
+    min-width: 190px;
+    padding: 6px;
+    position: fixed;
+    z-index: 950;
+}
+
+.chat-row-menu[hidden] {
+    display: none;
+}
+
+.chat-row-menu button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 10px;
+    padding: 9px 10px;
+    text-align: left;
+    width: 100%;
+}
+
+.chat-row-menu button:is(:hover, :focus-visible) {
+    background: var(--pale);
+    outline: none;
+}
+
+.chat-row-menu button.is-danger {
+    color: #b42318;
+}
+
+.chat-row-menu button.is-danger:is(:hover, :focus-visible) {
+    background: #fff0ee;
+}
+
+html[data-theme="dark"] .chat-row-menu {
+    background: #132a29;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .chat-row-menu button {
+    color: #e4f1ef;
+}
+
+html[data-theme="dark"] .chat-row-menu button:is(:hover, :focus-visible) {
+    background: rgba(143, 239, 218, 0.1);
+}
+
+html[data-theme="dark"] .chat-row-menu button.is-danger {
+    color: #fda29b;
+}
+
+html[data-theme="dark"] .chat-row-menu button.is-danger:is(:hover, :focus-visible) {
+    background: rgba(240, 68, 56, 0.14);
+}
+
+/* ---------- Group chats (General and your groups) ---------- */
+.account-page .chat-group-avatar {
+    background: var(--mentora-gradient);
+}
+
+.chat-group-avatar .chat-svg {
+    height: 20px;
+    width: 20px;
+}
+
+/* Who wrote it (other people's messages in a group) */
+.chat-bubble-author {
+    color: var(--teal);
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    margin: 0 0 2px;
+}
+
+html[data-theme="dark"] .chat-bubble-author {
+    color: var(--mentora-mint);
+}
+
+/* "Ana added Ben.", "Ana left the group." */
+.chat-system-note {
+    align-self: center;
+    color: var(--muted);
+    font-size: 12px;
+    font-style: italic;
+    margin: 8px 0;
+    max-width: 90%;
+    text-align: center;
+}
+
+html[data-theme="dark"] .chat-system-note {
+    color: #9cb7b4;
+}
+
+.account-page .chat-danger-button:hover {
+    background: #d92d20;
+    border-color: #d92d20;
+    color: #fff;
+}
+
+/* "@everyone" in a message */
+.chat-mention {
+    background: rgba(245, 158, 11, 0.22);
+    border-radius: 4px;
+    color: inherit;
+    font-weight: 800;
+    padding: 0 3px;
+}
+
+.chat-bubble-mine .chat-mention {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* "@Ana Cruz": a person; you being mentioned stands out */
+.chat-mention[data-user] {
+    background: rgba(47, 133, 128, 0.16);
+    color: var(--teal);
+}
+
+.chat-mention.is-me {
+    background: rgba(245, 158, 11, 0.3);
+    color: inherit;
+}
+
+.chat-bubble-mine .chat-mention[data-user] {
+    background: rgba(255, 255, 255, 0.25);
+    color: inherit;
+}
+
+html[data-theme="dark"] .chat-mention[data-user]:not(.is-me) {
+    background: rgba(143, 239, 218, 0.14);
+    color: var(--mentora-mint);
+}
+
+/* Members dialog: the owner's "Group name" + Save */
+.chat-rename {
+    margin: 0 0 6px;
+}
+
+.chat-rename[hidden],
+.chat-rename-error[hidden] {
+    display: none;
+}
+
+.chat-rename-row {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-rename-row input {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-rename-error {
+    color: #b42318;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 4px 2px 0;
+}
+
+html[data-theme="dark"] .chat-rename-error {
+    color: #fda29b;
+}
+
+/* Members dialog (group chats): the owner sees Remove */
+.chat-member-list {
+    list-style: none;
+    margin: 10px 0 0;
+    max-height: min(46vh, 420px);
+    overflow-y: auto;
+    padding: 0;
+}
+
+.chat-member {
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: 10px;
+    padding: 9px 2px;
+}
+
+.chat-member:last-child {
+    border-bottom: 0;
+}
+
+.chat-member .chat-mention-copy {
+    flex: 1;
+}
+
+.chat-member .chat-mention-copy strong {
+    color: var(--ink);
+}
+
+.chat-member-remove {
+    background: transparent;
+    border: 1px solid #f5c2bd;
+    border-radius: 999px;
+    color: #b42318;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+}
+
+.chat-member-remove:hover {
+    background: #d92d20;
+    border-color: #d92d20;
+    color: #fff;
+}
+
+.chat-member-remove:disabled {
+    cursor: progress;
+    opacity: 0.6;
+}
+
+html[data-theme="dark"] .chat-member {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .chat-member .chat-mention-copy strong {
+    color: #eef6f5;
+}
+
+html[data-theme="dark"] .chat-member-remove {
+    border-color: rgba(240, 68, 56, 0.4);
+    color: #fda29b;
+}
+
+/* The list that opens when you type "@" in a group chat */
+.chat-mention-list {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 18px 44px rgba(15, 72, 71, 0.22);
+    display: flex;
+    flex-direction: column;
+    left: 14px;
+    max-height: min(300px, 50vh);
+    overflow-y: auto;
+    padding: 6px;
+    position: absolute;
+    width: min(320px, calc(100% - 28px));
+    z-index: 7;
+}
+
+.chat-mention-list[hidden] {
+    display: none;
+}
+
+.chat-mention-option {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 10px;
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    gap: 10px;
+    padding: 7px 8px;
+    text-align: left;
+    width: 100%;
+}
+
+.chat-mention-option[aria-selected="true"],
+.chat-mention-option:hover {
+    background: var(--pale);
+}
+
+.chat-mention-badge {
+    align-items: center;
+    background: var(--teal);
+    border-radius: 50%;
+    color: #fff;
+    display: inline-flex;
+    flex: 0 0 30px;
+    font-size: 11px;
+    font-weight: 800;
+    height: 30px;
+    justify-content: center;
+}
+
+.chat-mention-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.chat-mention-copy strong {
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-mention-copy small {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+html[data-theme="dark"] .chat-mention-list {
+    background: #132a29;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .chat-mention-option {
+    color: #e4f1ef;
+}
+
+html[data-theme="dark"] :is(.chat-mention-option[aria-selected="true"], .chat-mention-option:hover) {
+    background: rgba(143, 239, 218, 0.1);
+}
+
+html[data-theme="dark"] .chat-mention-copy small {
+    color: #9cb7b4;
+}
+
+/* New group dialog: people with checkboxes */
+.chat-group-picked {
+    color: var(--muted);
+    font-size: 12px;
+    margin: 10px 2px 0;
+}
+
+.chat-group-person {
+    cursor: pointer;
+}
+
+.chat-group-person[hidden],
+.chat-contact-group[hidden] {
+    display: none;
+}
+
+.chat-group-person input {
+    accent-color: var(--teal);
+    flex: 0 0 auto;
+    height: 18px;
+    margin: 0;
+    width: 18px;
+}
+
+.chat-group-person:has(input:checked) {
+    background: var(--pale);
+}
+
+.chat-group-person:has(input:focus-visible) {
+    outline: 2px solid var(--teal);
+    outline-offset: -2px;
+}
+
+html[data-theme="dark"] .chat-group-person:has(input:checked) {
+    background: rgba(143, 239, 218, 0.1);
+}
+
+html[data-theme="dark"] .chat-group-picked {
+    color: #9cb7b4;
+}
+
+/* Delete one of your own messages: a small round button beside the bubble (on hover; always on touch screens) */
+.chat-bubble {
+    position: relative;
+}
+
+.chat-bubble-delete {
+    align-items: center;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(15, 72, 71, 0.12);
+    color: var(--muted);
+    cursor: pointer;
+    display: inline-flex;
+    height: 28px;
+    justify-content: center;
+    left: -36px;
+    opacity: 0;
+    padding: 0;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: opacity 150ms ease, background 150ms ease, color 150ms ease;
+    width: 28px;
+}
+
+.chat-bubble-delete .chat-svg {
+    height: 14px;
+    width: 14px;
+}
+
+/* Faintly visible on every device; clear on hover or keyboard focus */
+.chat-bubble-delete {
+    opacity: 0.55;
+}
+
+.chat-bubble:hover .chat-bubble-delete,
+.chat-bubble-delete:focus-visible {
+    opacity: 1;
+}
+
+.chat-bubble-delete:hover {
+    background: #d92d20;
+    border-color: #d92d20;
+    color: #fff;
+}
+
+@media (hover: none), (pointer: coarse) {
+    .chat-bubble-delete {
+        opacity: 0.75;
+    }
+}
+
+html[data-theme="dark"] .chat-bubble-delete {
+    background: #183533;
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #cfeee9;
+}
+
+/* Short confirmations ("Conversation archived.") */
+.chat-toast {
+    background: #1d1d1f;
+    border-radius: 999px;
+    bottom: 24px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    left: 50%;
+    margin: 0;
+    max-width: calc(100vw - 32px);
+    padding: 10px 18px;
+    position: fixed;
+    text-align: center;
+    transform: translateX(-50%);
+    z-index: 900;
+}
+
+.chat-toast[hidden] {
+    display: none;
+}
+
+/* ---------- Video call screen (assets/js/video-call.js) ----------
+   data-state: outgoing / connecting (your camera, "Calling…"), incoming (Accept / Decline),
+   connected (their video full screen, yours small), ended (a short message) */
+.chat-call {
+    align-items: center;
+    background: #0b1a19;
+    color: #fff;
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    position: fixed;
+    z-index: 1000;
+}
+
+.chat-call[hidden] {
+    display: none;
+}
+
+.chat-call-remote {
+    background: #0b1a19;
+    display: none;
+    height: 100%;
+    inset: 0;
+    object-fit: cover;
+    position: absolute;
+    width: 100%;
+}
+
+.chat-call[data-kind="video"][data-state="connected"] .chat-call-remote {
+    display: block;
+}
+
+/* Voice call: no pictures. Their audio still plays from the (invisible) remote element. */
+.chat-call[data-kind="voice"] .chat-call-remote {
+    display: block;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.chat-call[data-kind="voice"] :is(.chat-call-local, [data-call-camera]) {
+    display: none;
+}
+
+.chat-call[data-kind="voice"][data-state="connected"] .chat-call-status {
+    font-size: 18px;
+}
+
+.chat-call .chat-call-icon-voice,
+.chat-call[data-kind="voice"] .chat-call-icon-video {
+    display: none;
+}
+
+.chat-call[data-kind="voice"] .chat-call-icon-voice {
+    display: block;
+}
+
+.chat-call-local {
+    aspect-ratio: 4 / 3;
+    background: #132a29;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 14px;
+    bottom: 128px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+    object-fit: cover;
+    position: absolute;
+    right: 16px;
+    transform: scaleX(-1); /* like a mirror */
+    width: min(30vw, 220px);
+    z-index: 2;
+}
+
+.chat-call:is([data-state="incoming"], [data-state="ended"]) .chat-call-local {
+    display: none;
+}
+
+.chat-call-info {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 16px 120px;
+    position: relative;
+    text-align: center;
+    z-index: 1;
+}
+
+.chat-call-info strong {
+    font-size: 24px;
+    line-height: 1.2;
+}
+
+.chat-call-status {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    max-width: 420px;
+}
+
+.chat-call-avatar .avatar {
+    align-items: center;
+    background: var(--mentora-teal);
+    border-radius: 50%;
+    color: #fff;
+    display: inline-flex;
+    font-size: 34px;
+    font-weight: 700;
+    height: 104px;
+    justify-content: center;
+    overflow: hidden;
+    width: 104px;
+}
+
+.chat-call-avatar .avatar-img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.chat-call[data-state="incoming"] .chat-call-avatar .avatar {
+    animation: mentora-call-pulse 1.6s ease-out infinite;
+}
+
+@keyframes mentora-call-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(143, 239, 218, 0.5); }
+    80%, 100% { box-shadow: 0 0 0 22px rgba(143, 239, 218, 0); }
+}
+
+/* Connected video call: name and timer move to the top corner, over the video (voice calls keep the photo) */
+.chat-call[data-kind="video"][data-state="connected"] .chat-call-info {
+    align-items: flex-start;
+    gap: 2px;
+    left: 16px;
+    padding: 10px 14px;
+    position: absolute;
+    text-align: left;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+    top: 16px;
+    z-index: 2;
+}
+
+.chat-call[data-kind="video"][data-state="connected"] .chat-call-avatar {
+    display: none;
+}
+
+.chat-call[data-kind="video"][data-state="connected"] .chat-call-info strong {
+    font-size: 17px;
+}
+
+.chat-call-controls {
+    bottom: 32px;
+    display: flex;
+    gap: 22px;
+    justify-content: center;
+    left: 0;
+    position: absolute;
+    right: 0;
+    z-index: 3;
+}
+
+.chat-call[data-state="ended"] .chat-call-controls {
+    display: none;
+}
+
+.chat-call-button {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    gap: 7px;
+    padding: 0;
+}
+
+.chat-call-button .chat-svg {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 50%;
+    box-sizing: border-box;
+    height: 58px;
+    padding: 17px;
+    transition: background 150ms ease, transform 150ms ease;
+    width: 58px;
+}
+
+.chat-call-button:hover .chat-svg {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.chat-call-button:active .chat-svg {
+    transform: scale(0.94);
+}
+
+.chat-call-button.is-accept .chat-svg {
+    background: #16a34a;
+}
+
+.chat-call-button.is-accept:hover .chat-svg {
+    background: #15803d;
+}
+
+.chat-call-button.is-decline .chat-svg {
+    background: #d92d20;
+}
+
+.chat-call-button.is-decline:hover .chat-svg {
+    background: #b42318;
+}
+
+.chat-call-button[aria-pressed="true"] .chat-svg {
+    background: #fff;
+    color: #0b1a19;
+}
+
+.chat-call-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.chat-call-button:focus-visible {
+    outline: none;
+}
+
+.chat-call-button:focus-visible .chat-svg {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+}
+
+.chat-call-slash {
+    display: none;
+}
+
+.chat-call-button[aria-pressed="true"] .chat-call-slash {
+    display: inline;
+}
+
+/* ---------- Group calls (data-mode="group"): a grid with one tile per person ---------- */
+.chat-call-grid {
+    display: none;
+}
+
+.chat-call[data-mode="group"][data-state] .chat-call-remote {
+    display: none; /* group calls use the tiles */
+}
+
+.chat-call[data-mode="group"][data-state="connected"] .chat-call-grid {
+    bottom: 120px;
+    display: grid;
+    gap: 10px;
+    grid-auto-rows: minmax(0, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    left: 16px;
+    position: absolute;
+    right: 16px;
+    top: 72px;
+}
+
+.chat-call-grid[data-count="1"] {
+    grid-template-columns: 1fr;
+}
+
+/* Alone in the call: the group's picture and "Waiting for others to join…" stay in the middle */
+.chat-call[data-mode="group"][data-state="connected"] .chat-call-grid[data-count="0"] {
+    display: none;
+}
+
+.chat-call[data-mode="group"][data-state="connected"]:has(.chat-call-grid:not([data-count="0"])) .chat-call-info {
+    align-items: flex-start;
+    gap: 2px;
+    left: 16px;
+    padding: 10px 14px;
+    position: absolute;
+    text-align: left;
+    top: 10px;
+    z-index: 2;
+}
+
+.chat-call[data-mode="group"][data-state="connected"]:has(.chat-call-grid:not([data-count="0"])) .chat-call-avatar {
+    display: none;
+}
+
+.chat-call[data-mode="group"][data-state="connected"]:has(.chat-call-grid:not([data-count="0"])) .chat-call-info strong {
+    font-size: 17px;
+}
+
+.chat-call-tile {
+    align-items: center;
+    background: #132a29;
+    border-radius: 14px;
+    display: flex;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.chat-call-tile video {
+    height: 100%;
+    inset: 0;
+    object-fit: cover;
+    opacity: 0; /* still plays their sound */
+    position: absolute;
+    width: 100%;
+}
+
+.chat-call[data-kind="video"] .chat-call-tile.has-video video {
+    opacity: 1;
+}
+
+.chat-call[data-kind="video"] .chat-call-tile.has-video .chat-call-tile-avatar {
+    display: none;
+}
+
+.chat-call-tile-avatar .avatar {
+    align-items: center;
+    background: var(--mentora-teal);
+    border-radius: 50%;
+    color: #fff;
+    display: inline-flex;
+    font-size: 26px;
+    font-weight: 700;
+    height: 76px;
+    justify-content: center;
+    overflow: hidden;
+    width: 76px;
+}
+
+.chat-call-tile-avatar .avatar-img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.chat-call-tile-name,
+.chat-call-tile-state {
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 999px;
+    bottom: 8px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    left: 8px;
+    max-width: calc(100% - 16px);
+    overflow: hidden;
+    padding: 3px 10px;
+    position: absolute;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-call-tile-state {
+    bottom: auto;
+    font-weight: 600;
+    top: 8px;
+}
+
+.chat-call-tile-state:empty {
+    display: none;
+}
+
+/* "📹 Video call going on · 3 people in it [Join]" at the top of a group chat */
+.chat-call-banner {
+    align-items: center;
+    background: rgba(22, 163, 74, 0.1);
+    border-bottom: 1px solid rgba(22, 163, 74, 0.25);
+    color: var(--ink);
+    display: flex;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 10px;
+    padding: 8px 18px;
+}
+
+.chat-call-banner[hidden] {
+    display: none;
+}
+
+.chat-call-banner-dot {
+    animation: mentora-call-pulse 1.6s ease-out infinite;
+    background: #16a34a;
+    border-radius: 50%;
+    flex: 0 0 9px;
+    height: 9px;
+}
+
+.chat-call-banner-join {
+    background: #16a34a;
+    border: 0;
+    border-radius: 999px;
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: auto;
+    padding: 6px 16px;
+}
+
+.chat-call-banner-join:hover {
+    background: #15803d;
+}
+
+.chat-call-banner-join:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+html[data-theme="dark"] .chat-call-banner {
+    background: rgba(22, 163, 74, 0.16);
+    color: #e4f1ef;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chat-call-banner-dot {
+        animation: none;
+    }
+}
+
+/* Which buttons each state shows */
+.chat-call :is([data-call-accept], [data-call-decline]) {
+    display: none;
+}
+
+.chat-call[data-state="incoming"] :is([data-call-accept], [data-call-decline]) {
+    display: flex;
+}
+
+.chat-call[data-state="incoming"] :is([data-call-mute], [data-call-camera], [data-call-hangup]) {
+    display: none;
+}
+
+@media (max-width: 760px) {
+    .chat-call-local {
+        bottom: 120px;
+        right: 12px;
+        width: 34vw;
+    }
+
+    .chat-call-controls {
+        gap: 14px;
+    }
+
+    .chat-call-button .chat-svg {
+        height: 52px;
+        padding: 15px;
+        width: 52px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .account-page .chat-conversation-row > .chat-conversation,
+    .chat-call[data-state="incoming"] .chat-call-avatar .avatar {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* ---------- Notification archive (account/notification.php without ?id) ---------- */
+body.notifications-page {
+    background: var(--mist);
+    color: var(--ink);
+}
+
+.notification-archive {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 0 auto;
+    max-width: 760px;
+    min-height: 100dvh;
+    padding: 20px clamp(12px, 3vw, 32px) 32px;
+}
+
+/* "Delete all" (right of the heading) */
+.notification-archive-delete-all {
+    margin: 0 0 0 auto;
+}
+
+.notification-archive-delete-all button {
+    align-items: center;
+    background: var(--white);
+    border: 1px solid #f5c2bd;
+    border-radius: 999px;
+    color: #b42318;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    gap: 6px;
+    padding: 8px 14px 8px 11px;
+    transition: background 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+.notification-archive-delete-all button:hover {
+    background: #d92d20;
+    border-color: #d92d20;
+    box-shadow: 0 6px 14px rgba(217, 45, 32, 0.2);
+    color: #fff;
+}
+
+.notification-archive-delete-all button:focus-visible {
+    outline: 2px solid #d92d20;
+    outline-offset: 2px;
+}
+
+html[data-theme="dark"] .notification-archive-delete-all button {
+    background: rgba(240, 68, 56, 0.1);
+    border-color: rgba(240, 68, 56, 0.35);
+    color: #fda29b;
+}
+
+html[data-theme="dark"] .notification-archive-delete-all button:hover {
+    background: #d92d20;
+    border-color: #d92d20;
+    color: #fff;
+}
+
+.notification-archive-intro {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0;
+}
+
+.notification-archive-list {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: 0 12px 32px rgba(15, 72, 71, 0.08);
+    overflow: hidden;
+}
+
+/* Each row: the notification on top, its Delete button underneath on the right (slide left to show it) */
+.notification-archive-row {
+    --archive-delete-width: 88px; /* same as OPEN in the page's script */
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+    position: relative;
+    transition: height 220ms ease, opacity 220ms ease;
+}
+
+.notification-archive-row:last-child {
+    border-bottom: 0;
+}
+
+.notification-archive-row.is-removing {
+    opacity: 0;
+}
+
+.notification-archive-item {
+    align-items: flex-start;
+    background: var(--white); /* solid, so the Delete button stays hidden until slid */
+    color: var(--ink);
+    display: flex;
+    gap: 12px;
+    padding: 14px 18px;
+    position: relative;
+    text-decoration: none;
+    transition: transform 200ms ease;
+    z-index: 1;
+}
+
+.is-swipeable > .notification-archive-item {
+    touch-action: pan-y; /* the page still scrolls up and down; sideways is the slide */
+}
+
+.notification-archive-row.is-dragging > .notification-archive-item {
+    transition: none;
+    user-select: none;
+}
+
+.notification-archive-row.is-open > .notification-archive-item,
+.notification-archive-row:has(.notification-archive-delete :focus-visible) > .notification-archive-item {
+    transform: translateX(calc(-1 * var(--archive-delete-width)));
+}
+
+a.notification-archive-item:hover {
+    background: var(--pale);
+}
+
+.notification-archive-delete {
+    bottom: 0;
+    margin: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: var(--archive-delete-width);
+}
+
+.notification-archive-delete button {
+    align-items: center;
+    background: #d92d20;
+    border: 0;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    gap: 4px;
+    height: 100%;
+    justify-content: center;
+    width: 100%;
+}
+
+.notification-archive-delete button:hover {
+    background: #b42318;
+}
+
+.notification-archive-delete button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: -4px;
+}
+
+.notification-archive-delete button:disabled {
+    cursor: progress;
+    opacity: .7;
+}
+
+.notification-archive-delete .chat-svg {
+    height: 18px;
+    width: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notification-archive-row,
+    .notification-archive-item {
+        transition: none;
+    }
+}
+
+.notification-archive-item > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-archive-item > .chat-svg {
+    align-self: center;
+    color: var(--muted);
+    flex: 0 0 auto;
+}
+
+.notification-archive-dot {
+    border-radius: 50%;
+    flex: 0 0 7px;
+    height: 7px;
+    margin-top: 6px;
+    width: 7px;
+}
+
+.notification-archive-item.unread .notification-archive-dot {
+    background: var(--teal);
+}
+
+.notification-archive-item strong {
+    display: block;
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+.notification-archive-item p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.45;
+    margin: 4px 0;
+    overflow-wrap: anywhere;
+}
+
+.notification-archive-item small {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.notification-archive-empty {
+    color: var(--muted);
+    margin: 0;
+    padding: 32px 18px;
+    text-align: center;
+}
+
+.notification-archive-pages {
+    align-items: center;
+    display: flex;
+    font-size: 13px;
+    gap: 16px;
+    justify-content: center;
+}
+
+.notification-archive-pages a {
+    color: var(--teal);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.notification-archive-pages a:hover {
+    text-decoration: underline;
+}
+
+.notification-archive-pages span {
+    color: var(--muted);
+}
+
+/* Keep the site-wide "lift on hover" effect off the archive text */
+.notifications-page .notification-archive :is(p, h1, strong):hover {
+    text-shadow: none;
+    transform: none;
+}
+
+html[data-theme="dark"] body.notifications-page {
+    background: #1f3130;
+}
+
+html[data-theme="dark"] .notifications-page .chat-page-bar h1,
+html[data-theme="dark"] .notification-archive-item {
+    color: #eef6f5;
+}
+
+html[data-theme="dark"] .notification-archive-list {
+    background: #2b3f3e;
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .notification-archive-row {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .notification-archive-item {
+    background: #2b3f3e;
+}
+
+html[data-theme="dark"] a.notification-archive-item:hover {
+    background: #34504e; /* solid (not see-through) so the Delete button stays hidden */
+}
+
+html[data-theme="dark"] :is(.notification-archive-intro, .notification-archive-item p, .notification-archive-item small, .notification-archive-empty, .notification-archive-pages span) {
+    color: #b5ccc9;
+}
+
+html[data-theme="dark"] .notification-archive-item.unread .notification-archive-dot {
+    background: var(--mentora-mint);
+}
+
+html[data-theme="dark"] .notification-archive-pages a {
+    color: var(--mentora-mint);
+}
+
 /* ---------- Tablet: list | conversation ---------- */
 @media (max-width: 1024px) {
     .account-page .chat-workspace {

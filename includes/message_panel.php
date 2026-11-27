@@ -1,38 +1,51 @@
 <?php
+require_once __DIR__ . '/messaging.php';
 $userId = (int) ($_SESSION['user']['id'] ?? 0);
 $messageQuery = $userId
-    ? $pdo->prepare('SELECT m.sender_id,
+    // To you, announcements, and group chats you're in ("Name · General"); not your own; the newest 50.
+    ? $pdo->prepare('SELECT m.id,
+            m.sender_id,
+            m.recipient_id,
+            m.group_id,
             m.subject,
             m.body,
             m.created_at,
-            COALESCE(CONCAT(u.first_name, " ", u.last_name), "Mentora support") AS sender_name
+            CONCAT(COALESCE(CONCAT(u.first_name, " ", u.last_name), "Mentora support"), IF(g.id IS NULL, "", CONCAT(" · ", g.name))) AS sender_name
         FROM messages m
         LEFT JOIN users u ON u.id = m.sender_id
-        WHERE m.recipient_id = ? OR m.recipient_id IS NULL
-        ORDER BY m.created_at DESC')
-    : $pdo->prepare('SELECT m.sender_id, m.subject, m.body, m.created_at, "Mentora support" AS sender_name
+        LEFT JOIN chat_groups g ON g.id = m.group_id
+        WHERE (m.sender_id IS NULL OR m.sender_id <> ?)
+          AND (m.recipient_id = ? OR (m.recipient_id IS NULL AND (m.group_id IS NULL OR m.group_id IN (' . mentora_my_groups_sql() . '))))
+        ORDER BY m.created_at DESC, m.id DESC
+        LIMIT 50')
+    : $pdo->prepare('SELECT m.id, m.sender_id, m.recipient_id, m.group_id, m.subject, m.body, m.created_at, "Mentora support" AS sender_name
         FROM messages m
-        WHERE m.recipient_id IS NULL
+        WHERE m.recipient_id IS NULL AND m.group_id IS NULL
         ORDER BY m.created_at DESC');
 
 if ($userId) {
-    $messageQuery->execute([$userId]);
+    $messageQuery->execute([$userId, $userId, $userId]);
 } else {
     $messageQuery->execute();
 }
 
 $messageItems = $messageQuery->fetchAll();
+// Conversations you deleted on the Messages page stay out of here too (messages up to then).
+if ($userId) {
+    $messageStates = mentora_conversation_states($pdo, $userId);
+    $messageItems = array_values(array_filter($messageItems, static fn(array $message): bool => !mentora_message_cleared(
+        $messageStates,
+        mentora_conversation_key($message, $userId),
+        (int) $message['id']
+    )));
+}
 $messagesPageHref = str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/applicant/')
     ? '../../account/messages.php'
     : '../account/messages.php';
-// Conversation key used by account/messages.php (?c=...): u{id} per person, "support" for system
-// messages, "all" for announcements you sent yourself.
-$messageConversationKey = static function (array $message) use ($userId): string {
-    if ($message['sender_id'] === null) {
-        return 'support';
-    }
-    return (int) $message['sender_id'] === $userId ? 'all' : 'u' . (int) $message['sender_id'];
-};
+$callEndpointHref = substr($messagesPageHref, 0, -strlen('messages.php')) . 'call.php';
+// Conversation key used by account/messages.php (?c=...): u{id} per person, g{id} per group chat,
+// "support" for system messages (includes/messaging.php).
+$messageConversationKey = static fn(array $message): string => mentora_conversation_key($message, $userId);
 ?>
 <span class="message-popover">
     <button class="header-icon-link message-toggle<?= $unreadMessageCount > 0 ? ' has-unread' : '' ?>"
@@ -71,7 +84,7 @@ $messageConversationKey = static function (array $message) use ($userId): string
                         <div>
                             <strong><?= htmlspecialchars($message['sender_name'], ENT_QUOTES, 'UTF-8') ?></strong>
                             <h3><?= htmlspecialchars($message['subject'], ENT_QUOTES, 'UTF-8') ?></h3>
-                            <p><?= trim((string) $message['body']) !== '' ? htmlspecialchars($message['body'], ENT_QUOTES, 'UTF-8') : '📎 Attachment' ?></p>
+                            <p><?= trim((string) $message['body']) !== '' ? htmlspecialchars(mentora_plain_mentions((string) $message['body']), ENT_QUOTES, 'UTF-8') : '📎 Attachment' ?></p>
                             <small><?= htmlspecialchars($message['created_at'], ENT_QUOTES, 'UTF-8') ?></small>
                         </div>
                     </a>
@@ -81,6 +94,77 @@ $messageConversationKey = static function (array $message) use ($userId): string
         <a class="message-toast-all" href="<?= htmlspecialchars($messagesPageHref, ENT_QUOTES, 'UTF-8') ?>">Open all messages</a>
     </aside>
 </span>
+<?php if ($userId): // Someone calling you (voice or video) while you're on a workspace page: a toast that opens Messages to answer. ?>
+<div class="call-toast" data-call-toast role="alert" hidden>
+    <span class="call-toast-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="3" y="6.5" width="12.5" height="11" rx="2.5"/><path d="m15.5 10.5 5-3v9l-5-3"/></svg>
+    </span>
+    <span class="call-toast-copy"><strong data-call-toast-name></strong><small data-call-toast-kind>is video calling you</small></span>
+    <a class="call-toast-answer" data-call-toast-answer href="<?= htmlspecialchars($messagesPageHref, ENT_QUOTES, 'UTF-8') ?>">Answer</a>
+    <button class="call-toast-close" type="button" data-call-toast-close aria-label="Dismiss">×</button>
+</div>
+<script>
+    (() => {
+        const toast = document.querySelector('[data-call-toast]');
+        if (!toast || !window.fetch) {
+            return;
+        }
+        const endpoint = <?= json_encode($callEndpointHref) ?>;
+        const messagesPage = <?= json_encode($messagesPageHref) ?>;
+        let shownId = null;
+        let dismissedId = null;
+
+        const check = async () => {
+            let call = null;
+            try {
+                const response = await fetch(`${endpoint}?action=incoming`, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+                const result = await response.json();
+                // A person calling you, or a group call just started in one of your groups.
+                if (result.ok && result.call) {
+                    call = {
+                        id: `c${result.call.id}`,
+                        name: result.call.callerName,
+                        text: result.call.kind === 'voice' ? 'is voice calling you' : 'is video calling you',
+                        href: `${messagesPage}?c=u${encodeURIComponent(result.call.callerId)}`,
+                        answer: 'Answer'
+                    };
+                } else if (result.ok && result.groupCall) {
+                    call = {
+                        id: `g${result.groupCall.id}`,
+                        name: result.groupCall.groupName,
+                        text: `${result.groupCall.starterName} started a group ${result.groupCall.kind === 'voice' ? 'voice' : 'video'} call`,
+                        href: `${messagesPage}?c=g${encodeURIComponent(result.groupCall.groupId)}`,
+                        answer: 'Join'
+                    };
+                }
+            } catch (error) {
+                call = null;
+            }
+            if (call && call.id !== dismissedId) {
+                if (call.id !== shownId) {
+                    shownId = call.id;
+                    toast.querySelector('[data-call-toast-name]').textContent = call.name;
+                    toast.querySelector('[data-call-toast-kind]').textContent = call.text;
+                    const answer = toast.querySelector('[data-call-toast-answer]');
+                    answer.href = call.href;
+                    answer.textContent = call.answer;
+                    toast.hidden = false;
+                }
+            } else {
+                shownId = null;
+                toast.hidden = true;
+            }
+            // Check often while it rings; otherwise every 5 seconds (10 when this tab is in the background).
+            setTimeout(check, call ? 2000 : (document.hidden ? 10000 : 5000));
+        };
+        toast.querySelector('[data-call-toast-close]').addEventListener('click', () => {
+            dismissedId = shownId;
+            toast.hidden = true;
+        });
+        check();
+    })();
+</script>
+<?php endif; ?>
 <script>
     (() => {
         const popover = document.querySelector('.message-popover');

@@ -310,6 +310,141 @@ try {
             CONSTRAINT fk_message_reads_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
+    // Group chats (account/messages.php). "General" (is_general = 1) is the one chat every user is in
+    // automatically (no member rows); other groups list their members in chat_group_members.
+    // A group message is a messages row with group_id set (recipient_id NULL).
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS chat_groups (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(80) NOT NULL,
+            is_general TINYINT(1) NOT NULL DEFAULT 0,
+            created_by INT UNSIGNED NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_chat_groups_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS chat_group_members (
+            group_id BIGINT UNSIGNED NOT NULL,
+            user_id INT UNSIGNED NOT NULL,
+            role ENUM("owner", "member") NOT NULL DEFAULT "member",
+            joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (group_id, user_id),
+            KEY idx_chat_group_members_user (user_id),
+            CONSTRAINT fk_chat_group_members_group FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
+            CONSTRAINT fk_chat_group_members_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    if (!in_array('group_id', $pdo->query('SHOW COLUMNS FROM messages')->fetchAll(PDO::FETCH_COLUMN), true)) {
+        $pdo->exec('ALTER TABLE messages ADD COLUMN group_id BIGINT UNSIGNED NULL AFTER recipient_id,
+            ADD KEY idx_messages_group (group_id, id),
+            ADD CONSTRAINT fk_messages_group FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE');
+    }
+    // The General chat exists from the start. HR's earlier announcements to everyone become its first messages.
+    if (!$pdo->query('SELECT 1 FROM chat_groups WHERE is_general = 1 LIMIT 1')->fetchColumn()) {
+        $pdo->exec('INSERT INTO chat_groups (name, is_general) VALUES ("General", 1)');
+        $generalGroupId = (int) $pdo->lastInsertId();
+        $pdo->prepare('UPDATE messages SET group_id = ? WHERE recipient_id IS NULL AND sender_id IS NOT NULL AND group_id IS NULL')
+            ->execute([$generalGroupId]);
+    }
+    // Group calls (voice or video) in a group chat or General (account/call.php, assets/js/video-call.js).
+    // Everyone in the call connects to everyone else directly, so a call has at most 8 people.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS group_calls (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            group_id BIGINT UNSIGNED NOT NULL,
+            kind ENUM("video", "voice") NOT NULL DEFAULT "video",
+            started_by INT UNSIGNED NULL,
+            status ENUM("active", "ended") NOT NULL DEFAULT "active",
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            ended_at DATETIME NULL,
+            KEY idx_group_calls_group (group_id, status),
+            CONSTRAINT fk_group_calls_group FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
+            CONSTRAINT fk_group_calls_starter FOREIGN KEY (started_by) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS group_call_participants (
+            call_id BIGINT UNSIGNED NOT NULL,
+            user_id INT UNSIGNED NOT NULL,
+            joined_at DATETIME NOT NULL,
+            seen_at DATETIME NOT NULL,
+            left_at DATETIME NULL,
+            PRIMARY KEY (call_id, user_id),
+            CONSTRAINT fk_group_call_participants_call FOREIGN KEY (call_id) REFERENCES group_calls(id) ON DELETE CASCADE,
+            CONSTRAINT fk_group_call_participants_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS group_call_signals (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            call_id BIGINT UNSIGNED NOT NULL,
+            from_user INT UNSIGNED NOT NULL,
+            to_user INT UNSIGNED NOT NULL,
+            kind ENUM("offer", "answer") NOT NULL,
+            payload MEDIUMTEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_group_call_signals_to (call_id, to_user, id),
+            CONSTRAINT fk_group_call_signals_call FOREIGN KEY (call_id) REFERENCES group_calls(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // Each person's own view of a conversation (account/messages.php; key as in includes/messaging.php:
+    // u{id}, "support" or "all"). Archive and Delete only change this person's view, never the other's.
+    //   archived_through: archived while its newest message id is at most this (a new message brings it back)
+    //   cleared_through:  "Delete conversation": messages up to this id are hidden for this person
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS message_conversations (
+            user_id INT UNSIGNED NOT NULL,
+            conversation_key VARCHAR(24) NOT NULL,
+            archived_through BIGINT UNSIGNED NULL,
+            cleared_through BIGINT UNSIGNED NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, conversation_key),
+            CONSTRAINT fk_message_conversations_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // Video calls between two people (account/call.php). The browsers connect directly (WebRTC); these
+    // tables only carry the ringing / answered / ended state and the two connection descriptions.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS calls (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            caller_id INT UNSIGNED NOT NULL,
+            callee_id INT UNSIGNED NOT NULL,
+            kind ENUM("video", "voice") NOT NULL DEFAULT "video",
+            status ENUM("ringing", "active", "ended", "declined", "missed", "cancelled") NOT NULL DEFAULT "ringing",
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            answered_at DATETIME NULL,
+            ended_at DATETIME NULL,
+            caller_seen_at DATETIME NULL,
+            callee_seen_at DATETIME NULL,
+            log_message_id BIGINT UNSIGNED NULL,
+            KEY idx_calls_callee (callee_id, status),
+            KEY idx_calls_caller (caller_id, status),
+            CONSTRAINT fk_calls_caller FOREIGN KEY (caller_id) REFERENCES users(id) ON DELETE CASCADE,
+            CONSTRAINT fk_calls_callee FOREIGN KEY (callee_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // The "📹 Video call · 4:05" line written into the conversation when the call finished (shown live by the page).
+    $callColumns = $pdo->query('SHOW COLUMNS FROM calls')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('log_message_id', $callColumns, true)) {
+        $pdo->exec('ALTER TABLE calls ADD COLUMN log_message_id BIGINT UNSIGNED NULL AFTER callee_seen_at');
+    }
+    // Video call (camera and microphone) or voice call (microphone only).
+    if (!in_array('kind', $callColumns, true)) {
+        $pdo->exec('ALTER TABLE calls ADD COLUMN kind ENUM("video", "voice") NOT NULL DEFAULT "video" AFTER callee_id');
+    }
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS call_signals (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            call_id BIGINT UNSIGNED NOT NULL,
+            sender_id INT UNSIGNED NOT NULL,
+            kind ENUM("offer", "answer") NOT NULL,
+            payload MEDIUMTEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_call_signals_call (call_id, id),
+            CONSTRAINT fk_call_signals_call FOREIGN KEY (call_id) REFERENCES calls(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
 
     // ---------- Workflow (includes/workflow.php) ----------
     $userColumns = $pdo->query('SHOW COLUMNS FROM users')->fetchAll(PDO::FETCH_COLUMN);

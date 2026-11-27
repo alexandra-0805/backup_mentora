@@ -3,26 +3,26 @@ $userId = (int) ($_SESSION['user']['id'] ?? 0);
 // "Mark as done" posts to account/notification.php, which marks everything read and comes back here.
 $notificationActionToken = $_SESSION['notification_action_token'] ??= bin2hex(random_bytes(32));
 
-$notificationQuery = $userId
-    ? $pdo->prepare('SELECT id, title, body, link, read_at, created_at FROM notifications WHERE user_id = ? OR user_id IS NULL ORDER BY created_at DESC')
-    : $pdo->prepare('SELECT id, title, body, link, read_at, created_at FROM notifications WHERE user_id IS NULL ORDER BY created_at DESC');
-// Clicking a notification opens account/notification.php (marks it read, then goes to its page).
+// Only the newest MENTORA_NOTIFICATION_PANEL_LIMIT (10) are listed here; older ones are in the archive
+// (account/notification.php, "View archive" at the bottom of the panel).
+$notificationWhere = $userId ? 'user_id = ? OR user_id IS NULL' : 'user_id IS NULL';
+$notificationParams = $userId ? [$userId] : [];
+$notificationQuery = $pdo->prepare('SELECT id, title, body, link, read_at, created_at FROM notifications WHERE ' . $notificationWhere
+    . ' ORDER BY created_at DESC, id DESC LIMIT ' . MENTORA_NOTIFICATION_PANEL_LIMIT);
+$notificationQuery->execute($notificationParams);
+$notificationItems = $notificationQuery->fetchAll();
+
+// Counts over all of them (archived ones too), so the badge still shows unread notifications in the archive.
+$notificationCounts = $pdo->prepare('SELECT COUNT(*) AS total, COALESCE(SUM(read_at IS NULL), 0) AS unread FROM notifications WHERE ' . $notificationWhere);
+$notificationCounts->execute($notificationParams);
+$notificationCountRow = $notificationCounts->fetch();
+$unreadNotificationCount = (int) $notificationCountRow['unread'];
+$archivedNotificationCount = max(0, (int) $notificationCountRow['total'] - MENTORA_NOTIFICATION_PANEL_LIMIT);
+
+// Clicking a notification opens account/notification.php (marks it read, then goes to its page);
+// the same page without ?id= is the archive.
 $notificationPageUrl = (str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/applicant/') ? '../../' : '../') . 'account/notification.php';
 $notificationOpenUrl = $notificationPageUrl . '?id=';
-
-if ($userId) {
-    $notificationQuery->execute([$userId]);
-} else {
-    $notificationQuery->execute();
-}
-
-$notificationItems = $notificationQuery->fetchAll();
-$unreadNotificationCount = 0;
-foreach ($notificationItems as $notification) {
-    if (!$notification['read_at']) {
-        $unreadNotificationCount++;
-    }
-}
 ?>
 <span class="notification-popover">
     <button class="header-icon-link notification-toggle<?= $unreadNotificationCount > 0 ? ' has-unread' : '' ?>"
@@ -99,6 +99,9 @@ foreach ($notificationItems as $notification) {
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
+        <?php if ($userId && $archivedNotificationCount > 0): ?>
+            <a class="notification-archive-link" href="<?= htmlspecialchars($notificationPageUrl, ENT_QUOTES, 'UTF-8') ?>">View archive (<?= $archivedNotificationCount ?> older)</a>
+        <?php endif; ?>
     </aside>
 </span>
 <script>

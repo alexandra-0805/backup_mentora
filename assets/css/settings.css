@@ -302,8 +302,16 @@ body.workspace-dark-mode :is(.notification-close, .message-toast-close) {
     color: #e4f1ef;
 }
 
-body.workspace-dark-mode :is(.message-toast-all, .notification-panel-header a, .notification-mark-done, .admin-content a:not([class])) {
+body.workspace-dark-mode :is(.message-toast-all, .notification-panel-header a, .notification-mark-done, .notification-archive-link, .admin-content a:not([class])) {
     color: var(--mentora-mint);
+}
+
+body.workspace-dark-mode .notification-archive-link {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+body.workspace-dark-mode .notification-archive-link:hover {
+    background: rgba(143, 239, 218, 0.08);
 }
 
 body.workspace-dark-mode :is(.bar, .progress) {

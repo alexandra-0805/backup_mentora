@@ -160,6 +160,11 @@ function mentora_current_user(): ?array
     return $_SESSION['user'];
 }
 
+/* ---------- Notifications ---------- */
+
+/** How many of the newest notifications the bell panel shows; older ones are in the archive (account/notification.php). */
+const MENTORA_NOTIFICATION_PANEL_LIMIT = 10;
+
 /* ---------- Presence (Active / Busy / Offline) ---------- */
 
 /** Minutes without any page or heartbeat (includes/presence_heartbeat.php) before someone shows as Offline. */

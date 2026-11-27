@@ -1,8 +1,9 @@
 <?php
 
 /**
- * Sends a message attachment to someone allowed to see it: the sender, the recipient, or anyone
- * for an announcement (recipient_id NULL). Everyone else gets "not found", so file ids can't be probed.
+ * Sends a message attachment to someone allowed to see it: the sender, the recipient, anyone for an
+ * announcement, or the members of a group chat (includes/messaging.php). Everyone else gets "not found",
+ * so file ids can't be probed.
  *   attachment.php?id=12             images open in the browser
  *   attachment.php?id=12&download=1  always downloads (files always download)
  * Files live in uploads/messages/, which the web server never serves directly (see its .htaccess).
@@ -12,6 +13,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/auth_check.php';
+require_once __DIR__ . '/../includes/messaging.php';
 
 $me = mentora_require_login();
 $userId = (int) $me['id'];
@@ -42,7 +44,7 @@ if (!$id) {
 }
 
 $query = $pdo->prepare(
-    'SELECT a.kind, a.stored_name, a.original_name, a.size, m.sender_id, m.recipient_id
+    'SELECT a.kind, a.stored_name, a.original_name, a.size, m.sender_id, m.recipient_id, m.group_id
      FROM message_attachments a
      JOIN messages m ON m.id = a.message_id
      WHERE a.id = ?'
@@ -50,10 +52,12 @@ $query = $pdo->prepare(
 $query->execute([$id]);
 $attachment = $query->fetch();
 
+// The sender, the recipient, anyone for an announcement, or the members of a group chat.
 $allowed = $attachment
     && ((int) ($attachment['sender_id'] ?? 0) === $userId
         || (int) ($attachment['recipient_id'] ?? 0) === $userId
-        || $attachment['recipient_id'] === null);
+        || ($attachment['recipient_id'] === null && ($attachment['group_id'] === null
+            || mentora_in_group($pdo, (int) $attachment['group_id'], $userId))));
 if (!$allowed || $attachment['kind'] === 'gif') {
     $notFound();
 }
