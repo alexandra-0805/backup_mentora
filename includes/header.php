@@ -25,7 +25,7 @@ $themeFollowsDevice = $themeFollowsDevice ?? true;
     <link rel="stylesheet" href="<?= $root . htmlspecialchars($pageStyle, ENT_QUOTES, 'UTF-8') ?>">
     <?php endforeach; ?>
     <?php if ($inAccount): // account/*.php pages (Messages) ?>
-    <link rel="stylesheet" href="<?= $root ?>assets/css/account.css?v=16">
+    <link rel="stylesheet" href="<?= $root ?>assets/css/account.css?v=19">
     <?php endif; ?>
     <?php require __DIR__ . '/theme_boot.php'; ?>
 </head>

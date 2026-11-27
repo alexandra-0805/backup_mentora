@@ -2,7 +2,8 @@
 require_once __DIR__ . '/messaging.php';
 $userId = (int) ($_SESSION['user']['id'] ?? 0);
 $messageQuery = $userId
-    // To you, announcements, and group chats you're in ("Name · General"); not your own; the newest 50.
+    // To you, announcements, and group chats you're in ("Name · General"); not your own, not ones you deleted for
+    // yourself; the newest 50.
     ? $pdo->prepare('SELECT m.id,
             m.sender_id,
             m.recipient_id,
@@ -16,6 +17,7 @@ $messageQuery = $userId
         LEFT JOIN chat_groups g ON g.id = m.group_id
         WHERE (m.sender_id IS NULL OR m.sender_id <> ?)
           AND (m.recipient_id = ? OR (m.recipient_id IS NULL AND (m.group_id IS NULL OR m.group_id IN (' . mentora_my_groups_sql() . '))))
+          AND NOT EXISTS (SELECT 1 FROM message_hidden x WHERE x.user_id = ? AND x.message_id = m.id)
         ORDER BY m.created_at DESC, m.id DESC
         LIMIT 50')
     : $pdo->prepare('SELECT m.id, m.sender_id, m.recipient_id, m.group_id, m.subject, m.body, m.created_at, "Mentora support" AS sender_name
@@ -24,7 +26,7 @@ $messageQuery = $userId
         ORDER BY m.created_at DESC');
 
 if ($userId) {
-    $messageQuery->execute([$userId, $userId, $userId]);
+    $messageQuery->execute([$userId, $userId, $userId, $userId]);
 } else {
     $messageQuery->execute();
 }

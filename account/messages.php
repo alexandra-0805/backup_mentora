@@ -185,8 +185,9 @@ $markConversationRead = static function (string $conversation) use ($pdo, $userI
 //   archive              conversation archived  archive (1) or bring back (0), for you only
 //   delete_conversation  conversation           hide everything in it so far, for you only
 //   delete_message       message_id             delete a message you sent, for everyone
+//   hide_message         message_id             "Delete for me": any message you can see, gone from your chat only
 $backgroundAction = $_SERVER['REQUEST_METHOD'] === 'POST' ? (string) ($_POST['action'] ?? '') : '';
-if (in_array($backgroundAction, ['mark_read', 'archive', 'delete_conversation', 'delete_message'], true)) {
+if (in_array($backgroundAction, ['mark_read', 'archive', 'delete_conversation', 'delete_message', 'hide_message'], true)) {
     header('Content-Type: application/json');
     $reply = static function (bool $ok, int $status = 200): never {
         http_response_code($status);
@@ -211,6 +212,27 @@ if (in_array($backgroundAction, ['mark_read', 'archive', 'delete_conversation', 
             if (preg_match('/^[A-Za-z0-9._-]+$/', (string) $storedName) === 1) {
                 @unlink(MENTORA_APP_ROOT . '/uploads/messages/' . $storedName);
             }
+        }
+        $reply(true);
+    }
+
+    if ($backgroundAction === 'hide_message') {
+        // Only a message you can see: yours, to you, an announcement, or in a group chat you're in.
+        $find = $pdo->prepare('SELECT id, sender_id, recipient_id, group_id FROM messages WHERE id = ?');
+        $find->execute([(int) ($_POST['message_id'] ?? 0)]);
+        $message = $find->fetch();
+        $visible = $message && ($message['group_id'] !== null
+            ? mentora_in_group($pdo, (int) $message['group_id'], $userId)
+            : ((int) ($message['sender_id'] ?? 0) === $userId || (int) ($message['recipient_id'] ?? 0) === $userId || $message['recipient_id'] === null));
+        if (!$visible) {
+            $reply(false, 404);
+        }
+        $pdo->prepare('INSERT IGNORE INTO message_hidden (message_id, user_id) VALUES (?, ?)')->execute([(int) $message['id'], $userId]);
+        // A hidden message never counts as unread.
+        if ((int) ($message['recipient_id'] ?? 0) === $userId) {
+            $pdo->prepare('UPDATE messages SET read_at = NOW() WHERE id = ? AND read_at IS NULL')->execute([(int) $message['id']]);
+        } elseif ($message['recipient_id'] === null) {
+            $pdo->prepare('INSERT IGNORE INTO message_reads (message_id, user_id) VALUES (?, ?)')->execute([(int) $message['id'], $userId]);
         }
         $reply(true);
     }
@@ -567,11 +589,12 @@ $query = $pdo->prepare(
             END AS is_unread
      FROM messages m
      LEFT JOIN message_reads r ON r.message_id = m.id AND r.user_id = ?
-     WHERE (m.group_id IS NULL AND (m.recipient_id = ? OR m.recipient_id IS NULL OR m.sender_id = ?))
-        OR m.group_id IN (' . mentora_my_groups_sql() . ')
+     WHERE ((m.group_id IS NULL AND (m.recipient_id = ? OR m.recipient_id IS NULL OR m.sender_id = ?))
+        OR m.group_id IN (' . mentora_my_groups_sql() . '))
+       AND NOT EXISTS (SELECT 1 FROM message_hidden x WHERE x.user_id = ? AND x.message_id = m.id) -- "Delete for me"
      ORDER BY m.created_at, m.id'
 );
-$query->execute([$userId, $userId, $userId, $userId, $userId]);
+$query->execute([$userId, $userId, $userId, $userId, $userId, $userId]);
 $rows = $query->fetchAll();
 
 // Attachments of those messages, grouped by message.
@@ -652,7 +675,8 @@ $conversationStates = mentora_conversation_states($pdo, $userId);
 $conversations = [];
 
 // A group chat's entry in the list (General: everyone; other groups: their members).
-$groupConversation = static function (array $group) use ($people, $userId, $h): array {
+$activeUserCount = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE status = 'active'")->fetchColumn(); // everyone is in General
+$groupConversation = static function (array $group) use ($people, $userId, $h, $activeUserCount): array {
     $isGeneral = (int) $group['is_general'] === 1;
     $memberNames = [];
     foreach ($group['members'] as $memberId) {
@@ -680,6 +704,7 @@ $groupConversation = static function (array $group) use ($people, $userId, $h): 
         'isGeneral' => $isGeneral,
         'members' => $isGeneral ? '' : implode(', ', array_filter($memberNames)),
         'memberIds' => $isGeneral ? '' : implode(',', $group['members']),
+        'memberCount' => $isGeneral ? $activeUserCount : $memberCount,
         'ownerId' => $isGeneral ? '' : (string) ($group['owner'] ?? ''),
         'startedAt' => (string) $group['created_at'],
     ];
@@ -727,6 +752,7 @@ foreach ($rows as $row) {
             'isGeneral' => false,
             'members' => '',
             'memberIds' => '',
+            'memberCount' => 0,
             'ownerId' => '',
             'startedAt' => (string) $row['created_at'],
         ];
@@ -2459,6 +2485,7 @@ require __DIR__ . '/../includes/header.php';
                             data-group="<?= $conversation['isGeneral'] ? 'general' : ($conversation['isGroup'] ? 'group' : '') ?>"
                             data-members="<?= $h($conversation['members']) ?>"
                             data-member-ids="<?= $h($conversation['memberIds']) ?>"
+                            data-member-count="<?= (int) $conversation['memberCount'] ?>"
                             data-owner-id="<?= $h($conversation['ownerId']) ?>"
                             data-search="<?= $h($searchText) ?>">
                             <?= $conversation['avatar'] ?>
@@ -2499,14 +2526,15 @@ require __DIR__ . '/../includes/header.php';
                     <small data-thread-role>Choose a conversation</small>
                 </div>
                 <div class="chat-thread-actions" data-thread-actions hidden>
-                    <?php // Group chats you made or joined (not General): members (the owner can remove people), add people, leave. ?>
-                    <button class="chat-icon-button" type="button" data-group-members aria-label="Members" title="Members" hidden>
+                    <?php // Group chats you made or joined (not General): members (the owner can remove people), add people, leave.
+                          // On desktop these are in the details panel instead (CSS .chat-header-group-button). ?>
+                    <button class="chat-icon-button chat-header-group-button" type="button" data-group-members aria-label="Members" title="Members" hidden>
                         <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 18.5"/></svg>
                     </button>
-                    <button class="chat-icon-button" type="button" data-group-add aria-label="Add people" title="Add people" hidden>
+                    <button class="chat-icon-button chat-header-group-button" type="button" data-group-add aria-label="Add people" title="Add people" hidden>
                         <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M18 8v6M15 11h6"/></svg>
                     </button>
-                    <button class="chat-icon-button chat-danger-button" type="button" data-group-leave aria-label="Leave group" title="Leave group" hidden>
+                    <button class="chat-icon-button chat-danger-button chat-header-group-button" type="button" data-group-leave aria-label="Leave group" title="Leave group" hidden>
                         <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4"/><path d="M6 12h10"/></svg>
                     </button>
                     <?php // Voice and video calls (assets/js/video-call.js): only with one person you can message. ?>
@@ -2567,11 +2595,10 @@ require __DIR__ . '/../includes/header.php';
                                 <?php $previousAuthor = null; continue; ?>
                             <?php endif; ?>
                             <article class="chat-bubble <?= $message['mine'] ? 'chat-bubble-mine' : 'chat-bubble-theirs' ?>" data-message-id="<?= (int) $message['id'] ?>">
-                                <?php if ($message['mine']): // your own messages can be deleted (for everyone) ?>
-                                    <button class="chat-bubble-delete" type="button" data-delete-message="<?= (int) $message['id'] ?>" aria-label="Delete this message" title="Delete message">
-                                        <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>
-                                    </button>
-                                <?php endif; ?>
+                                <?php // Delete: "for me" on any message; "for everyone" too on your own. ?>
+                                <button class="chat-bubble-delete" type="button" data-delete-message="<?= (int) $message['id'] ?>" aria-label="Delete this message" title="Delete message">
+                                    <svg class="chat-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>
+                                </button>
                                 <?php if ($showAuthor): ?>
                                     <span class="chat-bubble-author"><?= $h(isset($people[$author]) ? trim($people[$author]['first_name'] . ' ' . $people[$author]['last_name']) : ($author ? 'Former member' : 'Mentora')) ?></span>
                                 <?php endif; ?>
@@ -2631,6 +2658,11 @@ require __DIR__ . '/../includes/header.php';
                 <?php endforeach; ?>
             </div>
 
+            <?php // "Ana is typing…" (group chats and General; account/typing.php) ?>
+            <div class="chat-typing" data-typing aria-live="polite" hidden>
+                <span class="chat-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span data-typing-text></span>
+            </div>
             <?php if ($messageError): ?><p class="chat-error" role="alert"><?= $h($messageError) ?></p><?php endif; ?>
             <!-- Emoji + GIF picker (opens above the message box) -->
             <div class="chat-picker" data-picker role="dialog" aria-label="Emoji and GIFs" hidden>
@@ -2723,6 +2755,21 @@ require __DIR__ . '/../includes/header.php';
             <small data-info-role>Mentora</small>
             <a class="chat-info-email" data-info-email hidden></a>
             <p class="chat-info-stats" data-info-stats></p>
+            <?php // Group chats (not General): members, add people, leave. Phones and tablets have them in the conversation header. ?>
+            <div class="chat-info-group-actions" data-info-group-actions hidden>
+                <button class="chat-info-action" type="button" data-group-members>
+                    <span class="chat-info-action-icon" aria-hidden="true"><svg class="chat-svg" viewBox="0 0 24 24" focusable="false"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 18.5"/></svg></span>
+                    <span>Members</span>
+                </button>
+                <button class="chat-info-action" type="button" data-group-add>
+                    <span class="chat-info-action-icon" aria-hidden="true"><svg class="chat-svg" viewBox="0 0 24 24" focusable="false"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M18 8v6M15 11h6"/></svg></span>
+                    <span>Add people</span>
+                </button>
+                <button class="chat-info-action is-danger" type="button" data-group-leave>
+                    <span class="chat-info-action-icon" aria-hidden="true"><svg class="chat-svg" viewBox="0 0 24 24" focusable="false"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4"/><path d="M6 12h10"/></svg></span>
+                    <span>Leave</span>
+                </button>
+            </div>
             <?php
             // Everything shared in each conversation, newest first: photos/GIFs and files.
             $shared = [];
@@ -2859,6 +2906,22 @@ require __DIR__ . '/../includes/header.php';
                 <?php endforeach; ?>
                 <p class="chat-contact-empty" data-contact-empty hidden>No one matches your search.</p>
             </div>
+        </div>
+    </dialog>
+
+    <!-- Delete a message: "Delete for me" (only your chat) or, on your own messages, "Delete for everyone". -->
+    <dialog class="dialog dialog-slide-down chat-delete-dialog" id="chatDeleteDialog" aria-labelledby="chatDeleteTitle" aria-describedby="chatDeleteText">
+        <div class="dialog-header">
+            <h1 class="dialog-title" id="chatDeleteTitle">Delete this message?</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="dialog" aria-label="Close"></button>
+        </div>
+        <div class="dialog-body">
+            <p id="chatDeleteText" data-delete-text></p>
+        </div>
+        <div class="dialog-footer chat-delete-choices">
+            <button type="button" class="btn-solid theme-secondary" data-bs-dismiss="dialog" data-delete-cancel>Cancel</button>
+            <button type="button" class="btn-solid theme-secondary" data-delete-choice="me">Delete for me</button>
+            <button type="button" class="btn-solid theme-danger" data-delete-choice="everyone">Delete for everyone</button>
         </div>
     </dialog>
 
@@ -3055,13 +3118,24 @@ require __DIR__ . '/../includes/header.php';
         // The row around a conversation in the list (it also holds Archive / Delete).
         const rowOf = (item) => item.closest('[data-conversation-row]') || item;
 
+        // Details panel line: "3 messages in this conversation · 5 members" (members: group chats and General).
+        function infoStats(item) {
+            const count = Number(item.dataset.count || 0);
+            const members = Number(item.dataset.memberCount || 0);
+            return `${count} message${count === 1 ? '' : 's'} in this conversation`
+                + (item.dataset.group && members ? ` · ${members} member${members === 1 ? '' : 's'}` : '');
+        }
+        // The same group button in the header (phones, tablets) and in the details panel (desktop).
+        const onEach = (selector, type, handler) => root.querySelectorAll(selector).forEach((button) => button.addEventListener(type, handler));
+
         // Header buttons for the open conversation: voice and video call (one person you can message);
         // add people and leave (a group chat, not General).
         function syncThreadActions() {
             const canCall = Boolean(current) && current.dataset.canCall === '1';
             const isGroup = Boolean(current) && current.dataset.group === 'group';
             callButtons.forEach((button) => { button.hidden = !canCall; });
-            root.querySelectorAll('[data-group-members], [data-group-add], [data-group-leave]').forEach((button) => { button.hidden = !isGroup; });
+            root.querySelectorAll('.chat-header-group-button').forEach((button) => { button.hidden = !isGroup; });
+            root.querySelector('[data-info-group-actions]').hidden = !isGroup;
             threadActions.hidden = !canCall && !isGroup;
         }
 
@@ -3477,8 +3551,7 @@ require __DIR__ . '/../includes/header.php';
             email.textContent = item.dataset.email;
             email.href = item.dataset.email ? `mailto:${item.dataset.email}` : '';
             const count = Number(item.dataset.count || 0);
-            setText('[data-info-stats]', `${count} message${count === 1 ? '' : 's'} in this conversation`
-                + (item.dataset.members ? ` · Members: ${item.dataset.members}` : ''));
+            setText('[data-info-stats]', infoStats(item));
             // Shared photos and files for this conversation.
             root.querySelectorAll('[data-shared]').forEach((group) => { group.hidden = group.dataset.shared !== key; });
             root.querySelectorAll('[data-shared-count]').forEach((badge) => {
@@ -3865,6 +3938,86 @@ require __DIR__ . '/../includes/header.php';
             });
         }
 
+        // ---------- "Ana is typing…" in group chats and General (account/typing.php) ----------
+        // While you type, the server hears about it at most every 3 seconds; sending (or clearing the box) stops it.
+        // The open group chat is checked every 2 seconds for others typing (only while this tab is visible).
+        const typingBox = root.querySelector('[data-typing]');
+        const typingText = root.querySelector('[data-typing-text]');
+        let typingSentAt = 0;
+        let typingGroup = null;
+        let typingTimer = null;
+        const groupIdOf = (item) => (item && item.dataset.group ? item.dataset.conversation.slice(1) : null);
+
+        const sendTyping = (groupId, action) => {
+            const form = new FormData();
+            form.append('action', action);
+            form.append('group_id', groupId);
+            form.append('message_action_token', root.dataset.token);
+            fetch('typing.php', { method: 'POST', body: form, credentials: 'same-origin', keepalive: action === 'stop' }).catch(() => {});
+        };
+        const stopTyping = () => {
+            if (typingSentAt && typingGroup) {
+                sendTyping(typingGroup, 'stop');
+            }
+            typingSentAt = 0;
+            typingGroup = null;
+        };
+
+        composerInput.addEventListener('input', () => {
+            const groupId = groupIdOf(current);
+            if (!groupId || composerInput.value.trim() === '') {
+                stopTyping();
+                return;
+            }
+            if (typingGroup !== groupId) {
+                stopTyping(); // moved to another group mid-sentence
+            }
+            if (Date.now() - typingSentAt > 3000) {
+                typingSentAt = Date.now();
+                typingGroup = groupId;
+                sendTyping(groupId, 'typing');
+            }
+        });
+        composer.addEventListener('submit', stopTyping);
+
+        const showTyping = (names) => {
+            const first = names.map((name) => name.split(/\s+/)[0]);
+            typingText.textContent = first.length === 1 ? `${first[0]} is typing…`
+                : first.length === 2 ? `${first[0]} and ${first[1]} are typing…`
+                    : 'Several people are typing…';
+            typingBox.hidden = names.length === 0;
+        };
+
+        const checkTyping = async () => {
+            clearTimeout(typingTimer);
+            const groupId = groupIdOf(current);
+            if (groupId && !document.hidden) {
+                try {
+                    const response = await fetch(`typing.php?group_id=${encodeURIComponent(groupId)}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+                    const result = await response.json();
+                    if (groupIdOf(current) === groupId) {
+                        showTyping(result.ok ? result.names : []);
+                    }
+                } catch (error) {
+                    showTyping([]);
+                }
+            } else {
+                showTyping([]);
+            }
+            typingTimer = setTimeout(checkTyping, 2000);
+        };
+        // Another chat opened: forget the old one's indicator straight away and check the new one.
+        conversationList.addEventListener('click', () => setTimeout(() => {
+            showTyping([]);
+            checkTyping();
+        }, 0));
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                checkTyping();
+            }
+        });
+        setTimeout(checkTyping, 0); // after the first conversation has opened
+
         // Composer: Enter sends, Shift+Enter adds a line; Send is off while empty.
         composerInput.addEventListener('input', () => {
             growComposer();
@@ -4216,24 +4369,48 @@ require __DIR__ . '/../includes/header.php';
         conversationList.addEventListener('scroll', () => closeRowMenu(), { passive: true });
         window.addEventListener('resize', () => closeRowMenu());
 
-        // Delete one of your own messages (for everyone), with its photos and files.
+        // Delete a message: "for me" (any message: gone from your chat only, everyone else keeps it) or, on your own
+        // messages, "for everyone" (with its photos and files).
+        const deleteDialog = document.getElementById('chatDeleteDialog');
+        const deleteEveryone = deleteDialog.querySelector('[data-delete-choice="everyone"]');
+        let resolveDelete = null;
+        const chooseDelete = (mine) => new Promise((resolve) => {
+            resolveDelete = resolve;
+            deleteEveryone.hidden = !mine;
+            deleteDialog.querySelector('[data-delete-text]').textContent = mine
+                ? '“Delete for me” removes it from your chat only. “Delete for everyone” removes it for everyone in this conversation, with any photos or files in it. This can’t be undone.'
+                : 'It will be removed from your chat only. Everyone else in this conversation still sees it. This can’t be undone.';
+            deleteDialog.showModal();
+            deleteDialog.querySelector('[data-delete-cancel]').focus(); // start on the safe choice
+        });
+        deleteDialog.querySelectorAll('[data-delete-choice]').forEach((choice) => choice.addEventListener('click', () => {
+            const resolve = resolveDelete;
+            resolveDelete = null;
+            deleteDialog.querySelector('[data-bs-dismiss="dialog"]').click(); // close with the usual slide
+            resolve?.(choice.dataset.deleteChoice);
+        }));
+        deleteDialog.addEventListener('close', () => {
+            const resolve = resolveDelete;
+            resolveDelete = null;
+            resolve?.(null); // Cancel, ×, Esc or clicking outside
+        });
+
         body.addEventListener('click', async (event) => {
             const button = event.target.closest('[data-delete-message]');
             if (!button) {
                 return;
             }
-            const confirmed = await window.MentoraConfirm({
-                title: 'Delete this message?',
-                message: 'It will be removed for everyone in this conversation, together with any photos or files in it. This can’t be undone.',
-                confirmLabel: 'Delete',
-                tone: 'danger'
-            });
-            if (!confirmed) {
+            const mine = Boolean(button.closest('.chat-bubble-mine'));
+            const choice = await chooseDelete(mine);
+            if (!choice) {
                 return;
             }
             const messageId = button.dataset.deleteMessage;
             button.disabled = true;
-            if (!await postAction({ action: 'delete_message', message_id: messageId })) {
+            const done = await postAction(choice === 'everyone' && mine
+                ? { action: 'delete_message', message_id: messageId }
+                : { action: 'hide_message', message_id: messageId });
+            if (!done) {
                 button.disabled = false;
                 showToast(tryAgain);
                 return;
@@ -4269,11 +4446,11 @@ require __DIR__ . '/../includes/header.php';
                         : 'No messages';
                 }
                 if (item === current) {
-                    setText('[data-info-stats]', `${count} message${count === 1 ? '' : 's'} in this conversation`);
+                    setText('[data-info-stats]', infoStats(item));
                     syncThreadActions();
                 }
             }
-            showToast('Message deleted.');
+            showToast(choice === 'everyone' && mine ? 'Message deleted for everyone.' : 'Message deleted for you.');
         });
 
         // ---------- Group chats: add people, leave ----------
@@ -4325,7 +4502,7 @@ require __DIR__ . '/../includes/header.php';
             addSubmit.disabled = true;
         });
 
-        root.querySelector('[data-group-add]').addEventListener('click', () => {
+        onEach('[data-group-add]', 'click', () => {
             if (!current || current.dataset.group !== 'group') {
                 return;
             }
@@ -4377,7 +4554,7 @@ require __DIR__ . '/../includes/header.php';
                 renameSave.disabled = false;
             }
         });
-        root.querySelector('[data-group-members]').addEventListener('click', () => {
+        onEach('[data-group-members]', 'click', () => {
             const item = current;
             if (!item || item.dataset.group !== 'group') {
                 return;
@@ -4433,7 +4610,7 @@ require __DIR__ . '/../includes/header.php';
             membersDialog.showModal();
         });
 
-        root.querySelector('[data-group-leave]').addEventListener('click', async () => {
+        onEach('[data-group-leave]', 'click', async () => {
             const item = current;
             if (!item || item.dataset.group !== 'group') {
                 return;
@@ -4474,8 +4651,8 @@ require __DIR__ . '/../includes/header.php';
                 }
                 const bubble = make('article', `chat-bubble ${message.mine ? 'chat-bubble-mine' : 'chat-bubble-theirs'}`);
                 bubble.dataset.messageId = String(message.id);
-                if (message.mine) {
-                    const remove = make('button', 'chat-bubble-delete');
+                {
+                    const remove = make('button', 'chat-bubble-delete'); // for me, or (yours) for everyone
                     remove.type = 'button';
                     remove.dataset.deleteMessage = String(message.id);
                     remove.setAttribute('aria-label', 'Delete this message');
@@ -4517,8 +4694,7 @@ require __DIR__ . '/../includes/header.php';
                 filterItems();
 
                 if (item === current) {
-                    const count = Number(item.dataset.count);
-                    setText('[data-info-stats]', `${count} message${count === 1 ? '' : 's'} in this conversation`);
+                    setText('[data-info-stats]', infoStats(item));
                     body.scrollTop = body.scrollHeight;
                     markRead(item); // you're looking at it
                 }

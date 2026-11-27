@@ -347,6 +347,29 @@ try {
         $pdo->prepare('UPDATE messages SET group_id = ? WHERE recipient_id IS NULL AND sender_id IS NOT NULL AND group_id IS NULL')
             ->execute([$generalGroupId]);
     }
+    // "Delete for me" on a message (account/messages.php): hidden from that person's chat only; everyone else keeps it.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS message_hidden (
+            message_id BIGINT UNSIGNED NOT NULL,
+            user_id INT UNSIGNED NOT NULL,
+            hidden_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, message_id),
+            CONSTRAINT fk_message_hidden_message FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+            CONSTRAINT fk_message_hidden_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // "Ana is typing…" in group chats and General (account/typing.php): when each person last typed there.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS chat_typing (
+            group_id BIGINT UNSIGNED NOT NULL,
+            user_id INT UNSIGNED NOT NULL,
+            typed_at DATETIME NOT NULL,
+            PRIMARY KEY (group_id, user_id),
+            KEY idx_chat_typing_time (group_id, typed_at),
+            CONSTRAINT fk_chat_typing_group FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
+            CONSTRAINT fk_chat_typing_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
     // Group calls (voice or video) in a group chat or General (account/call.php, assets/js/video-call.js).
     // Everyone in the call connects to everyone else directly, so a call has at most 8 people.
     $pdo->exec(
