@@ -77,7 +77,7 @@ if (mentora_is_post()) {
 }
 
 $pageTitle = 'AI screening';
-$activePage = 'screening.php';
+$activePage = 'dashboard.php'; // not in the sidebar; highlight the Dashboard it's opened from
 require __DIR__ . '/../includes/admin_layout.php';
 
 $view = isset(MENTORA_SCREENING_VIEWS[$_GET['view'] ?? '']) ? $_GET['view'] : 'suitable';

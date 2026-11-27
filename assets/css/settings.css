@@ -89,7 +89,6 @@ body.accent-custom .applicant-sidebar {
 }
 
 body.accent-custom .admin-nav a.active,
-body.accent-custom .admin-btn:not(.primary),
 body.accent-custom .admin-brand:hover span {
     color: var(--mentora-teal);
 }
@@ -226,13 +225,16 @@ body.workspace-dark-mode .field label {
     color: #cfe3e0;
 }
 
-body.workspace-dark-mode .admin-btn:not(.primary) {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.14);
-    color: #d5ece8;
+/* Tinted buttons in dark mode use the lighter accent so they stay readable (light mode: admin.css). */
+body.workspace-dark-mode .admin-btn {
+    background: color-mix(in srgb, var(--mentora-mint) 10%, transparent);
+    border-color: color-mix(in srgb, var(--mentora-mint) 35%, transparent);
+    color: var(--mentora-mint);
 }
 
-body.workspace-dark-mode .admin-btn:not(.primary):hover {
+body.workspace-dark-mode .admin-btn:hover {
+    background: color-mix(in srgb, var(--mentora-mint) 16%, transparent);
+    border-color: color-mix(in srgb, var(--mentora-mint) 55%, transparent);
     color: var(--mentora-mint);
 }
 
@@ -1161,11 +1163,14 @@ body.workspace-dark-mode .invite-mail-status {
 }
 
 .admin-btn.danger {
+    background: rgba(180, 35, 24, 0.08);
+    border-color: rgba(180, 35, 24, 0.35);
     color: #b42318;
 }
 
 .admin-btn.danger:hover {
-    border-color: rgba(180, 35, 24, 0.35);
+    background: rgba(180, 35, 24, 0.14);
+    border-color: rgba(180, 35, 24, 0.55);
     color: #b42318;
 }
 
@@ -1180,6 +1185,8 @@ body.workspace-dark-mode .invite-link-row input {
 }
 
 body.workspace-dark-mode .admin-btn.danger {
+    background: rgba(253, 162, 155, 0.10);
+    border-color: rgba(253, 162, 155, 0.35);
     color: #fda29b;
 }
 

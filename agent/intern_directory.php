@@ -17,7 +17,7 @@ $count = static fn(string $status): int => count(array_filter($interns, static f
         <p>Manage your interns, follow their progress, and support every next step.</p>
     </div>
     <div class="admin-actions">
-        <a class="admin-btn" href="export.php?type=interns"><?= mentora_icon('download') ?>Export list</a><a class="admin-btn" href="export.php?type=social"><?= mentora_icon('download') ?>Export social profiles</a><a class="admin-btn primary" href="../auth/signup.php?pathway=internship">+ Add intern</a>
+        <a class="admin-btn" href="intern_hours.php">Internship hours</a><a class="admin-btn" href="export.php?type=interns"><?= mentora_icon('download') ?>Export list</a><a class="admin-btn" href="export.php?type=social"><?= mentora_icon('download') ?>Export social profiles</a><a class="admin-btn primary" href="../auth/signup.php?pathway=internship">+ Add intern</a>
     </div>
 </div>
 <?= mentora_flash_html() ?>

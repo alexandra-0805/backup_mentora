@@ -51,7 +51,7 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
         <p><?= $greeting ?>. A clear view of your people, recruitment, onboarding, and today's priorities.</p>
     </div>
     <div class="admin-actions"><a class="admin-btn"
-        href="export.php?type=summary&amp;from=<?= date('Y-m-01') ?>&amp;to=<?= $today ?>"><?= mentora_icon('download') ?>Export dashboard</a><a class="admin-btn primary" href="consolidated_report.php">View consolidated reports</a>
+        href="export.php?type=summary&amp;from=<?= date('Y-m-01') ?>&amp;to=<?= $today ?>"><?= mentora_icon('download') ?>Export dashboard</a><a class="admin-btn" href="consolidated_report.php">View consolidated reports</a><a class="admin-btn" href="screening.php">AI screening</a>
     </div>
 </div>
 <?= mentora_flash_html() ?>

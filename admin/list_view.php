@@ -23,7 +23,7 @@ $config = [
         '../auth/signup.php?pathway=internship',
         'interns'
     ],
-    'agent' => ['Agent list', 'agent_list.php', "u.role = 'agent'", 'agent', 'user_edit.php?new=1&role=agent', 'agents'],
+    'agent' => ['Agent list', 'agent_list.php', "u.role = 'agent'", 'agent', 'staff_accounts.php#create', 'agents'],
 ][$listType];
 [$pageTitle, $activePage, $where, $noun, $addHref, $exportType] = $config;
 require __DIR__ . '/../includes/admin_layout.php';
@@ -54,7 +54,7 @@ $modulesTotal = count(mentora_training_modules($listType === 'intern' ? 'interns
         <h1><?= mentora_h($pageTitle) ?></h1>
         <p>Manage profiles, assignments, schedules, and workspace readiness.</p>
     </div>
-    <div class="admin-actions"><a class="admin-btn"
+    <div class="admin-actions"><?php if ($listType === 'intern'): ?><a class="admin-btn" href="intern_hours.php">Internship hours</a><?php elseif ($listType === 'employee'): ?><a class="admin-btn" href="employee_hours.php">Employee hours</a><?php endif; ?><a class="admin-btn"
         href="export.php?type=<?= $exportType ?>"><?= mentora_icon('download') ?>Export list</a><?php if ($listType !== 'agent'): ?><a class="admin-btn" href="export.php?type=social"><?= mentora_icon('download') ?>Export social profiles</a><?php endif; ?><a class="admin-btn primary" href="<?= mentora_h($addHref) ?>">+ Add <?= $noun ?></a>
     </div>
 </div>

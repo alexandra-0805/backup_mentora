@@ -63,7 +63,7 @@ ksort($teams);
     <div class="admin-actions">
         <button class="admin-btn"
             type="button"
-            onclick="window.print()"><?= mentora_icon('download') ?>Download PDF</button><a class="admin-btn primary" href="export.php?type=reports"><?= mentora_icon('download') ?>Export CSV</a>
+            onclick="window.print()">Print</button><a class="admin-btn primary" href="export.php?type=reports"><?= mentora_icon('download') ?>Export PDF</a>
     </div>
 </div>
 <?= mentora_flash_html() ?>

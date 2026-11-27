@@ -1,7 +1,8 @@
 <?php
-// CSV downloads for HR: ?type=employees | interns | agents | users | social | screening | attendance&date= | summary&from=&to=&scope=
+// PDF downloads for HR: ?type=employees | interns | agents | users | social | screening | attendance&date= | summary&from=&to=&scope=
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/workflow.php';
+require_once __DIR__ . '/../includes/pdf_export.php';
 require_once __DIR__ . '/../includes/social_profiles.php';
 require_once __DIR__ . '/../includes/report_summary.php';
 require_once __DIR__ . '/../includes/screening.php';
@@ -38,8 +39,9 @@ switch ($type) {
             WHERE $where AND u.status IN ('active', 'disabled') ORDER BY u.last_name, u.first_name")
             ->fetchAll(PDO::FETCH_NUM);
         $rows = array_map(static function (array $row) use ($statusLabel): array { $row[9] = $statusLabel[$row[9]] ?? $row[9]; return $row; }, $rows);
-        mentora_csv(
-            "mentora-{$type}-{$stamp}.csv",
+        mentora_pdf(
+            ['employees' => 'Employee list', 'interns' => 'Intern list', 'agents' => 'Agent list'][$type],
+            "mentora-{$type}-{$stamp}.pdf",
             [
                 'User ID',
                 'First name',
@@ -70,8 +72,9 @@ switch ($type) {
             ORDER BY u.created_at DESC")
             ->fetchAll(PDO::FETCH_NUM);
         $rows = array_map(static function (array $row) use ($statusLabel): array { $row[6] = $statusLabel[$row[6]] ?? $row[6]; return $row; }, $rows);
-        mentora_csv(
-            "mentora-access-audit-{$stamp}.csv",
+        mentora_pdf(
+            'Access audit',
+            "mentora-access-audit-{$stamp}.pdf",
             ['User ID', 'Name', 'Email', 'Username', 'Role', 'Department', 'Access', 'Created', 'Account confirmed'],
             $rows
         );
@@ -106,8 +109,9 @@ switch ($type) {
                 $label
             ];
         }, $query->fetchAll());
-        mentora_csv(
-            "mentora-attendance-{$date}.csv",
+        mentora_pdf(
+            'Attendance · ' . date('d M Y', strtotime($date)),
+            "mentora-attendance-{$date}.pdf",
             ['Date', 'User ID', 'Name', 'Pathway', 'Department', 'Time in', 'Time out', 'Worked hours', 'Status'],
             $rows
         );
@@ -139,10 +143,15 @@ switch ($type) {
                 $department['people'] . ' / ' . mentora_hours($department['hours']) . ' / ' . ($department['score'] !== null ? mentora_hours($department['score']) : '—')
             ];
         }
-        mentora_csv("mentora-summary-{$from}-to-{$to}.csv", ["Mentora summary {$from} to {$to}", 'Value'], $rows);
+        mentora_pdf(
+            'Workspace summary · ' . date('d M Y', strtotime($from)) . ' to ' . date('d M Y', strtotime($to)),
+            "mentora-summary-{$from}-to-{$to}.pdf",
+            ['Measure', 'Value'],
+            $rows
+        );
     case 'social':
         // Social profile monitoring for every active intern (Student VA) and employee (Professional VA).
-        mentora_csv("mentora-social-profiles-{$stamp}.csv", mentora_social_export_header(), mentora_social_export_rows($pdo));
+        mentora_pdf('Social profiles', "mentora-social-profiles-{$stamp}.pdf", mentora_social_export_header(), mentora_social_export_rows($pdo));
     case 'screening':
         // AI screening of Employee VA applications: every candidate's latest review and HR's decision.
         $rows = [];
@@ -162,7 +171,7 @@ switch ($type) {
                 ];
             }
         }
-        mentora_csv("mentora-ai-screening-{$stamp}.csv", [
+        mentora_pdf('AI screening', "mentora-ai-screening-{$stamp}.pdf", [
             'User ID', 'Name', 'Email', 'Role applied for', 'Education', 'Years of experience', 'Applied with', 'AI score', 'AI category',
             'Best-fit department', 'Lacking skills they fill', 'Skills found', 'AI summary', 'Department assessment', 'HR decision', 'Referred by', 'Reviewed',
         ], $rows);

@@ -37,8 +37,7 @@ $count = static fn(string $key, string $value): int => count(array_filter($users
         <p>Manage workspace accounts, keep access proportional to each role, and review who can sign in.</p>
     </div>
     <div class="admin-actions">
-        <a class="admin-btn" href="export.php?type=users"><?= mentora_icon('download') ?>Export access audit</a><a class="admin-btn primary" href="user_edit.php?new=1">+ Invite user</a>
-    </div>
+        <a class="admin-btn" href="export.php?type=users"><?= mentora_icon('download') ?>Export access audit</a>    </div>
 </div>
 <?= mentora_flash_html() ?>
 <div class="metric-grid">

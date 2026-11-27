@@ -25,9 +25,9 @@ $presets = [
         <p>Choose a date range and group, then print or download a workspace summary.</p>
     </div>
     <div class="admin-actions">
-        <button class="admin-btn"
+        <a class="admin-btn" href="intern_reports.php">Intern reports<?= $navCounts['consolidated_report.php'] ? ' (' . (int) $navCounts['consolidated_report.php'] . ' waiting)' : '' ?></a><button class="admin-btn"
             type="button"
-            onclick="window.print()">Print / save as PDF</button><a class="admin-btn primary" href="export.php?type=summary&amp;<?= mentora_h($query) ?>"><?= mentora_icon('download') ?>Download CSV</a>
+            onclick="window.print()">Print / save as PDF</button><a class="admin-btn primary" href="export.php?type=summary&amp;<?= mentora_h($query) ?>"><?= mentora_icon('download') ?>Download PDF</a>
     </div>
 </div>
 <div class="admin-grid report-layout">

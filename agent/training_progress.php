@@ -4,7 +4,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/workflow.php';
 $pageTitle = 'Training tracker';
-$activePage = 'training_tracker.php';
+$activePage = 'training_progress.php';
 require __DIR__ . '/../includes/agent_layout.php';
 
 $rows = mentora_workspace_people($pdo);

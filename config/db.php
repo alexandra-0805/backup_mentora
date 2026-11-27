@@ -160,16 +160,35 @@ try {
              '-', IF(id < 10000, LPAD(id, 4, '0'), id))
          WHERE user_code IS NULL"
     );
-    // Mentora's starting departments, added only to an empty list; HR adds, edits and deletes them
-    // in admin/department.php (so a deleted department doesn't come back).
+    // Mentora's client departments: name => [description, required skills]. Added only to an empty list; HR adds,
+    // edits and deletes them in admin/department.php (so a deleted department doesn't come back).
+    $clientDepartments = [
+        'Universal Tax Professionals' => [
+            'Tax preparation, bookkeeping, payroll and financial reports for a tax practice',
+            'Bookkeeping, Tax preparation, QuickBooks, Xero, Microsoft Excel, Invoicing, Payroll, Financial reporting',
+        ],
+        'Omis Digital Agency' => [
+            'Social media, content, ads and email campaigns for a digital marketing agency',
+            'Social media management, Content writing, Copywriting, Canva, Email marketing, SEO, Facebook ads',
+        ],
+        'Rebecca Therapy Group' => [
+            'Client intake, scheduling and admin support for a therapy practice',
+            'Client intake, Calendar management, Email management, Customer service, Data privacy, Medical records',
+        ],
+        'Luminary Collective Coaching' => [
+            'Client onboarding, scheduling, content and community support for a coaching business',
+            'Calendar management, Client onboarding, Email management, Customer service, Content writing, Canva, Community management',
+        ],
+        'Arkiste' => [
+            'Websites, web apps, site maintenance and tech support',
+            'HTML, CSS, JavaScript, PHP, WordPress, Responsive design, Git, SEO',
+        ],
+    ];
     if ((int) $pdo->query('SELECT COUNT(*) FROM departments')->fetchColumn() === 0) {
-        $pdo->exec(
-            'INSERT IGNORE INTO departments (name, description) VALUES
-                ("Web Developer", "Websites, web apps, landing pages and site maintenance for clients"),
-                ("Marketing Services", "Social media, content, email campaigns and online advertising"),
-                ("Accounting", "Bookkeeping, invoicing, payroll support and financial reports"),
-                ("Psychotherapist", "Client intake, scheduling and admin support for therapy practices")'
-        );
+        $addDepartment = $pdo->prepare('INSERT IGNORE INTO departments (name, description) VALUES (?, ?)');
+        foreach ($clientDepartments as $departmentName => [$about]) {
+            $addDepartment->execute([$departmentName, $about]);
+        }
     }
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS training_records (
@@ -430,14 +449,8 @@ try {
     $departmentColumns = $pdo->query('SHOW COLUMNS FROM departments')->fetchAll(PDO::FETCH_COLUMN);
     if (!in_array('required_skills', $departmentColumns, true)) {
         $pdo->exec('ALTER TABLE departments ADD COLUMN required_skills TEXT NULL AFTER description');
-        $starterSkills = [
-            'Web Developer' => 'HTML, CSS, JavaScript, PHP, WordPress, Responsive design, Git, SEO',
-            'Marketing Services' => 'Social media management, Content writing, Copywriting, Canva, Email marketing, SEO, Facebook ads',
-            'Accounting' => 'Bookkeeping, QuickBooks, Xero, Microsoft Excel, Invoicing, Payroll, Financial reporting',
-            'Psychotherapist' => 'Client intake, Calendar management, Email management, Customer service, Data privacy, Medical records',
-        ];
         $setSkills = $pdo->prepare('UPDATE departments SET required_skills = ? WHERE name = ? AND required_skills IS NULL');
-        foreach ($starterSkills as $departmentName => $skills) {
+        foreach ($clientDepartments as $departmentName => [, $skills]) {
             $setSkills->execute([$skills, $departmentName]);
         }
     }
@@ -568,6 +581,44 @@ try {
             CONSTRAINT fk_intern_activity_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
+    // The first starter departments (services) became Mentora's client departments ($clientDepartments above).
+    // Renaming keeps everyone's department and AI screening results; Web Developer merges into Omis Digital Agency,
+    // and the clients that had no starter department are added. Runs once, while any old starter name is still there.
+    $oldStarters = ['Accounting' => 'Universal Tax Professionals', 'Marketing Services' => 'Omis Digital Agency',
+        'Psychotherapist' => 'Rebecca Therapy Group', 'Web Developer' => 'Omis Digital Agency'];
+    $marks = implode(', ', array_fill(0, count($oldStarters), '?'));
+    $hasOldStarters = $pdo->prepare("SELECT COUNT(*) FROM departments WHERE name IN ($marks)");
+    $hasOldStarters->execute(array_keys($oldStarters));
+    if ((int) $hasOldStarters->fetchColumn() > 0) {
+        $findDepartment = $pdo->prepare('SELECT id FROM departments WHERE name = ?');
+        $departmentId = static function (string $name) use ($findDepartment): int {
+            $findDepartment->execute([$name]);
+            return (int) $findDepartment->fetchColumn();
+        };
+        $pdo->beginTransaction();
+        foreach ($oldStarters as $oldName => $clientName) {
+            $oldId = $departmentId($oldName);
+            if (!$oldId) {
+                continue;
+            }
+            $clientId = $departmentId($clientName);
+            if (!$clientId) {
+                [$about, $skills] = $clientDepartments[$clientName];
+                $pdo->prepare('UPDATE departments SET name = ?, description = ?, required_skills = ? WHERE id = ?')
+                    ->execute([$clientName, $about, $skills, $oldId]);
+                continue;
+            }
+            // The client department exists already: move the old department's people and AI reviews into it.
+            $pdo->prepare('UPDATE users SET department_id = ? WHERE department_id = ?')->execute([$clientId, $oldId]);
+            $pdo->prepare('UPDATE ai_reviews SET department_id = ? WHERE department_id = ?')->execute([$clientId, $oldId]);
+            $pdo->prepare('DELETE FROM departments WHERE id = ?')->execute([$oldId]);
+        }
+        $addClient = $pdo->prepare('INSERT IGNORE INTO departments (name, description, required_skills) VALUES (?, ?, ?)');
+        foreach ($clientDepartments as $clientName => [$about, $skills]) {
+            $addClient->execute([$clientName, $about, $skills]);
+        }
+        $pdo->commit();
+    }
 } catch (PDOException $exception) {
     error_log('Mentora database connection failed: ' . $exception->getMessage());
     http_response_code(500);

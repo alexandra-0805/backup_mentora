@@ -8,17 +8,18 @@
  *
  * admin/employee_hours.php
  *   ?format=json  the live figures (the page refreshes itself with these every 15 seconds)
- *   ?format=csv   download the report
+ *   ?format=pdf   download the report
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/../workflow.php';
 require_once __DIR__ . '/../intern_hours.php';
+require_once __DIR__ . '/../pdf_export.php';
 
 $format = (string) ($_GET['format'] ?? '');
 
-if ($format === 'json' || $format === 'csv') {
+if ($format === 'json' || $format === 'pdf') {
     mentora_require_login(['admin']);
     $rows = mentora_intern_hours($pdo, null, 'employee_va');
     if ($format === 'json') {
@@ -28,7 +29,7 @@ if ($format === 'json' || $format === 'csv') {
         exit;
     }
     $stateLabel = ['working' => 'Active now', 'out' => 'Paused', 'absent' => 'Not active today'];
-    mentora_csv('employee-hours-' . date('Y-m-d-Hi') . '.csv', [
+    mentora_pdf('Employee hours', 'employee-hours-' . date('Y-m-d-Hi') . '.pdf', [
         'Employee', 'User ID', 'Department', 'Today', 'Hours today', 'Hours this week', 'Total tracked hours',
         'First activity', 'Last activity', 'Days present', 'Approved report hours',
     ], array_map(static fn(array $r): array => [
@@ -40,7 +41,7 @@ if ($format === 'json' || $format === 'csv') {
 }
 
 $pageTitle = 'Employee hours';
-$activePage = 'employee_hours.php';
+$activePage = 'employee_list.php'; // not in the sidebar; highlight the Employee list it's opened from
 require __DIR__ . '/../admin_layout.php';
 
 $rows = mentora_intern_hours($pdo, null, 'employee_va');
@@ -68,7 +69,7 @@ $todayText = static function (array $r): array {
         <p>Every employee’s work hours, counted automatically while they click, type or scroll in Mentora. Employees who are active now count up live.</p>
     </div>
     <div class="admin-actions">
-        <a class="admin-btn" href="employee_hours.php?format=csv"><?= mentora_icon('download') ?>Export CSV</a>
+        <a class="admin-btn" href="employee_hours.php?format=pdf"><?= mentora_icon('download') ?>Export PDF</a>
     </div>
 </div>
 

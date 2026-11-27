@@ -32,7 +32,7 @@ if (mentora_is_post()) {
 }
 
 $pageTitle = 'AI assessments';
-$activePage = 'intern_assessments.php';
+$activePage = 'dashboard.php'; // not in the sidebar; highlight the Dashboard it's opened from
 require __DIR__ . '/../includes/agent_layout.php';
 
 $meId = (int) $_SESSION['user']['id'];

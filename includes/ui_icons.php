@@ -2,7 +2,7 @@
 
 /**
  * Button icons for the workspaces: upload (tray + arrow up), view (eye) and download (tray + arrow down).
- * Use inside a button or link: <a class="admin-btn"><?= mentora_icon('download') ?>Export CSV</a>
+ * Use inside a button or link: <a class="admin-btn"><?= mentora_icon('download') ?>Export PDF</a>
  * Hover animations live in assets/css/settings.css ("Button icons").
  */
 

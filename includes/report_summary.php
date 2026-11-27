@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Workspace summary for a date range (admin Reports page, its CSV download and the admin dashboard).
+ * Workspace summary for a date range (admin Reports page, its PDF download and the admin dashboard).
  * $scope: 'all', 'internship' or 'employee_va'.
  */
 

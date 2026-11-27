@@ -34,7 +34,7 @@ if (mentora_is_post()) {
 }
 
 $pageTitle = 'Intern reports';
-$activePage = 'intern_reports.php';
+$activePage = 'consolidated_report.php'; // not in the sidebar; highlight Reports, which it's opened from
 require __DIR__ . '/../includes/admin_layout.php';
 
 $reports = mentora_agent_reports($pdo);

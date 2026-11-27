@@ -1,7 +1,8 @@
 <?php
-// CSV downloads for the agent workspace: ?type=interns | training | assessments | evaluations | reports | social (agents and HR).
+// PDF downloads for the agent workspace: ?type=interns | training | assessments | evaluations | reports | social (agents and HR).
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/workflow.php';
+require_once __DIR__ . '/../includes/pdf_export.php';
 require_once __DIR__ . '/../includes/social_profiles.php';
 require_once __DIR__ . '/../ai/intern_assessment.php';
 mentora_require_login(['agent', 'admin']);
@@ -17,8 +18,9 @@ switch ($type) {
             mentora_hours($i['hours_logged']), mentora_required_hours($i), MENTORA_TRAINING_STATUS[$i['training_status']][1] ?? $i['training_status'],
             date('Y-m-d', strtotime($i['created_at'])),
         ], mentora_workspace_people($pdo));
-        mentora_csv(
-            "mentora-{$type}-{$stamp}.csv",
+        mentora_pdf(
+            $type === 'interns' ? 'Intern list' : 'Training progress',
+            "mentora-{$type}-{$stamp}.pdf",
             ['User ID', 'Name', 'Email', 'Team', 'Agent', 'School', 'Modules', 'Completion', 'Internship hours', 'Required hours', 'Training status', 'Joined'],
             $rows
         );
@@ -30,8 +32,9 @@ switch ($type) {
             $i['ai']['score'] ?? '', $i['ai']['tier'] ?? 'Not assessed', isset($i['ai']) ? ((int) $i['ai']['ready'] === 1 ? 'Yes' : 'No') : '',
             $i['ai']['summary'] ?? '', isset($i['ai']) ? date('Y-m-d', strtotime($i['ai']['assessed_at'])) : '',
         ], mentora_intern_rankings($pdo));
-        mentora_csv(
-            "mentora-intern-ranking-{$stamp}.csv",
+        mentora_pdf(
+            'Intern AI ranking',
+            "mentora-intern-ranking-{$stamp}.pdf",
             ['Rank', 'User ID', 'Name', 'Email', 'Team', 'Agent', 'Training', 'Quiz average (%)', 'Approved / required hours', 'AI score', 'Tier', 'Ready to employ', 'AI summary', 'Assessed'],
             $rows
         );
@@ -52,8 +55,9 @@ switch ($type) {
             LEFT JOIN users v ON v.id = e.evaluator_id
             ORDER BY e.updated_at DESC")
             ->fetchAll(PDO::FETCH_NUM);
-        mentora_csv(
-            "mentora-evaluations-{$stamp}.csv",
+        mentora_pdf(
+            'Evaluations',
+            "mentora-evaluations-{$stamp}.pdf",
             ['User ID', 'Name', 'Email', 'Pathway', 'Review type', 'Status', 'Score (of 5)', 'Due date', 'Published', 'Evaluator', 'Next steps'],
             $rows
         );
@@ -74,14 +78,15 @@ switch ($type) {
             LEFT JOIN users v ON v.id = r.reviewer_id
             ORDER BY r.report_date DESC, r.id DESC")
             ->fetchAll(PDO::FETCH_NUM);
-        mentora_csv(
-            "mentora-reports-{$stamp}.csv",
+        mentora_pdf(
+            'Daily reports',
+            "mentora-reports-{$stamp}.pdf",
             ['User ID', 'Name', 'Pathway', 'Date', 'Hours', 'Work completed', 'Notes / blockers', 'Status', 'Reviewer', 'Review note', 'Reviewed at'],
             $rows
         );
     case 'social':
         // Social profile monitoring for every active intern (Student VA) and employee (Professional VA).
-        mentora_csv("mentora-social-profiles-{$stamp}.csv", mentora_social_export_header(), mentora_social_export_rows($pdo));
+        mentora_pdf('Social profiles', "mentora-social-profiles-{$stamp}.pdf", mentora_social_export_header(), mentora_social_export_rows($pdo));
     default:
         http_response_code(404);
         exit('Unknown export.');

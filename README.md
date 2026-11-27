@@ -24,7 +24,7 @@ approval link (`admin/applications.php` → `auth/activate.php`).
 
 ### Intern: training, AI assessment, agent handling
 1. The intern fills the internship form and **goes straight to training**. The agent who sent the link becomes their supervising agent.
-2. Training progress is tracked per module (`agent/training_tracker.php`).
+2. Training progress is tracked per module (`agent/training_progress.php`).
 3. After the last module, the **AI assesses and ranks the intern** (`ai/intern_assessment.php`), and the agent is notified (`agent/intern_assessments.php`).
 4. The agent sends an **employability report** recommending interns (`agent/agent_reports.php`). The AI summarizes it and checks each recommendation against the assessment.
 5. HR sees the summaries and the **interns ready to employ** (`admin/intern_reports.php`).

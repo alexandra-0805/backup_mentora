@@ -421,26 +421,24 @@
     gap: 8px;
 }
 
+/* Every workspace button is tinted: a see-through accent fill with accent text and border, following the
+   accent color chosen in Settings. Dark mode and .danger: settings.css. */
 .admin-btn {
-    background: #fff;
-    border: 1px solid var(--workspace-line);
+    background: color-mix(in srgb, var(--mentora-teal) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--mentora-teal) 35%, transparent);
     border-radius: 999px;
-    color: #246965;
+    color: var(--mentora-teal);
     font-size: 10px;
     padding: 10px 16px;
     text-decoration: none;
-    transition: box-shadow 180ms ease, transform 180ms ease;
+    transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
 .admin-btn:hover {
-    box-shadow: 0 6px 16px rgba(60, 60, 67, 0.12);
+    background: color-mix(in srgb, var(--mentora-teal) 14%, transparent);
+    border-color: color-mix(in srgb, var(--mentora-teal) 55%, transparent);
+    box-shadow: 0 6px 16px rgba(11, 98, 93, 0.14);
     transform: translateY(-1px);
-}
-
-.admin-btn.primary {
-    background: var(--workspace-blue);
-    border-color: var(--workspace-blue);
-    color: #fff;
 }
 
 /* ---------- Cards, panels, grids ---------- */
@@ -463,6 +461,14 @@
 .metric-card,
 .admin-panel {
     padding: 22px;
+}
+
+/* Full-width panels stacked down a page (admin, agent and applicant workspaces) keep a 16px gap to whatever
+   comes next; it merges with the next block's own top margin instead of adding to it. Panels side by side in
+   an .admin-grid are spaced by the grid's gap instead. */
+.admin-content > .admin-panel,
+.admin-content > form > .admin-panel {
+    margin-bottom: 16px;
 }
 
 .metric-card {
@@ -1261,29 +1267,11 @@ body.workspace-dark-mode .data-pager-btn:hover:not(:disabled) {
     color: #fff;
 }
 
-/* Buttons. */
-.admin-btn {
-    transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease, transform 180ms ease;
-}
-
-.admin-btn:hover {
-    border-color: rgba(11, 98, 93, 0.35);
-    box-shadow: 0 6px 16px rgba(11, 98, 93, 0.14);
-    color: var(--mentora-teal);
-}
-
-.admin-btn.primary:hover {
-    background: var(--mentora-gradient);
-    border-color: var(--mentora-teal);
-    box-shadow: 0 10px 22px rgba(11, 98, 93, 0.26);
-    color: #fff;
-}
-
+/* Buttons (look and hover: see .admin-btn above). */
 .admin-btn:focus-visible {
     outline: 2px solid var(--mentora-teal);
     outline-offset: 2px;
 }
-
 /* Metric cards: lift with a teal glow and a teal-to-mint bar along the top. */
 .metric-card {
     overflow: hidden;
@@ -1673,9 +1661,6 @@ body.workspace-dark-mode .data-pager-btn:hover:not(:disabled) {
     color: #a2382c;
 }
 
-.screening-card {
-    margin-bottom: 16px;
-}
 
 .screening-head {
     align-items: flex-start;

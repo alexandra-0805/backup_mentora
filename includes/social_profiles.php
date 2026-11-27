@@ -2,7 +2,7 @@
 
 /**
  * Social profile monitoring: the public profiles a Student VA (intern) or Professional VA (employee)
- * builds. Entered on the applicant Profile page; agents and HR download them all as CSV
+ * builds. Entered on the applicant Profile page; agents and HR download them all as PDF
  * (agent/export.php?type=social, admin/export.php?type=social).
  */
 
@@ -80,7 +80,7 @@ function mentora_social_clean_url(string $column, string $value): array
     return [$value, null];
 }
 
-/** Every active intern and employee with their social profiles, for the CSV export. */
+/** Every active intern and employee with their social profiles, for the PDF export. */
 function mentora_social_export_rows(PDO $pdo): array
 {
     $columns = implode(', ', array_map(static fn($c) => 's.' . $c, array_keys(MENTORA_SOCIAL_PLATFORMS)));

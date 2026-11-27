@@ -37,32 +37,22 @@ $avatarUrl = mentora_avatar_url($adminUser['avatar_path'] ?? null, '../');
 
 $now = new DateTimeImmutable('now', new DateTimeZone('Asia/Manila'));
 
-// Waiting for HR: applications to confirm, suitable AI-screened candidates, agents' reports (sidebar badges).
+// Waiting for HR: applications to confirm, agents' reports (sidebar badges; agents' reports show on Reports,
+// which opens Intern reports).
 $navCounts = [
     'applications.php' => (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'applicant' AND status = 'pending'")->fetchColumn(),
-    'screening.php' => (int) $pdo->query(
-        "SELECT COUNT(*) FROM ai_reviews r
-         JOIN (SELECT user_id, MAX(id) AS id FROM ai_reviews GROUP BY user_id) l ON l.id = r.id
-         JOIN users u ON u.id = r.user_id AND u.status = 'active'
-         JOIN applications a ON a.id = (SELECT MAX(id) FROM applications WHERE user_id = u.id)
-         WHERE r.category = 'suitable' AND a.status = 'pending'"
-    )->fetchColumn(),
-    'intern_reports.php' => (int) $pdo->query("SELECT COUNT(*) FROM agent_reports WHERE status = 'submitted'")->fetchColumn(),
+    'consolidated_report.php' => (int) $pdo->query("SELECT COUNT(*) FROM agent_reports WHERE status = 'submitted'")->fetchColumn(),
 ];
 
 $adminNav = [
-    'dashboard.php'              => 'Dashboard',
+    'dashboard.php'              => 'Dashboard', // screening.php (AI screening) opens from the Dashboard button, so it isn't listed
     'applications.php'           => 'Applications',
-    'screening.php'              => 'AI screening',
-    'employee_list.php'          => 'Employee list',
-    'intern_list.php'            => 'Intern list',
+    'employee_list.php'          => 'Employee list', // employee_hours.php opens from here (Employee hours button), so it isn't listed
+    'intern_list.php'            => 'Intern list', // intern_hours.php opens from here (Internship hours button), so it isn't listed
     'agent_list.php'             => 'Agent list',
     'department.php'             => 'Departments',
     'monitoring.php'             => 'Monitoring',
-    'intern_hours.php'           => 'Internship hours',
-    'employee_hours.php'         => 'Employee hours',
-    'intern_reports.php'         => 'Intern reports',
-    'consolidated_report.php'    => 'Reports',
+    'consolidated_report.php'    => 'Reports', // intern_reports.php opens from here (Intern reports button), so it isn't listed
     'user&access_management.php' => 'Users & access',
     'staff_accounts.php'         => 'Staff accounts',
     'settings.php'               => 'Settings',

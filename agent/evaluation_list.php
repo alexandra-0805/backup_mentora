@@ -72,7 +72,7 @@ $statusBadge = ['published' => ['', 'Published'], 'draft' => ['info', 'Draft'], 
         <p>Review intern and employee performance and turn feedback into clear development goals.</p>
     </div>
     <div class="admin-actions">
-        <a class="admin-btn" href="export.php?type=evaluations"><?= mentora_icon('download') ?>Export evaluations</a><a class="admin-btn primary" href="#create">+ Create evaluation</a>
+        <a class="admin-btn" href="individual_evaluation.php">Individual evaluation</a><a class="admin-btn" href="export.php?type=evaluations"><?= mentora_icon('download') ?>Export evaluations</a><a class="admin-btn primary" href="#create">+ Create evaluation</a>
     </div>
 </div>
 <?= mentora_flash_html() ?>

@@ -4,8 +4,8 @@
  * One account (HR admins), opened from the people lists and Users & access.
  *   user_edit.php?id=12          view the person's records and edit name, email, role, pathway,
  *                                department, supervising agent and access (active / turned off)
- *   user_edit.php?new=1&role=agent   invite someone: creates the account and a one-time link to set
- *                                their username and password (emailed when mail is set up)
+ * New staff accounts are created in Staff accounts (admin/staff_accounts.php); applicants sign up themselves.
+ * "Send a new link" here re-sends the one-time username/password link to an account that hasn't used it yet.
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ $sendInvite = static function (PDO $pdo, array $user, array $admin, bool $resent
 
 if (mentora_is_post()) {
     $id = (int) ($_POST['id'] ?? 0);
-    $back = $id > 0 ? 'admin/user_edit.php?id=' . $id : 'admin/user_edit.php?new=1';
+    $back = $id > 0 ? 'admin/user_edit.php?id=' . $id : 'admin/user&access_management.php';
     $admin = mentora_post_user(['admin'], $back);
     $action = (string) ($_POST['action'] ?? '');
 
@@ -50,7 +50,7 @@ if (mentora_is_post()) {
     // One account per email (Gmail lookalikes such as dots or "+tags" count as the same email).
     $emailTaken = static fn(PDO $pdo, string $email, int $exceptId): bool => mentora_find_account_by_email($pdo, $email, $exceptId) !== null;
     $formError = match (true) {
-        !in_array($action, ['save', 'invite'], true) => null,
+        $action !== 'save' => null,
         $first === '' || $last === '' => 'First and last name are required.',
         !filter_var($email, FILTER_VALIDATE_EMAIL) => 'Please enter a valid email address.',
         $emailTaken($pdo, $email, $id) => 'Another account already uses that email.',
@@ -64,15 +64,6 @@ if (mentora_is_post()) {
     }
     if ($role !== 'applicant' || $pathway !== 'internship') {
         $agentId = null; // only interns have a supervising agent
-    }
-
-    if ($action === 'invite') {
-        $pdo->prepare("INSERT INTO users (first_name, last_name, email, pathway, password_hash, role, status, department_id, agent_id)
-            VALUES (?, ?, ?, ?, ?, ?, 'approved', ?, ?)")
-            ->execute([$first, $last, $email, $pathway, password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT), $role, $departmentId, $agentId]);
-        $newId = (int) $pdo->lastInsertId();
-        $sendInvite($pdo, mentora_person($pdo, $newId), $admin, false);
-        mentora_redirect('admin/user_edit.php?id=' . $newId);
     }
 
     $user = $id > 0 ? mentora_person($pdo, $id) : null;
@@ -129,20 +120,13 @@ if (mentora_is_post()) {
     mentora_redirect($back);
 }
 
-$isNew = isset($_GET['new']);
-$user = $isNew ? null : mentora_person($pdo, (int) ($_GET['id'] ?? 0));
-$pageTitle = $isNew ? 'Invite user' : 'User details';
+$user = mentora_person($pdo, (int) ($_GET['id'] ?? 0));
+$pageTitle = 'User details';
 $activePage = 'user&access_management.php';
 require __DIR__ . '/../includes/admin_layout.php';
 
 $invite = $_SESSION['user_invite'] ?? null;
 unset($_SESSION['user_invite']);
-$defaults = $user ?? [
-    'first_name' => '', 'last_name' => '', 'email' => '',
-    'role' => isset($roles[$_GET['role'] ?? '']) ? $_GET['role'] : 'agent',
-    'pathway' => isset($pathways[$_GET['pathway'] ?? '']) ? $_GET['pathway'] : 'employee_va',
-    'department_id' => null, 'agent_id' => null, 'status' => 'new',
-];
 $statusBadge = [
     'active' => ['', 'Active'],
     'pending' => ['warn', 'Waiting for confirmation'],
@@ -153,76 +137,71 @@ $statusBadge = [
 ?>
 <div class="admin-heading keep-title">
     <div>
-        <h1><?= $isNew ? 'Invite user' : ($user ? mentora_h(trim($user['first_name'] . ' ' . $user['last_name'])) : 'User not found') ?></h1>
-        <p><?= $isNew ? 'Create an account and send a one-time link to set a username and password.' : 'Account details, access and workspace records.' ?></p>
+        <h1><?= $user ? mentora_h(trim($user['first_name'] . ' ' . $user['last_name'])) : 'User not found' ?></h1>
+        <p>Account details, access and workspace records.</p>
     </div>
     <a class="admin-btn" href="user&amp;access_management.php">← Users &amp; access</a>
 </div>
 <?= mentora_flash_html() ?>
 <?php if ($invite) { mentora_render_invite_panel($invite, $adminName); } ?>
-<?php if (!$isNew && !$user): ?>
+<?php if (!$user): ?>
     <section class="admin-panel"><p>That account doesn’t exist anymore.</p></section>
 <?php else:
-    [$badgeClass, $badgeText] = $statusBadge[$defaults['status']] ?? ['info', 'New'];
-    $isSelf = $user && (int) $user['id'] === (int) ($_SESSION['user']['id'] ?? 0);
+    [$badgeClass, $badgeText] = $statusBadge[$user['status']] ?? ['info', ucfirst((string) $user['status'])];
+    $isSelf = (int) $user['id'] === (int) ($_SESSION['user']['id'] ?? 0);
 ?>
     <div class="admin-grid">
         <section class="admin-panel">
-            <h2><?= $isNew ? 'New account' : 'Account' ?> <?php if (!$isNew): ?><span class="badge <?= $badgeClass ?>"><?= $badgeText ?></span><?php endif; ?>
+            <h2>Account <span class="badge <?= $badgeClass ?>"><?= $badgeText ?></span>
             </h2>
-            <p class="panel-subtitle"><?= $user
-                ? mentora_h($user['user_code'] . ($user['username'] ? ' · @' . $user['username'] : '') . ' · created ' . date('d M Y', strtotime($user['created_at'])))
-                : 'They’ll get an email with a link (or you can send it yourself).' ?></p>
+            <p class="panel-subtitle"><?= mentora_h($user['user_code'] . ($user['username'] ? ' · @' . $user['username'] : '') . ' · created ' . date('d M Y', strtotime($user['created_at']))) ?></p>
             <form method="post" class="form-grid" data-role-form>
                 <?= mentora_csrf_field() ?><input type="hidden"
                     name="id"
-                    value="<?= (int) ($user['id'] ?? 0) ?>"><input type="hidden" name="action" value="<?= $isNew ? 'invite' : 'save' ?>">
+                    value="<?= (int) $user['id'] ?>"><input type="hidden" name="action" value="save">
                 <div class="field">
-                    <label for="first_name">First name *</label><input id="first_name" name="first_name" required maxlength="80" value="<?= mentora_h($defaults['first_name']) ?>"></div>
+                    <label for="first_name">First name *</label><input id="first_name" name="first_name" required maxlength="80" value="<?= mentora_h($user['first_name']) ?>"></div>
                 <div class="field">
-                    <label for="last_name">Last name *</label><input id="last_name" name="last_name" required maxlength="80" value="<?= mentora_h($defaults['last_name']) ?>"></div>
+                    <label for="last_name">Last name *</label><input id="last_name" name="last_name" required maxlength="80" value="<?= mentora_h($user['last_name']) ?>"></div>
                 <div class="field full">
                     <label for="email">Email *</label><input id="email"
                         name="email"
                         type="email"
                         required
                         maxlength="190"
-                        value="<?= mentora_h($defaults['email']) ?>"></div>
+                        value="<?= mentora_h($user['email']) ?>"></div>
                 <div class="field">
                     <label for="role">Role *</label><select id="role" name="role"<?= $isSelf ? ' disabled' : '' ?>><?php foreach ($roles as $key => $label): ?>
-                        <option value="<?= $key ?>"<?= $defaults['role'] === $key ? ' selected' : '' ?>><?= $label ?></option>
+                        <option value="<?= $key ?>"<?= $user['role'] === $key ? ' selected' : '' ?>><?= $label ?></option>
                         <?php endforeach; ?></select><?php if ($isSelf): ?><input type="hidden" name="role" value="admin"><small>You can’t change your own role.</small><?php endif; ?>
                 </div>
                 <div class="field" data-for-role="applicant">
                     <label for="pathway">Pathway *</label><select id="pathway" name="pathway"><?php foreach ($pathways as $key => $label): ?>
-                        <option value="<?= $key ?>"<?= $defaults['pathway'] === $key ? ' selected' : '' ?>><?= $label ?></option>
+                        <option value="<?= $key ?>"<?= $user['pathway'] === $key ? ' selected' : '' ?>><?= $label ?></option>
                         <?php endforeach; ?></select>
                 </div>
                 <div class="field">
                     <label for="department_id">Department</label><select id="department_id" name="department_id">
                         <option value="">Not assigned</option>
                         <?php foreach (mentora_departments($pdo) as $department): ?>
-                        <option value="<?= (int) $department['id'] ?>"<?= (int) $defaults['department_id'] === (int) $department['id'] ? ' selected' : '' ?>><?= mentora_h($department['name']) ?></option>
+                        <option value="<?= (int) $department['id'] ?>"<?= (int) $user['department_id'] === (int) $department['id'] ? ' selected' : '' ?>><?= mentora_h($department['name']) ?></option>
                         <?php endforeach; ?></select>
                 </div>
                 <div class="field" data-for-role="intern">
                     <label for="agent_id">Supervising agent</label><select id="agent_id" name="agent_id">
                         <option value="">Not assigned</option>
                         <?php foreach (mentora_active_agents($pdo) as $agent): ?>
-                        <option value="<?= (int) $agent['id'] ?>"<?= (int) $defaults['agent_id'] === (int) $agent['id'] ? ' selected' : '' ?>><?= mentora_h($agent['first_name'] . ' ' . $agent['last_name']) ?></option>
+                        <option value="<?= (int) $agent['id'] ?>"<?= (int) $user['agent_id'] === (int) $agent['id'] ? ' selected' : '' ?>><?= mentora_h($agent['first_name'] . ' ' . $agent['last_name']) ?></option>
                         <?php endforeach; ?></select>
                 </div>
                 <div class="field full form-actions">
                     <button class="admin-btn primary"
                         type="submit"
-                        data-confirm-title="<?= $isNew ? 'Send the invitation?' : 'Save these changes?' ?>"
-                        data-confirm="<?= $isNew
-                            ? 'The account is created and a one-time link to set a username and password is sent.'
-                            : 'The account details will be updated.' ?>"><?= $isNew ? 'Create & send invite' : 'Save changes' ?></button>
+                        data-confirm-title="Save these changes?"
+                        data-confirm="The account details will be updated.">Save changes</button>
                 </div>
             </form>
         </section>
-        <?php if ($user): ?>
             <section class="admin-panel">
                 <h2>Access</h2>
                 <?php if (in_array($user['status'], ['pending', 'approved'], true)): ?>
@@ -294,9 +273,8 @@ $statusBadge = [
                     <?php endif; ?>
                 <?php endif; ?>
             </section>
-        <?php endif; ?>
     </div>
-    <?php if ($user && $user['role'] === 'applicant' && $user['status'] === 'active') { mentora_render_certificate_panel($pdo, $user, 'user_edit.php?id=' . (int) $user['id'], '../'); } ?>
+    <?php if ($user['role'] === 'applicant' && $user['status'] === 'active') { mentora_render_certificate_panel($pdo, $user, 'user_edit.php?id=' . (int) $user['id'], '../'); } ?>
     <script>
         // Pathway only matters for interns/employees, and the agent only for interns.
         (() => {

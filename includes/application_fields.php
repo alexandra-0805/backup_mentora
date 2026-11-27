@@ -220,6 +220,8 @@ const MENTORA_VA_INTERESTS = [
     'Audit Assistant',
     'Medical Virtual Assistant (Client intake)',
     'Healthcare Scheduling & Records',
+    'Coaching Client Support (Onboarding & Scheduling)',
+    'Online Community Management',
     'Travel & Booking Assistant',
 ];
 
@@ -275,20 +277,23 @@ function mentora_course_interests(string $course): array
  * department does, keyed by the department's name in the `departments` table. Every niche appears once.
  */
 const MENTORA_DEPARTMENT_ROLES = [
-    'Web Developer' => [
+    'Arkiste' => [
         'Web Development', 'Website Maintenance', 'Technical Support (IT Helpdesk)', 'E-commerce Store Support (Shopify)',
     ],
-    'Marketing Services' => [
+    'Omis Digital Agency' => [
         'Social Media Management', 'SEO (Search Engine Optimization)', 'Content Writing & Copywriting', 'Email Marketing',
         'Online Ads (Facebook / Google Ads)', 'Lead Generation', 'Graphic Design (Canva)', 'Video Editing',
     ],
-    'Accounting' => [
+    'Universal Tax Professionals' => [
         'Accounting Assistant', 'Bookkeeping', 'Accounts Payable & Receivable', 'Bank & Account Reconciliation',
         'Billing & Collections', 'Payroll & Invoicing', 'Expense Tracking & Management', 'Budgeting & Forecasting',
         'Financial Reporting', 'Tax Preparation Assistant', 'Audit Assistant',
     ],
-    'Psychotherapist' => [
+    'Rebecca Therapy Group' => [
         'Medical Virtual Assistant (Client intake)', 'Healthcare Scheduling & Records',
+    ],
+    'Luminary Collective Coaching' => [
+        'Coaching Client Support (Onboarding & Scheduling)', 'Online Community Management',
     ],
 ];
 

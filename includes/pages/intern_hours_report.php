@@ -8,19 +8,20 @@
  *
  * Shared by agent/intern_hours.php and admin/intern_hours.php, which set $workspace ('agent' or 'admin').
  *   ?format=json  the live figures (the page refreshes itself with these every minute)
- *   ?format=csv   download the report
+ *   ?format=pdf   download the report
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/../workflow.php';
 require_once __DIR__ . '/../intern_hours.php';
+require_once __DIR__ . '/../pdf_export.php';
 
 $workspace = ($workspace ?? 'agent') === 'admin' ? 'admin' : 'agent';
 $allowedRoles = $workspace === 'admin' ? ['admin'] : ['agent', 'admin'];
 $format = (string) ($_GET['format'] ?? '');
 
-if ($format === 'json' || $format === 'csv') {
+if ($format === 'json' || $format === 'pdf') {
     mentora_require_login($allowedRoles);
     $rows = mentora_intern_hours($pdo);
     if ($format === 'json') {
@@ -30,7 +31,7 @@ if ($format === 'json' || $format === 'csv') {
         exit;
     }
     $stateLabel = ['completed' => 'Completed', 'working' => 'Active now', 'out' => 'Paused', 'absent' => 'Not active today'];
-    mentora_csv('internship-hours-' . date('Y-m-d-Hi') . '.csv', [
+    mentora_pdf('Internship hours', 'internship-hours-' . date('Y-m-d-Hi') . '.pdf', [
         'Intern', 'User ID', 'School', 'Department', 'Supervising agent', 'Required hours', 'Rendered hours', 'Remaining hours',
         'Progress %', 'Today', 'Active today (hours)', 'First activity', 'Last activity', 'Days present', 'Missing time-outs',
         'Approved report hours', 'Estimated finish',
@@ -44,7 +45,8 @@ if ($format === 'json' || $format === 'csv') {
 }
 
 $pageTitle = 'Internship hours';
-$activePage = 'intern_hours.php';
+// Not in either sidebar: agents open it from the Intern directory button, HR from the Intern list button.
+$activePage = $workspace === 'agent' ? 'intern_directory.php' : 'intern_list.php';
 require __DIR__ . '/../' . $workspace . '_layout.php';
 
 $me = $_SESSION['user'];
@@ -78,7 +80,7 @@ $todayText = static function (array $r): array {
         <p>Every intern’s required hours against the hours they’ve rendered, counted automatically while they click, type or scroll in Mentora. Interns who are active now count up live.</p>
     </div>
     <div class="admin-actions">
-        <a class="admin-btn" href="intern_hours.php?format=csv"><?= mentora_icon('download') ?>Export CSV</a>
+        <a class="admin-btn" href="intern_hours.php?format=pdf"><?= mentora_icon('download') ?>Export PDF</a>
     </div>
 </div>
 

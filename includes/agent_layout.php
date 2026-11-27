@@ -56,18 +56,14 @@ $now = new DateTimeImmutable(
 );
 
 $agentNav = [
-    'dashboard.php'             => 'Dashboard', // recruitment.php opens from the Dashboard / Department candidates buttons, so it isn't listed
-    'candidates.php'            => 'Department candidates',
-    'intern_directory.php'      => 'Intern directory', // edit_intern.php opens from here (Edit buttons), so it isn't listed
-    'training_tracker.php'      => 'Training tracker',
-    'intern_hours.php'          => 'Internship hours',
-    'intern_assessments.php'    => 'AI assessments',
-    'individual_evaluation.php' => 'Individual evaluation',
-    'evaluation_list.php'       => 'Evaluation list',
-    'agent_reports.php'         => 'Employability reports',
+    'dashboard.php'             => 'Dashboard', // intern_assessments.php opens from the Dashboard button, so it isn't listed
+    'candidates.php'            => 'Department candidates', // recruitment.php opens from here (Recruitment links button), so it isn't listed
+    'intern_directory.php'      => 'Intern directory', // edit_intern.php (Edit buttons) and intern_hours.php open from here, so they aren't listed
+    'training_progress.php'     => 'Training tracker', // not training_tracker.php: InfinityFree blocks any URL ending in "tracker.php" (403)
+    'evaluation_list.php'       => 'Evaluation list', // individual_evaluation.php opens from here (button, Review/View), so it isn't listed
+    'agent_reports.php'         => 'Agent Reports',
     'reporting_overview.php'    => 'Reporting overview',
     'documents.php'             => 'Documents',
-    'staff_accounts.php'        => 'Staff accounts',
     'settings.php'              => 'Settings',
 ];
 

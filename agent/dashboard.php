@@ -42,7 +42,7 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
         <p><?= $greeting ?>. Keep your team's learning and work on track.</p>
     </div>
     <div class="admin-actions">
-        <a class="admin-btn" href="recruitment.php">Recruitment links</a><a class="admin-btn" href="reporting_overview.php">View reporting</a><a class="admin-btn primary" href="intern_directory.php<?= $myInterns ? '?scope=mine' : '' ?>">Open team</a>
+        <a class="admin-btn" href="intern_assessments.php">AI assessments</a><a class="admin-btn" href="reporting_overview.php">View reporting</a><a class="admin-btn primary" href="intern_directory.php<?= $myInterns ? '?scope=mine' : '' ?>">Open team</a>
     </div>
 </div>
 <?= mentora_flash_html() ?>

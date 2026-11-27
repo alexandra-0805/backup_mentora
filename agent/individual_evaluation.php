@@ -79,7 +79,7 @@ if (mentora_is_post()) {
 }
 
 $pageTitle = 'Individual evaluation';
-$activePage = 'individual_evaluation.php';
+$activePage = 'evaluation_list.php'; // not in the sidebar; highlight the Evaluation list it's opened from
 require __DIR__ . '/../includes/agent_layout.php';
 
 $evaluation = $loadEvaluation($pdo, (int) ($_GET['id'] ?? 0));

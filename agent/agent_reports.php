@@ -1,12 +1,5 @@
 <?php
 
-/**
- * Employability reports (agents): after handling interns through training, the agent reports on them
- * and ticks the ones they recommend for employment. The AI summarizes the report and checks each
- * recommendation against the intern's AI assessment (ai/agent_report_summary.php); HR sees it in
- * admin/intern_reports.php and is notified.
- */
-
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/intern_reports.php';
@@ -45,7 +38,7 @@ if (mentora_is_post()) {
     mentora_redirect('agent/agent_reports.php#rep' . $id);
 }
 
-$pageTitle = 'Employability reports';
+$pageTitle = 'Agent Reports';
 $activePage = 'agent_reports.php';
 require __DIR__ . '/../includes/agent_layout.php';
 
@@ -64,7 +57,7 @@ $reports = $reports->fetchAll();
 ?>
 <div class="admin-heading">
     <div>
-        <h1>Employability reports</h1>
+        <h1>Agent Reports</h1>
         <p>Report on the interns you handle and recommend the ones ready to employ. The AI summarizes it for HR.</p>
     </div>
     <div class="admin-actions"><a class="admin-btn" href="intern_assessments.php">View AI ranking</a></div>

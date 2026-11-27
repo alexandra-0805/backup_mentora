@@ -546,22 +546,3 @@ function mentora_format_bytes(int $bytes): string
 
     return $bytes >= 1024 ? round($bytes / 1024) . ' KB' : $bytes . ' B';
 }
-
-/* ---------- CSV export ---------- */
-
-/** Send rows as a CSV download (opens in Excel / Google Sheets) and stop. */
-function mentora_csv(string $fileName, array $header, iterable $rows): never
-{
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="' . preg_replace('/[^A-Za-z0-9._-]/', '_', $fileName) . '"');
-    header('X-Content-Type-Options: nosniff');
-    $out = fopen('php://output', 'w');
-    fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM so Excel shows accents correctly
-    fputcsv($out, $header);
-    foreach ($rows as $row) {
-        // Cells starting with = + - @ would run as formulas in a spreadsheet; prefix them.
-        fputcsv($out, array_map(static fn($cell) => preg_match('/^[=+\-@\t\r]/', (string) $cell) ? "'" . $cell : (string) $cell, array_values($row)));
-    }
-    fclose($out);
-    exit;
-}

@@ -68,26 +68,30 @@ if ($dryRun || !$toUpload) {
     exit(0);
 }
 
+/** Log in with the first of $connectors that works (ftp_ssl_connect = FTPS, ftp_connect = plain FTP). */
+$login = static function (array $connectors) use ($config): array {
+    foreach ($connectors as $connect) {
+        if (!function_exists($connect)) {
+            continue;
+        }
+        $conn = @$connect((string) $config['host'], (int) ($config['port'] ?? 21), 30);
+        if ($conn && @ftp_login($conn, (string) $config['user'], (string) $config['password'])) {
+            ftp_pasv($conn, true);
+            return [$conn, $connect];
+        }
+        if ($conn) {
+            @ftp_close($conn);
+        }
+    }
+    return [null, null];
+};
+
 // Connect: FTPS when the host supports it, plain FTP otherwise.
-$ftp = null;
-foreach (['ftp_ssl_connect', 'ftp_connect'] as $connect) {
-    if (!function_exists($connect)) {
-        continue;
-    }
-    $conn = @$connect((string) $config['host'], (int) ($config['port'] ?? 21), 30);
-    if ($conn && @ftp_login($conn, (string) $config['user'], (string) $config['password'])) {
-        $ftp = $conn;
-        break;
-    }
-    if ($conn) {
-        @ftp_close($conn);
-    }
-}
+[$ftp, $connectedWith] = $login(['ftp_ssl_connect', 'ftp_connect']);
 if (!$ftp) {
     fwrite(STDERR, "Could not log in to {$config['host']} as {$config['user']}. Check config/deploy.local.php.\n");
     exit(1);
 }
-ftp_pasv($ftp, true);
 
 // Safety check: the target folder must already hold the site.
 if (@ftp_size($ftp, $remoteDir . '/index.php') < 0) {
@@ -95,9 +99,13 @@ if (@ftp_size($ftp, $remoteDir . '/index.php') < 0) {
     exit(1);
 }
 
+/**
+ * Upload one file and check it arrived whole. Text files must match the local size exactly: an FTPS upload
+ * can be cut short while the file still appears on the server (a cut-off PHP file breaks every page using it).
+ * The host re-compresses images, so their sizes differ; an image counts if it was just written.
+ */
 $madeDirs = [];
-$failed = [];
-foreach ($toUpload as $i => $path) {
+$upload = static function ($ftp, string $path) use ($root, $remoteDir, &$madeDirs): bool {
     $dir = dirname($path);
     $built = $remoteDir;
     foreach ($dir === '.' ? [] : explode('/', $dir) as $part) {
@@ -107,13 +115,19 @@ foreach ($toUpload as $i => $path) {
             $madeDirs[$built] = true;
         }
     }
+    $remote = $remoteDir . '/' . $path;
     $started = time();
-    $ok = @ftp_put($ftp, $remoteDir . '/' . $path, $root . '/' . $path, FTP_BINARY);
-    if (!$ok) {
-        // The host sometimes answers an image upload with a speed report instead of "transfer complete"
-        // (it re-compresses images, so sizes differ). Count it as uploaded if the file was just written.
-        $ok = @ftp_size($ftp, $remoteDir . '/' . $path) > 0 && @ftp_mdtm($ftp, $remoteDir . '/' . $path) >= $started - 120;
+    $put = @ftp_put($ftp, $remote, $root . '/' . $path, FTP_BINARY);
+    if (preg_match('#\.(png|jpe?g|gif|webp|ico)$#i', $path)) {
+        // The host sometimes answers an image upload with a speed report instead of "transfer complete".
+        return $put || (@ftp_size($ftp, $remote) > 0 && @ftp_mdtm($ftp, $remote) >= $started - 120);
     }
+    return @ftp_size($ftp, $remote) === filesize($root . '/' . $path);
+};
+
+$failed = [];
+foreach ($toUpload as $i => $path) {
+    $ok = $upload($ftp, $path);
     printf("[%d/%d] %s %s\n", $i + 1, count($toUpload), $ok ? 'OK  ' : 'FAIL', $path);
     if ($ok) {
         $manifest[$path] = $files[$path];
@@ -122,6 +136,24 @@ foreach ($toUpload as $i => $path) {
     }
 }
 @ftp_close($ftp); // the host drops TLS on close; the uploads are already done
+
+// Some files are always cut short over FTPS at this host but upload fine over plain FTP: retry those that way.
+if ($failed && $connectedWith === 'ftp_ssl_connect') {
+    [$plain] = $login(['ftp_connect']);
+    if ($plain) {
+        echo "Retrying " . count($failed) . " file(s) over plain FTP (the encrypted upload didn't arrive whole):\n";
+        $madeDirs = [];
+        foreach ($failed as $key => $path) {
+            $ok = $upload($plain, $path);
+            printf("  %s %s\n", $ok ? 'OK  ' : 'FAIL', $path);
+            if ($ok) {
+                $manifest[$path] = $files[$path];
+                unset($failed[$key]);
+            }
+        }
+        @ftp_close($plain);
+    }
+}
 
 foreach ($deleted as $path) {
     unset($manifest[$path]);
