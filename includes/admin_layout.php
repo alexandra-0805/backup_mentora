@@ -71,7 +71,7 @@ $adminNav = [
     <link rel="icon" type="image/png" href="../assets/images/mentora-logo.png?v=1">
     <link rel="stylesheet" href="../assets/css/style.css?v=44">
     <link rel="stylesheet" href="../assets/css/admin.css?v=17">
-    <link rel="stylesheet" href="../assets/css/settings.css?v=44">
+    <link rel="stylesheet" href="../assets/css/settings.css?v=45">
     <link rel="stylesheet" href="../assets/css/theme.css?v=10">
     <link rel="stylesheet" href="../assets/css/dialog.css?v=2">
     <?php require __DIR__ . '/theme_boot.php'; ?>

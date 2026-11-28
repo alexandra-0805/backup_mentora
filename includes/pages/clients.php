@@ -10,6 +10,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../client_work.php';
+require_once __DIR__ . '/../work_rules.php';
 
 $workspace = ($workspace ?? 'agent') === 'admin' ? 'admin' : 'agent';
 $self = $workspace . '/clients.php';
@@ -115,6 +116,7 @@ $assetBase = '../';
     </div>
 </div>
 <?= mentora_flash_html() ?>
+<?= mentora_work_rules(true) // Starting rules (includes/work_rules.php) ?>
 <div class="metric-grid">
     <div class="metric-card"><small>Active clients</small><strong><?= $active ?></strong><span>Of <?= count($clients) ?> clients</span></div>
     <div class="metric-card"><small>Open tasks</small><strong><?= array_sum(array_map('intval', array_column($clients, 'open_tasks'))) ?></strong><span>Not done yet</span></div>

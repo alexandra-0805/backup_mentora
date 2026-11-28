@@ -173,7 +173,7 @@ $now = new DateTimeImmutable(
 
     <link
         rel="stylesheet"
-        href="../../assets/css/settings.css?v=44">
+        href="../../assets/css/settings.css?v=45">
 
     <link
         rel="stylesheet"

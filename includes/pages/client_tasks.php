@@ -12,6 +12,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../client_work.php';
+require_once __DIR__ . '/../work_rules.php';
 
 $requestedWorkspace = (string) ($workspace ?? ''); // set by the wrapper page (admin/, agent/ or applicant/…/tasks.php)
 $workspace = in_array($requestedWorkspace, ['admin', 'agent', 'applicant'], true) ? $requestedWorkspace : 'agent';
@@ -157,6 +158,7 @@ $filterClient = (int) ($_GET['client'] ?? 0);
     <?php endif; ?>
 </div>
 <?= mentora_flash_html() ?>
+<?= mentora_work_rules($isStaff) // Starting rules (includes/work_rules.php) ?>
 <div class="metric-grid">
     <div class="metric-card"><small>Open</small><strong><?= count($open) ?></strong><span>Not done yet</span></div>
     <div class="metric-card"><small>Due in 7 days</small><strong><?= count($dueSoon) ?></strong><span>Coming up</span></div>
