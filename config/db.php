@@ -777,6 +777,121 @@ try {
         }
         $pdo->commit();
     }
+
+    // ---------- Client work: Clients, Tasks & Deliverables, End-of-Day Updates, Link Bank ----------
+    // New tables only: nothing above is changed. Removing a person keeps their clients, tasks and links
+    // (owner set to NULL); their own End-of-Day Updates go with them.
+
+    // Clients: who Mentora works for. department_id links a client to its client department (the staff
+    // assigned to it); owner_id is the Mentora person responsible for the client.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS clients (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(160) NOT NULL,
+            department_id INT UNSIGNED NULL,
+            contact_name VARCHAR(120) NULL,
+            contact_email VARCHAR(190) NULL,
+            contact_phone VARCHAR(40) NULL,
+            website VARCHAR(255) NULL,
+            service_scope TEXT NULL,
+            shared_folder_url VARCHAR(500) NULL,
+            owner_id INT UNSIGNED NULL,
+            status ENUM("active", "paused", "ended") NOT NULL DEFAULT "active",
+            notes TEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_clients_department (department_id),
+            KEY idx_clients_owner (owner_id),
+            KEY idx_clients_status (status, name),
+            CONSTRAINT fk_clients_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
+            CONSTRAINT fk_clients_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    // The first time: every client department gets its client record (name, and its description as the service scope).
+    if (!(int) $pdo->query('SELECT COUNT(*) FROM clients')->fetchColumn()) {
+        $pdo->exec('INSERT INTO clients (name, department_id, service_scope)
+            SELECT d.name, d.id, NULLIF(d.description, "") FROM departments d ORDER BY d.id');
+    }
+
+    // Tasks & Deliverables: one row per piece of work, for one client, with one Mentora owner.
+    // A client can't be deleted while it still has tasks (RESTRICT), so no work history is lost by accident.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS client_tasks (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            client_id INT UNSIGNED NOT NULL,
+            owner_id INT UNSIGNED NULL,
+            title VARCHAR(190) NOT NULL,
+            description TEXT NULL,
+            deliverable_url VARCHAR(500) NULL,
+            status ENUM("to_do", "in_progress", "in_review", "done", "blocked") NOT NULL DEFAULT "to_do",
+            priority ENUM("low", "normal", "high", "urgent") NOT NULL DEFAULT "normal",
+            due_date DATE NULL,
+            completed_at DATETIME NULL,
+            created_by INT UNSIGNED NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            KEY idx_client_tasks_client (client_id, status),
+            KEY idx_client_tasks_owner (owner_id, status),
+            KEY idx_client_tasks_due (due_date),
+            CONSTRAINT fk_client_tasks_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT,
+            CONSTRAINT fk_client_tasks_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL,
+            CONSTRAINT fk_client_tasks_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+
+    // End-of-Day Updates: one per person per workday (the unique key), with what they finished, what's in
+    // the way, and what's next. Separate from work_reports (hours and approval), which is unchanged.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS eod_updates (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            work_date DATE NOT NULL,
+            completed_work TEXT NOT NULL,
+            blockers TEXT NULL,
+            next_day_focus TEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_eod_updates_person_day (user_id, work_date),
+            KEY idx_eod_updates_day (work_date),
+            CONSTRAINT fk_eod_updates_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+
+    // End-of-day report format (includes/eod_report.php): date, day, time in, time out, hours worked, tasks
+    // completed, notes. Interns' and employees' reports stay in work_reports (approval and approved hours as
+    // before: report_date, hours, summary = tasks completed, notes); agents' own are in eod_updates
+    // (completed_work = tasks completed). Only columns are added here.
+    $reportColumns = $pdo->query('SHOW COLUMNS FROM work_reports')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('day_name', $reportColumns, true)) {
+        $pdo->exec('ALTER TABLE work_reports ADD COLUMN day_name VARCHAR(9) NULL AFTER report_date,
+            ADD COLUMN time_in TIME NULL AFTER day_name, ADD COLUMN time_out TIME NULL AFTER time_in');
+    }
+    $eodColumns = $pdo->query('SHOW COLUMNS FROM eod_updates')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('day_name', $eodColumns, true)) {
+        $pdo->exec('ALTER TABLE eod_updates ADD COLUMN day_name VARCHAR(9) NULL AFTER work_date,
+            ADD COLUMN time_in TIME NULL AFTER day_name, ADD COLUMN time_out TIME NULL AFTER time_in,
+            ADD COLUMN hours_worked DECIMAL(4,1) NULL AFTER time_out, ADD COLUMN notes TEXT NULL AFTER completed_work');
+    }
+
+    // Link Bank: links the team uses often, grouped by category. client_id ties a link to its client;
+    // NULL means a general team link. No page uses it any more (the Link bank pages were removed); the table is kept.
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS link_bank (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            category VARCHAR(80) NOT NULL,
+            title VARCHAR(160) NOT NULL,
+            url VARCHAR(500) NOT NULL,
+            description VARCHAR(255) NULL,
+            client_id INT UNSIGNED NULL,
+            added_by INT UNSIGNED NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            KEY idx_link_bank_category (category, title),
+            KEY idx_link_bank_client (client_id),
+            CONSTRAINT fk_link_bank_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
+            CONSTRAINT fk_link_bank_user FOREIGN KEY (added_by) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
 } catch (PDOException $exception) {
     error_log('Mentora database connection failed: ' . $exception->getMessage());
     http_response_code(500);

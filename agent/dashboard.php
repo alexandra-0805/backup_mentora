@@ -31,7 +31,10 @@ $checkedIn = (int) $pdo->query("SELECT COUNT(*)
     ->fetchColumn();
 $myDepartmentId = (int) ($pdo->query('SELECT department_id FROM users WHERE id = ' . $meId)->fetchColumn() ?: 0);
 $candidates = $myDepartmentId ? mentora_screening_rows($pdo, 'suitable', $myDepartmentId) : [];
-$assessed = array_filter(mentora_intern_rankings($pdo, $myInterns ? $meId : null), static fn($i) => $i['ai'] !== null);
+// Intern ranking (ai/intern_assessment.php): best AI assessment first, not assessed yet last. "Recommended" = finished
+// training and scored MENTORA_READY_SCORE (70) or more, the same "ready to employ" as the AI ranking page.
+$ranking = mentora_intern_rankings($pdo, $myInterns ? $meId : null);
+$assessed = array_filter($ranking, static fn($i) => $i['ai'] !== null);
 $readyToReport = count(array_filter($assessed, static fn($i) => (int) $i['ai']['ready'] === 1));
 $hour = (int) date('G');
 $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
@@ -42,7 +45,7 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
         <p><?= $greeting ?>. Keep your team's learning and work on track.</p>
     </div>
     <div class="admin-actions">
-        <a class="admin-btn" href="intern_assessments.php">AI assessments</a><a class="admin-btn" href="reporting_overview.php">View reporting</a><a class="admin-btn primary" href="intern_directory.php<?= $myInterns ? '?scope=mine' : '' ?>">Open team</a>
+        <a class="admin-btn" href="intern_assessments.php">Assessments</a><a class="admin-btn" href="reporting_overview.php">View reporting</a><a class="admin-btn primary" href="intern_directory.php<?= $myInterns ? '?scope=mine' : '' ?>">Open team</a>
     </div>
 </div>
 <?= mentora_flash_html() ?>
@@ -58,21 +61,36 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
 </div>
 <div class="admin-grid">
     <section class="admin-panel">
-        <h2>Intern training progress</h2>
-        <p class="panel-subtitle"><?= $myInterns ? 'Your interns' : 'Active learners in the current cohort' ?></p>
-        <?php if (!$cohort): ?><p class="panel-subtitle">No active interns yet.</p><?php else: ?>
-        <table class="admin-table"><thead><tr><th>Intern / team</th><th>Module progress</th><th>Status</th></tr></thead><tbody>
-            <?php foreach (array_slice($cohort, 0, 6) as $intern): [$badgeClass, $badgeText] = MENTORA_TRAINING_STATUS[$intern['training_status']] ?? ['info', $intern['training_status']]; ?>
+        <div class="panel-title-row">
+            <div>
+                <h2>Intern ranking</h2>
+                <p class="panel-subtitle"><?= $myInterns ? 'Your interns' : 'All active interns' ?>, best first ·
+                    <?= $readyToReport ?> recommended for employment</p>
+            </div>
+            <a class="admin-btn" href="intern_assessments.php">Full ranking</a>
+        </div>
+        <?php if (!$ranking): ?><p class="panel-subtitle">No active interns yet.</p><?php else: ?>
+        <table class="admin-table intern-ranking-table" data-no-pager><thead><tr><th>Rank</th><th>Intern / team</th><th>Score</th><th>Recommendation</th></tr></thead><tbody>
+            <?php foreach (array_slice($ranking, 0, 6) as $intern): $ai = $intern['ai']; $ready = $ai && (int) $ai['ready'] === 1; ?>
                 <tr>
-                    <td><a href="edit_intern.php?id=<?= (int) $intern['id'] ?>"><?= mentora_h($intern['name']) ?></a><br><small><?= mentora_h($intern['department_name'] ?? 'No team yet') ?></small>
-                    </td>
-                    <td>
-                        <span class="progress"><i style="width:<?= $intern['percent'] ?>%"></i></span> <?= $intern['completed'] ?>/<?= $intern['total'] ?></td>
-                    <td><span class="badge <?= $badgeClass ?>"><?= $badgeText ?></span>
-                    </td>
+                    <td class="intern-rank"><?= $intern['rank'] ? '#' . (int) $intern['rank'] : '—' ?></td>
+                    <td><a href="edit_intern.php?id=<?= (int) $intern['id'] ?>"><?= mentora_h($intern['name']) ?></a><br><small><?= mentora_h($intern['department_name'] ?? 'No team yet') ?></small></td>
+                    <td><?php if ($ai): ?>
+                            <strong><?= (int) $ai['score'] ?></strong>/100<br><small><?= mentora_h($ai['tier']) ?></small>
+                        <?php else: ?>
+                            <span class="progress"><i style="width:<?= (int) $intern['percent'] ?>%"></i></span> <small><?= (int) $intern['completed'] ?>/<?= (int) $intern['total'] ?> modules</small>
+                        <?php endif; ?></td>
+                    <td><?php if ($ready): ?>
+                            <span class="badge">Recommended</span>
+                        <?php elseif ($ai): ?>
+                            <span class="badge warn">Not recommended yet</span><br><small>Needs <?= MENTORA_READY_SCORE ?>+<?= $intern['percent'] < 100 ? ' and finished training' : '' ?></small>
+                        <?php else: ?>
+                            <span class="badge info">Not assessed yet</span><br><small><?= $intern['percent'] >= 100 ? 'Training done · assess it' : 'Assessed after training' ?></small>
+                        <?php endif; ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody></table>
+        <?php if (count($ranking) > 6): ?><p class="table-note">Top 6 of <?= count($ranking) ?> interns. <a href="intern_assessments.php">See the full ranking</a>.</p><?php endif; ?>
         <?php endif; ?>
     </section>
     <section class="admin-panel">
@@ -80,12 +98,12 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
         <p class="panel-subtitle"><?= date('l, d F') ?> · PHT</p>
         <?php foreach (array_slice($candidates, 0, 3) as $candidate): ?>
             <div class="notice-row">
-                <span><?= mentora_h($candidate['name']) ?><br><small>Suitable for <?= mentora_h($candidate['department_name']) ?> · AI <?= (int) $candidate['score'] ?>/100<?= $candidate['dept_verdict'] ? ' · assessed' : '' ?></small></span><a class="badge <?= $candidate['dept_verdict'] ? '' : 'warn' ?>" href="candidates.php#r<?= (int) $candidate['user_id'] ?>"><?= $candidate['dept_verdict'] ? 'View' : 'Assess' ?></a>
+                <span><?= mentora_h($candidate['name']) ?><br><small>Suitable for <?= mentora_h($candidate['department_name']) ?> · Score <?= (int) $candidate['score'] ?>/100<?= $candidate['dept_verdict'] ? ' · assessed' : '' ?></small></span><a class="badge <?= $candidate['dept_verdict'] ? '' : 'warn' ?>" href="candidates.php#r<?= (int) $candidate['user_id'] ?>"><?= $candidate['dept_verdict'] ? 'View' : 'Assess' ?></a>
             </div>
         <?php endforeach; ?>
         <?php if ($readyToReport): ?>
             <div class="notice-row">
-                <span><?= $readyToReport ?> intern<?= $readyToReport === 1 ? ' is' : 's are' ?> ready to employ<br><small>From the AI assessment after training</small></span><a class="badge info" href="agent_reports.php#new">Report to HR</a>
+                <span><?= $readyToReport ?> intern<?= $readyToReport === 1 ? ' is' : 's are' ?> ready to employ<br><small>From the assessment after training</small></span><a class="badge info" href="agent_reports.php?tab=intern#new">Report to HR</a>
             </div>
         <?php endif; ?>
         <?php foreach (array_slice($waiting, 0, 4) as $report): ?>

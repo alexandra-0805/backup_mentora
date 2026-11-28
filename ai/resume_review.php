@@ -202,7 +202,7 @@ function mentora_ai_rules_review(PDO $pdo, array $candidate): array
     }
     if ($portfolioOnly) {
         // Kept last: the AI model's result keeps the last concern when HR has to look for themselves.
-        $concerns[] = 'Applied with a portfolio link and a short note, so the AI couldn’t judge their work. Open the portfolio to review it.';
+        $concerns[] = 'Applied with a portfolio link and a short note, so the review couldn’t judge their work. Open the portfolio to review it.';
     }
 
     $summary = ($candidate['role'] !== '' ? 'Applying as ' . $candidate['role'] . '. ' : '')
@@ -347,7 +347,7 @@ function mentora_ai_notify_review(PDO $pdo, array $person, array $review, bool $
 
     if ($review['category'] === 'suitable') {
         $title = 'Suitable candidate: ' . $name . ' → ' . $review['department_name'];
-        $body = 'AI review ' . $score . '. Fills ' . $review['department_name'] . '’s lacking skills: ' . implode(', ', $review['gap']) . '. Assess them now.';
+        $body = 'Review score ' . $score . '. Fills ' . $review['department_name'] . '’s lacking skills: ' . implode(', ', $review['gap']) . '. Assess them now.';
         mentora_notify_roles($pdo, ['admin'], $title, $body, 'admin/screening.php?view=suitable#r' . $userId);
         foreach (mentora_department_agents($pdo, (int) $review['department_id']) as $agentId) {
             mentora_notify($pdo, $agentId, $title, $body, 'agent/candidates.php#r' . $userId);
@@ -357,12 +357,12 @@ function mentora_ai_notify_review(PDO $pdo, array $person, array $review, bool $
             $pdo,
             ['admin'],
             'For HR review: ' . $name . ($review['category'] === 'unsuitable' ? ' (flagged unsuitable)' : ''),
-            'AI review ' . $score . '. ' . mb_strimwidth($review['summary'], 0, 220, '…'),
+            'Review score ' . $score . '. ' . mb_strimwidth($review['summary'], 0, 220, '…'),
             'admin/screening.php?view=' . ($review['category'] === 'unsuitable' ? 'flagged' : 'review') . '#r' . $userId
         );
     }
     if (!empty($person['referred_by'])) {
-        mentora_notify($pdo, (int) $person['referred_by'], 'Your referral was screened: ' . $name, $label . ' · AI review ' . $score . '.', 'agent/recruitment.php#joined');
+        mentora_notify($pdo, (int) $person['referred_by'], 'Your referral was screened: ' . $name, $label . ' · review score ' . $score . '.', 'agent/recruitment.php#joined');
     }
     if ($first) {
         mentora_notify(
@@ -376,7 +376,7 @@ function mentora_ai_notify_review(PDO $pdo, array $person, array $review, bool $
         $alertTo = getenv('MENTORA_APPROVAL_EMAIL') ?: '';
         if (filter_var($alertTo, FILTER_VALIDATE_EMAIL)) {
             require_once __DIR__ . '/../includes/mailer.php';
-            mentora_deliver_mail($alertTo, 'Mentora AI screening: ' . $name . ' (' . $label . ')', implode("\n", [
+            mentora_deliver_mail($alertTo, 'Mentora screening: ' . $name . ' (' . $label . ')', implode("\n", [
                 'A new Employee VA application was screened.', '', 'Applicant: ' . $name, 'Email: ' . $person['email'],
                 'Result: ' . $label . ' · ' . $score, 'Best fit: ' . ($review['department_name'] ?? '—'), '', $review['summary'],
             ]));

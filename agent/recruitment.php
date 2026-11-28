@@ -49,7 +49,7 @@ $employees = count(array_filter($people, static fn($p) => $p['pathway_chosen_at'
     <div class="metric-card"><small>Active links</small><strong><?= count(array_filter($links, $isLive)) ?></strong><span>Of <?= count($links) ?> created</span></div>
     <div class="metric-card"><small>People joined</small><strong><?= count($people) ?></strong><span>With <?= $scope ? 'your' : 'agents’' ?> links</span></div>
     <div class="metric-card"><small>Interns</small><strong><?= $interns ?></strong><span>Supervised by the link’s agent</span></div>
-    <div class="metric-card"><small>Employee VAs</small><strong><?= $employees ?></strong><span>Screened by AI review</span></div>
+    <div class="metric-card"><small>Employee VAs</small><strong><?= $employees ?></strong><span>Screened automatically</span></div>
 </div>
 <div class="admin-grid">
     <section class="admin-panel">
@@ -73,7 +73,7 @@ $employees = count(array_filter($people, static fn($p) => $p['pathway_chosen_at'
             <li>The applicant opens your link and signs in or creates an account.</li>
             <li>They choose <strong>Intern</strong> or <strong>Employee VA</strong>.</li>
             <li>Interns fill the internship form and go straight to training; you’re their supervising agent.</li>
-            <li>Employee VAs fill the form or upload a resume; the AI review sorts them as suitable or for review, and notifies HR and the matching department.</li>
+            <li>Employee VAs fill the form or upload a resume; the automatic review sorts them as suitable or for review, and notifies HR and the matching department.</li>
         </ol>
     </section>
 </div>

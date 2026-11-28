@@ -24,7 +24,7 @@ if (mentora_is_post()) {
         foreach (mentora_unscreened_employees($pdo) as $person) {
             $done += mentora_ai_review_application($pdo, (int) $person['id']) ? 1 : 0;
         }
-        mentora_flash($done ? 'AI review finished for ' . $done . ' application(s).' : 'Nothing was waiting for an AI review.');
+        mentora_flash($done ? 'Review finished for ' . $done . ' application(s).' : 'Nothing was waiting for a review.');
         mentora_redirect($back);
     }
 
@@ -40,7 +40,7 @@ if (mentora_is_post()) {
 
     if ($action === 'rerun') {
         $review = mentora_ai_review_application($pdo, $userId);
-        mentora_flash($review ? $name . ': ' . MENTORA_AI_CATEGORIES[$review['category']][0] . ' · ' . $review['score'] . '/100.' : 'The AI review couldn’t run for ' . $name . '.', $review ? 'success' : 'error');
+        mentora_flash($review ? $name . ': ' . MENTORA_AI_CATEGORIES[$review['category']][0] . ' · ' . $review['score'] . '/100.' : 'The review couldn’t run for ' . $name . '.', $review ? 'success' : 'error');
         mentora_redirect($back . '#r' . $userId);
     }
     if ($action === 'accept' && $application['status'] === 'pending') {
@@ -76,7 +76,7 @@ if (mentora_is_post()) {
     mentora_redirect($back);
 }
 
-$pageTitle = 'AI screening';
+$pageTitle = 'Screening';
 $activePage = 'dashboard.php'; // not in the sidebar; highlight the Dashboard it's opened from
 require __DIR__ . '/../includes/admin_layout.php';
 
@@ -90,8 +90,8 @@ $lackingTotal = array_sum(array_map(static fn($d) => count($d['lacking']), $gaps
 ?>
 <div class="admin-heading">
     <div>
-        <h1>AI screening</h1>
-        <p>Employee VA applications reviewed by AI and matched to the skills each department is lacking.</p>
+        <h1>Screening</h1>
+        <p>Employee VA applications reviewed automatically and matched to the skills each department is lacking.</p>
     </div>
     <div class="admin-actions">
         <a class="admin-btn" href="export.php?type=screening"><?= mentora_icon('download') ?>Export screening</a>
@@ -105,17 +105,17 @@ $lackingTotal = array_sum(array_map(static fn($d) => count($d['lacking']), $gaps
     <a class="metric-card" href="?view=accepted"><small>Accepted</small><strong><?= $counts['accepted'] ?></strong><span>Assigned to a department</span></a>
     <div class="metric-card"><small>Lacking skills</small><strong><?= $lackingTotal ?></strong><span>Across <?= count($gaps) ?> departments</span></div>
 </div>
-<p class="notice">AI engine: <strong><?= mentora_h(mentora_ai_model_label()) ?></strong>. <?= mentora_ai_model_enabled()
-    ? 'The AI model writes each summary; the rules engine checks it against the departments’ real skill gaps.'
-    : 'No AI model is set up, so the built-in rules engine reviews applications. Add a model in ai/config.local.php for written AI summaries.' ?></p>
+<p class="notice">Review engine: <strong><?= mentora_h(mentora_ai_model_label()) ?></strong>. <?= mentora_ai_model_enabled()
+    ? 'The writing model writes each summary; the rules engine checks it against the departments’ real skill gaps.'
+    : 'No writing model is set up, so the built-in rules engine reviews applications. Add a model in ai/config.local.php for written summaries.' ?></p>
 <?php if ($unscreened): ?>
     <section class="admin-panel">
-        <h2>Waiting for an AI review <span class="badge warn"><?= count($unscreened) ?></span></h2>
-        <p class="panel-subtitle">Applications submitted before AI screening was turned on, or whose review didn’t finish.</p>
+        <h2>Waiting for a review <span class="badge warn"><?= count($unscreened) ?></span></h2>
+        <p class="panel-subtitle">Applications submitted before screening was turned on, or whose review didn’t finish.</p>
         <?php foreach (array_slice($unscreened, 0, 5) as $person): ?>
             <div class="list-row"><span><?= mentora_h($person['first_name'] . ' ' . $person['last_name']) ?><br><small><?= mentora_h($person['email']) ?> · applied <?= date('d M Y', strtotime($person['applied_at'])) ?></small></span></div>
         <?php endforeach; ?>
-        <form method="post"><?= mentora_csrf_field() ?><input type="hidden" name="action" value="screen_all"><input type="hidden" name="view" value="<?= mentora_h($view) ?>"><button class="admin-btn primary" type="submit">Run AI review for all</button></form>
+        <form method="post"><?= mentora_csrf_field() ?><input type="hidden" name="action" value="screen_all"><input type="hidden" name="view" value="<?= mentora_h($view) ?>"><button class="admin-btn primary" type="submit">Run review for all</button></form>
     </section>
 <?php endif; ?>
 <nav class="application-tabs" aria-label="Screening results">
@@ -125,7 +125,7 @@ $lackingTotal = array_sum(array_map(static fn($d) => count($d['lacking']), $gaps
 </nav>
 <p class="panel-subtitle"><?= mentora_h(MENTORA_SCREENING_VIEWS[$view][1]) ?>.</p>
 <?php if (!$rows): ?>
-    <section class="admin-panel"><p class="panel-subtitle">No candidates here yet. Applications appear as soon as the AI reviews them.</p></section>
+    <section class="admin-panel"><p class="panel-subtitle">No candidates here yet. Applications appear as soon as they are reviewed.</p></section>
 <?php endif; ?>
 <?php foreach ($rows as $row) { mentora_render_screening_card($row, 'admin', $departments); } ?>
 <?php mentora_render_skill_gaps($gaps); ?>

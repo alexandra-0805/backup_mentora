@@ -2572,3 +2572,279 @@ body.workspace-dark-mode .report-table-wrap {
         top: 0;
     }
 }
+
+/* ---------- Client work (includes/client_work.php): Clients, Tasks & deliverables, End-of-day updates ---------- */
+.work-dialog {
+    width: min(640px, calc(100vw - 32px));
+}
+
+.work-dialog .dialog-body {
+    max-height: min(68vh, 640px);
+    overflow-y: auto;
+}
+
+.work-dialog .form-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.work-dialog .field {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+}
+
+.work-dialog .field.full {
+    grid-column: 1 / -1;
+}
+
+.work-dialog :is(input, textarea, select) {
+    background: transparent;
+    border: 1px solid var(--workspace-line, #dbe8e6);
+    border-radius: 10px;
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+    padding: 10px 12px;
+    width: 100%;
+}
+
+.work-dialog textarea {
+    resize: vertical;
+}
+
+.work-dialog .dialog-footer {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 560px) {
+    .work-dialog .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* My tasks: status + deliverable link + Save in one row */
+.task-update-form {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.task-update-form :is(select, input) {
+    border: 1px solid var(--workspace-line, #dbe8e6);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 12px;
+    min-width: 0;
+    padding: 6px 8px;
+}
+
+.task-update-form input {
+    width: 170px;
+}
+
+/* End-of-day reports (includes/eod_report.php): totals after every 5 days, wide tables scroll sideways */
+.table-scroll {
+    overflow-x: auto;
+}
+
+.eod-report-table td {
+    vertical-align: top;
+}
+
+.eod-total-row td {
+    background: var(--mentora-pale, #e4f2f0);
+    border-top: 2px solid var(--mentora-teal, #2f8580);
+    font-size: 12px;
+}
+
+.eod-total-row small {
+    color: var(--workspace-muted, #607977);
+    margin-left: 4px;
+}
+
+.eod-grand-total td {
+    background: var(--mentora-teal, #2f8580);
+    color: #fff;
+}
+
+.eod-grand-total small {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+body.workspace-dark-mode .eod-total-row:not(.eod-grand-total) td {
+    background: rgba(143, 239, 218, 0.1);
+    color: inherit;
+}
+
+.eod-report-fields .field small {
+    color: var(--workspace-muted, #607977);
+    font-weight: 400;
+}
+
+/* Agent dashboard: Intern ranking (title with "Full AI ranking" on the right; rank numbers) */
+.panel-title-row {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.intern-ranking-table .intern-rank {
+    color: var(--mentora-teal, #2f8580);
+    font-size: 14px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+body.workspace-dark-mode .intern-ranking-table .intern-rank {
+    color: var(--mentora-mint, #8fefda);
+}
+
+/* Phones: each intern stacks (rank on the left; name, score and recommendation under each other), so the
+   recommendation is visible without scrolling sideways */
+@media (max-width: 600px) {
+    .intern-ranking-table,
+    .intern-ranking-table tbody {
+        display: block;
+        min-width: 0 !important;
+        width: 100%;
+    }
+
+    .intern-ranking-table thead {
+        display: none;
+    }
+
+    .intern-ranking-table tr {
+        border-bottom: 1px solid var(--workspace-line, #e0ecea);
+        display: grid;
+        gap: 6px 12px;
+        grid-template-columns: 40px minmax(0, 1fr);
+        padding: 12px 0;
+    }
+
+    .intern-ranking-table tr:last-child {
+        border-bottom: 0;
+    }
+
+    .intern-ranking-table td {
+        border: 0;
+        display: block;
+        padding: 0;
+    }
+
+    .intern-ranking-table td.intern-rank {
+        grid-row: span 3;
+    }
+
+    .intern-ranking-table td:not(.intern-rank) {
+        grid-column: 2;
+    }
+}
+
+/* Heading of a reports table with its Download PDF button on the right */
+.eod-table-head {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    padding: 14px 16px 0;
+}
+
+.eod-table-head .admin-btn {
+    align-items: center;
+    display: inline-flex;
+    gap: 6px;
+}
+
+/* HR: pick a day or a person */
+.eod-picker-form {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0;
+}
+
+.eod-picker-form .field {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+}
+
+.eod-picker-form :is(input, select) {
+    border: 1px solid var(--workspace-line, #dbe8e6);
+    border-radius: 10px;
+    font: inherit;
+    font-size: 13px;
+    min-height: 40px;
+    padding: 8px 10px;
+}
+
+.eod-view-picker {
+    margin-bottom: 0; /* spaced by .report-tab-panel > * + * */
+}
+
+/* Agents' Reports page: End-of-day reports | Intern reports */
+.report-tabs {
+    border-bottom: 1px solid var(--workspace-line, #dbe8e6);
+    display: flex;
+    gap: 4px;
+    margin: 0 0 16px;
+}
+
+.report-tabs a {
+    border-bottom: 3px solid transparent;
+    color: var(--workspace-muted, #607977);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 14px;
+    text-decoration: none;
+}
+
+.report-tabs a[aria-selected="true"] {
+    border-bottom-color: var(--mentora-teal, #2f8580);
+    color: var(--mentora-teal, #2f8580);
+}
+
+.report-tab-panel[hidden] {
+    display: none;
+}
+
+/* Space between everything stacked inside a tab: the end-of-day form and your reports, HR's day / person picker,
+   summary cards, reports table and "Not sent yet" list */
+.report-tab-panel > * + * {
+    margin-top: 18px;
+}
+
+.report-tab-panel > .metric-grid {
+    margin-bottom: 0; /* the next box's 18px top space is the gap */
+}
+
+/* Interns' and employees' End-of-day report page: space above "Your end-of-day reports" */
+.eod-reports-card {
+    margin-top: 18px;
+}
+
+/* End-of-day updates: full text, line breaks kept */
+.eod-text {
+    font-size: 12px;
+    line-height: 1.45;
+    max-width: 320px;
+    overflow-wrap: anywhere;
+}
+
+.eod-day-picker {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    margin: 0;
+}
+
+.eod-row {
+    align-items: flex-start;
+}

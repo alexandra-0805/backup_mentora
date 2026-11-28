@@ -57,11 +57,11 @@ $now = new DateTimeImmutable(
 
 $agentNav = [
     'dashboard.php'             => 'Dashboard', // intern_assessments.php opens from the Dashboard button, so it isn't listed
-    'candidates.php'            => 'Department candidates', // recruitment.php opens from here (Recruitment links button), so it isn't listed
+    'candidates.php'            => 'Department candidates', // recruitment.php and clients.php open from here (Recruitment links / Clients buttons), so they aren't listed
     'intern_directory.php'      => 'Intern directory', // edit_intern.php (Edit buttons) and intern_hours.php open from here, so they aren't listed
-    'training_progress.php'     => 'Training tracker', // not training_tracker.php: InfinityFree blocks any URL ending in "tracker.php" (403)
+    'training_progress.php'     => 'Training tracker', // not training_tracker.php: InfinityFree blocks any URL ending in "tracker.php" (403); tasks.php opens from here (Tasks & deliverables button), so it isn't listed
     'evaluation_list.php'       => 'Evaluation list', // individual_evaluation.php opens from here (button, Review/View), so it isn't listed
-    'agent_reports.php'         => 'Agent Reports',
+    'agent_reports.php'         => 'Reports', // two tabs: End-of-day reports (yours) and Intern reports (to HR)
     'reporting_overview.php'    => 'Reporting overview',
     'documents.php'             => 'Documents',
     'settings.php'              => 'Settings',
@@ -105,7 +105,7 @@ $navCounts = ['candidates.php' => (int) $candidateCountQuery->fetchColumn()];
 
     <link
         rel="stylesheet"
-        href="../assets/css/settings.css?v=36">
+        href="../assets/css/settings.css?v=44">
 
     <link
         rel="stylesheet"

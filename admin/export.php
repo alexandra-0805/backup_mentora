@@ -129,9 +129,9 @@ switch ($type) {
                 $s['average_score'] !== null ? mentora_hours($s['average_score']) : ''
             ],
             ['Days present', $s['present']], ['Hours worked (time in / out)', mentora_hours($s['worked_hours'])],
-            ['Employee VAs screened by AI', (int) $s['screening']['screened']], ['AI: suitable', (int) $s['screening']['suitable']],
-            ['AI: for review', (int) $s['screening']['for_review']], ['AI: flagged unsuitable', (int) $s['screening']['unsuitable']],
-            ['Interns assessed by AI', (int) $s['assessments']['assessed']], ['Interns ready to employ', (int) $s['assessments']['ready']],
+            ['Employee VAs screened', (int) $s['screening']['screened']], ['Screening: suitable', (int) $s['screening']['suitable']],
+            ['Screening: for review', (int) $s['screening']['for_review']], ['Screening: flagged unsuitable', (int) $s['screening']['unsuitable']],
+            ['Interns assessed', (int) $s['assessments']['assessed']], ['Interns ready to employ', (int) $s['assessments']['ready']],
             ['Agent employability reports', $s['agent_reports']],
         ];
         foreach (mentora_department_skill_map($pdo) as $gap) {
@@ -171,9 +171,9 @@ switch ($type) {
                 ];
             }
         }
-        mentora_pdf('AI screening', "mentora-ai-screening-{$stamp}.pdf", [
-            'User ID', 'Name', 'Email', 'Role applied for', 'Education', 'Years of experience', 'Applied with', 'AI score', 'AI category',
-            'Best-fit department', 'Lacking skills they fill', 'Skills found', 'AI summary', 'Department assessment', 'HR decision', 'Referred by', 'Reviewed',
+        mentora_pdf('Screening', "mentora-screening-{$stamp}.pdf", [
+            'User ID', 'Name', 'Email', 'Role applied for', 'Education', 'Years of experience', 'Applied with', 'Score', 'Category',
+            'Best-fit department', 'Lacking skills they fill', 'Skills found', 'Summary', 'Department assessment', 'HR decision', 'Referred by', 'Reviewed',
         ], $rows);
     default:
         http_response_code(404);

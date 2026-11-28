@@ -392,8 +392,8 @@ function mentora_render_review_table(array $reports, string $tableId, string $em
             <tr>
                 <th>Person</th>
                 <th>Date</th>
-                <th>Hours</th>
-                <th>Work completed</th>
+                <th>Hours worked</th>
+                <th>Tasks completed</th>
                 <th>Review</th>
             </tr>
         </thead>
@@ -404,7 +404,11 @@ function mentora_render_review_table(array $reports, string $tableId, string $em
         <?php foreach ($reports as $report): $name = trim($report['first_name'] . ' ' . $report['last_name']); ?>
             <tr data-pathway="<?= mentora_pathway_folder($report['pathway']) ?>">
                 <td><?= mentora_h($name) ?><br><small><?= mentora_pathway_label($report['pathway']) ?></small></td>
-                <td><?= date('d M Y', strtotime($report['report_date'])) ?><br><small>Sent <?= date('d M, g:i A', strtotime($report['created_at'])) ?></small>
+                <td><?= date('m/d/Y', strtotime($report['report_date'])) ?> · <?= mentora_h(($report['day_name'] ?? '') ?: date('l', strtotime($report['report_date']))) ?>
+                    <?php if (!empty($report['time_in']) && !empty($report['time_out'])): // end-of-day report times ?>
+                        <br><small><?= date('g:i A', strtotime('2000-01-01 ' . $report['time_in'])) ?> – <?= date('g:i A', strtotime('2000-01-01 ' . $report['time_out'])) ?></small>
+                    <?php endif; ?>
+                    <br><small>Sent <?= date('m/d/Y, g:i A', strtotime($report['created_at'])) ?></small>
                 </td>
                 <td><?= mentora_hours($report['hours']) ?></td>
                 <td><?= nl2br(mentora_h(mb_strimwidth($report['summary'], 0, 400, '…'))) ?><?= $report['notes']

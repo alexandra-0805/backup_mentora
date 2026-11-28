@@ -33,9 +33,9 @@ switch ($type) {
             $i['ai']['summary'] ?? '', isset($i['ai']) ? date('Y-m-d', strtotime($i['ai']['assessed_at'])) : '',
         ], mentora_intern_rankings($pdo));
         mentora_pdf(
-            'Intern AI ranking',
+            'Intern ranking',
             "mentora-intern-ranking-{$stamp}.pdf",
-            ['Rank', 'User ID', 'Name', 'Email', 'Team', 'Agent', 'Training', 'Quiz average (%)', 'Approved / required hours', 'AI score', 'Tier', 'Ready to employ', 'AI summary', 'Assessed'],
+            ['Rank', 'User ID', 'Name', 'Email', 'Team', 'Agent', 'Training', 'Quiz average (%)', 'Approved / required hours', 'Score', 'Tier', 'Ready to employ', 'Summary', 'Assessed'],
             $rows
         );
     case 'evaluations':

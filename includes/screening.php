@@ -16,8 +16,8 @@ require_once __DIR__ . '/../ai/bootstrap.php';
 /** view => [tab label, description] */
 const MENTORA_SCREENING_VIEWS = [
     'suitable' => ['Suitable', 'Fills a department’s lacking skills: assess them first'],
-    'review' => ['For review', 'For HR to review, with the AI summary of skills and attainment'],
-    'flagged' => ['Flagged unsuitable', 'Part of For review, flagged unsuitable by the AI'],
+    'review' => ['For review', 'For HR to review, with the summary of skills and attainment'],
+    'flagged' => ['Flagged unsuitable', 'Part of For review, flagged unsuitable by screening'],
     'accepted' => ['Accepted', 'Accepted and assigned to a department'],
     'declined' => ['Declined', 'Not selected'],
 ];
@@ -137,7 +137,7 @@ function mentora_render_screening_card(array $row, string $mode, array $departme
                 <h2><?= mentora_h($row['name']) ?> <small><?= mentora_h($row['user_code']) ?></small></h2>
                 <p class="panel-subtitle"><?= mentora_h(implode(' · ', $details)) ?></p>
             </div>
-            <div class="screening-score" aria-label="AI score <?= (int) $row['score'] ?> out of 100">
+            <div class="screening-score" aria-label="Score <?= (int) $row['score'] ?> out of 100">
                 <strong><?= (int) $row['score'] ?></strong><small>/100</small>
                 <span class="badge <?= $categoryClass ?>"><?= mentora_h($categoryLabel) ?></span>
             </div>
@@ -201,7 +201,7 @@ function mentora_render_screening_card(array $row, string $mode, array $departme
                 <?php else: ?>
                     <form method="post"><?= $hidden ?><input type="hidden" name="action" value="reopen"><button class="admin-btn" type="submit" data-confirm-title="Reopen <?= mentora_h($row['name']) ?>’s application?" data-confirm="It goes back to the screening lists so you can decide again.">Reopen</button></form>
                 <?php endif; ?>
-                <form method="post"><?= $hidden ?><input type="hidden" name="action" value="rerun"><button class="admin-btn" type="submit" title="Read the application again with the current department skill gaps">Re-run AI review</button></form>
+                <form method="post"><?= $hidden ?><input type="hidden" name="action" value="rerun"><button class="admin-btn" type="submit" title="Read the application again with the current department skill gaps">Re-run review</button></form>
             <?php elseif ($pending): ?>
                 <form method="post" class="screening-assess">
                     <?= $hidden ?><input type="hidden" name="action" value="assess">
@@ -211,7 +211,7 @@ function mentora_render_screening_card(array $row, string $mode, array $departme
                 </form>
             <?php endif; ?>
         </footer>
-        <small class="screening-engine">AI review by <?= mentora_h($row['engine']) ?> · <?= date('d M Y, g:i A', strtotime($row['created_at'])) ?></small>
+        <small class="screening-engine">Review by <?= mentora_h($row['engine']) ?> · <?= date('d M Y, g:i A', strtotime($row['created_at'])) ?></small>
     </article>
     <?php
 }

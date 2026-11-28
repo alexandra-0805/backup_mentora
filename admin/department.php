@@ -90,7 +90,7 @@ $lackingCount = count(array_filter($skillMap, static fn($d) => $d['lacking']));
         <small>Total people</small><strong><?= array_sum(array_column($departments, 'people')) ?></strong><span>Employees, interns and agents</span>
     </div>
     <div class="metric-card">
-        <small>Teams lacking skills</small><strong><?= $lackingCount ?></strong><span>Of <?= count($departments) ?> departments · see AI screening</span>
+        <small>Teams lacking skills</small><strong><?= $lackingCount ?></strong><span>Of <?= count($departments) ?> departments · see Screening</span>
     </div>
     <div class="metric-card">
         <small>Unassigned people</small><strong><?= count($unassigned) ?></strong><span><?= $unassigned ? 'Assign them below' : 'Every person has a team' ?></span>
@@ -162,7 +162,7 @@ $lackingCount = count(array_filter($skillMap, static fn($d) => $d['lacking']));
             </div>
             <div class="field">
                 <label for="dept-skills">Required skills</label><textarea id="dept-skills" name="required_skills" rows="3" maxlength="2000" placeholder="Separate with commas" data-dept-field="required_skills"></textarea>
-                <small>Separate with commas. The AI screening finds which of these the team is lacking and notifies you and the department when an applicant has them.</small>
+                <small>Separate with commas. Screening finds which of these the team is lacking and notifies you and the department when an applicant has them.</small>
             </div>
         </div>
         <div class="dialog-footer">

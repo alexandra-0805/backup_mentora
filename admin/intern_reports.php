@@ -15,7 +15,7 @@ if (mentora_is_post()) {
     $action = (string) ($_POST['action'] ?? '');
     if ($action === 'resummarize') {
         mentora_ai_summarize_agent_report($pdo, $id, false);
-        mentora_flash('The AI summary was updated with the latest assessments.');
+        mentora_flash('The summary was updated with the latest assessments.');
     } elseif ($action === 'review') {
         $note = mb_substr(trim((string) ($_POST['note'] ?? '')), 0, 500);
         $update = $pdo->prepare("UPDATE agent_reports SET status = 'reviewed', reviewed_by = ?, review_note = ?, reviewed_at = NOW() WHERE id = ? AND status = 'submitted'");
@@ -25,7 +25,7 @@ if (mentora_is_post()) {
             $report->execute([$id]);
             $report = $report->fetch();
             if ($report && $report['agent_id']) {
-                mentora_notify($pdo, (int) $report['agent_id'], 'HR reviewed your report: ' . mb_substr($report['title'], 0, 120), $note !== '' ? $admin['name'] . ': “' . $note . '”' : 'Reviewed by ' . $admin['name'] . '.', 'agent/agent_reports.php#rep' . $id);
+                mentora_notify($pdo, (int) $report['agent_id'], 'HR reviewed your report: ' . mb_substr($report['title'], 0, 120), $note !== '' ? $admin['name'] . ': “' . $note . '”' : 'Reviewed by ' . $admin['name'] . '.', 'agent/agent_reports.php?tab=intern#rep' . $id);
             }
             mentora_flash('Report marked as reviewed. The agent was notified.');
         }
@@ -48,25 +48,25 @@ $verdicts = MENTORA_REPORT_VERDICTS + ['ready_only' => ['Ready · no agent repor
 <div class="admin-heading">
     <div>
         <h1>Intern reports</h1>
-        <p>Agents’ reports on the interns they handle, summarized by AI, and the interns you can employ now.</p>
+        <p>Agents’ reports on the interns they handle, summarized automatically, and the interns you can employ now.</p>
     </div>
     <div class="admin-actions">
-        <a class="admin-btn" href="../agent/export.php?type=assessments"><?= mentora_icon('download') ?>Export AI ranking</a>
+        <a class="admin-btn" href="../agent/export.php?type=assessments"><?= mentora_icon('download') ?>Export ranking</a>
         <button class="admin-btn" type="button" onclick="window.print()">Print / save as PDF</button>
     </div>
 </div>
 <?= mentora_flash_html() ?>
 <div class="metric-grid">
     <div class="metric-card"><small>Reports waiting</small><strong><?= $waiting ?></strong><span>Of <?= count($reports) ?> from agents</span></div>
-    <div class="metric-card"><small>Employable</small><strong><?= $confirmed ?></strong><span>Agent recommends · AI ready</span></div>
+    <div class="metric-card"><small>Employable</small><strong><?= $confirmed ?></strong><span>Agent recommends · assessment ready</span></div>
     <div class="metric-card"><small>To check</small><strong><?= count($employable) - $confirmed ?></strong><span>Only one of the two agrees</span></div>
     <div class="metric-card"><small>Interns assessed</small><strong><?= $assessed ?></strong><span>Of <?= count($rankings) ?> active interns</span></div>
 </div>
 <section class="admin-panel data-panel">
     <h2>Interns you can employ</h2>
-    <p class="panel-subtitle">Recommended by their agent and/or ready by their AI assessment (training done, score ≥ <?= MENTORA_READY_SCORE ?>).</p>
+    <p class="panel-subtitle">Recommended by their agent and/or ready by their assessment (training done, score ≥ <?= MENTORA_READY_SCORE ?>).</p>
     <table class="admin-table">
-        <thead><tr><th>Intern</th><th>Team / agent</th><th>AI assessment</th><th>Recommended by</th><th>Verdict</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Intern</th><th>Team / agent</th><th>Assessment</th><th>Recommended by</th><th>Verdict</th><th>Actions</th></tr></thead>
         <tbody>
         <?php if (!$employable): ?><tr><td colspan="6" class="table-note">No intern is ready yet. They appear here after training and their agent’s report.</td></tr><?php endif; ?>
         <?php foreach ($employable as $intern): [$label, $class] = $verdicts[$intern['verdict']]; ?>

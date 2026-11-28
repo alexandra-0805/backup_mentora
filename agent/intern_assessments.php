@@ -31,7 +31,7 @@ if (mentora_is_post()) {
     mentora_redirect('agent/intern_assessments.php' . $scope . '#i' . $id);
 }
 
-$pageTitle = 'AI assessments';
+$pageTitle = 'Assessments';
 $activePage = 'dashboard.php'; // not in the sidebar; highlight the Dashboard it's opened from
 require __DIR__ . '/../includes/agent_layout.php';
 
@@ -45,12 +45,12 @@ $average = $assessed ? round(array_sum(array_map(static fn($r) => (int) $r['ai']
 ?>
 <div class="admin-heading">
     <div>
-        <h1>AI assessments</h1>
-        <p>After training, the AI ranks each intern from their quiz scores, hours, reports, evaluations and attendance. Ready interns go into your employability report.</p>
+        <h1>Assessments</h1>
+        <p>After training, each intern is ranked from their quiz scores, hours, reports, evaluations and attendance. Ready interns go into your employability report.</p>
     </div>
     <div class="admin-actions">
         <a class="admin-btn" href="export.php?type=assessments"><?= mentora_icon('download') ?>Export ranking</a>
-        <a class="admin-btn primary" href="agent_reports.php#new">Write employability report</a>
+        <a class="admin-btn primary" href="agent_reports.php?tab=intern#new">Write employability report</a>
     </div>
 </div>
 <?= mentora_flash_html() ?>
@@ -75,7 +75,7 @@ $average = $assessed ? round(array_sum(array_map(static fn($r) => (int) $r['ai']
         <form method="post" class="toolbar-action"><?= mentora_csrf_field() ?><input type="hidden" name="action" value="assess_all"><input type="hidden" name="scope" value="<?= $mine ? 'mine' : 'all' ?>"><button class="admin-btn" type="submit">Re-assess everyone who finished</button></form>
     </div>
     <table class="admin-table" id="ranking-table">
-        <thead><tr><th>Rank</th><th>Intern</th><th>Training</th><th>Quiz avg.</th><th>Hours</th><th>AI assessment</th><th>Action</th></tr></thead>
+        <thead><tr><th>Rank</th><th>Intern</th><th>Training</th><th>Quiz avg.</th><th>Hours</th><th>Assessment</th><th>Action</th></tr></thead>
         <tbody>
         <?php if (!$rows): ?><tr><td colspan="7" class="table-note">No active interns<?= $mine ? ' assigned to you' : '' ?> yet.</td></tr><?php endif; ?>
         <?php foreach ($rows as $row): $ai = $row['ai']; $m = $ai['metrics'] ?? []; ?>
@@ -105,6 +105,6 @@ $average = $assessed ? round(array_sum(array_map(static fn($r) => (int) $r['ai']
         <?php endforeach; ?>
         </tbody>
     </table>
-    <div class="table-note">Score: quiz 35 · training 15 · hours 15 · report quality 15 · evaluations 15 · attendance 5. Tiers: Top performer ≥ 85, Strong ≥ 70, Developing ≥ 55. The ranking is the same for every intern; the AI model, when set up, writes the summary.</div>
+    <div class="table-note">Score: quiz 35 · training 15 · hours 15 · report quality 15 · evaluations 15 · attendance 5. Tiers: Top performer ≥ 85, Strong ≥ 70, Developing ≥ 55. The ranking is the same for every intern; the writing model, when set up, writes the summary.</div>
 </section>
 <?php require __DIR__ . '/../includes/admin_footer.php'; ?>

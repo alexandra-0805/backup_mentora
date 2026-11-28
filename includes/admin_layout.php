@@ -51,6 +51,9 @@ $adminNav = [
     'intern_list.php'            => 'Intern list', // intern_hours.php opens from here (Internship hours button), so it isn't listed
     'agent_list.php'             => 'Agent list',
     'department.php'             => 'Departments',
+    'clients.php'                => 'Clients', // client work: includes/client_work.php
+    'tasks.php'                  => 'Tasks & deliverables',
+    'eod_updates.php'            => 'End-of-day reports',
     'monitoring.php'             => 'Monitoring',
     'consolidated_report.php'    => 'Reports', // intern_reports.php opens from here (Intern reports button), so it isn't listed
     'user&access_management.php' => 'Users & access',
@@ -68,7 +71,7 @@ $adminNav = [
     <link rel="icon" type="image/png" href="../assets/images/mentora-logo.png?v=1">
     <link rel="stylesheet" href="../assets/css/style.css?v=44">
     <link rel="stylesheet" href="../assets/css/admin.css?v=17">
-    <link rel="stylesheet" href="../assets/css/settings.css?v=36">
+    <link rel="stylesheet" href="../assets/css/settings.css?v=44">
     <link rel="stylesheet" href="../assets/css/theme.css?v=10">
     <link rel="stylesheet" href="../assets/css/dialog.css?v=2">
     <?php require __DIR__ . '/theme_boot.php'; ?>

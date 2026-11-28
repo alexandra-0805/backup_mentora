@@ -79,7 +79,8 @@ $nav = $pathway === 'intern'
         'profile.php'     => ['Profile'],
         'training.php'    => ['Training'],
         'team-agent.php'  => ['Assigned team & agent'],
-        'reporting.php'   => ['Reporting'],
+        'reporting.php'   => ['End-of-day report'], // includes/pages/applicant_reporting.php
+        'tasks.php'       => ['My tasks'], // client work: includes/client_work.php
         'settings.php'    => ['Settings']
     ]
     : [
@@ -88,7 +89,8 @@ $nav = $pathway === 'intern'
         'profile.php'     => ['Profile'],
         'training.php'    => ['Training'],
         'department.php'  => ['Assigned department'],
-        'reporting.php'   => ['Reporting'],
+        'reporting.php'   => ['End-of-day report'],
+        'tasks.php'       => ['My tasks'],
         'settings.php'    => ['Settings']
     ];
 
@@ -171,7 +173,7 @@ $now = new DateTimeImmutable(
 
     <link
         rel="stylesheet"
-        href="../../assets/css/settings.css?v=36">
+        href="../../assets/css/settings.css?v=44">
 
     <link
         rel="stylesheet"

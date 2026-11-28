@@ -61,10 +61,10 @@ $gaps = mentora_department_skill_map($pdo);
     <div>
         <h1>Department candidates</h1>
         <p><?= $scope !== null
-            ? 'Employee VA applicants the AI matched to ' . mentora_h($agentDepartment) . '. Assess suitable ones and endorse them to HR.'
-            : 'Employee VA applicants the AI matched to each department.' ?></p>
+            ? 'Employee VA applicants screening matched to ' . mentora_h($agentDepartment) . '. Assess suitable ones and endorse them to HR.'
+            : 'Employee VA applicants screening matched to each department.' ?></p>
     </div>
-    <div class="admin-actions"><a class="admin-btn primary" href="recruitment.php">Recruitment links</a></div>
+    <div class="admin-actions"><a class="admin-btn" href="clients.php">Clients</a><a class="admin-btn primary" href="recruitment.php">Recruitment links</a></div>
 </div>
 <?= mentora_flash_html() ?>
 <?php if (!$isAdmin && $myDepartmentId === 0): ?>
@@ -76,7 +76,7 @@ $gaps = mentora_department_skill_map($pdo);
     <?php endforeach; ?>
 </nav>
 <?php if (!$rows): ?>
-    <section class="admin-panel"><p class="panel-subtitle">No candidates here. You’re notified as soon as the AI finds a suitable one for your department.</p></section>
+    <section class="admin-panel"><p class="panel-subtitle">No candidates here. You’re notified as soon as screening finds a suitable one for your department.</p></section>
 <?php endif; ?>
 <?php foreach ($rows as $row) { mentora_render_screening_card($row, 'agent', []); } ?>
 <?php mentora_render_skill_gaps($scope !== null ? array_intersect_key($gaps, [$scope => true]) : $gaps, $scope !== null ? 'Your department’s skill gaps' : 'Department skill gaps'); ?>

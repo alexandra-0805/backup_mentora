@@ -139,7 +139,7 @@ function mentora_ai_assess_intern(PDO $pdo, int $userId, bool $notify = true): ?
         . mentora_hours($m['hours']) . ' of ' . $m['required_hours'] . ' internship hours are approved from '
         . ($m['reports_approved'] + $m['reports_returned']) . ' reviewed report(s)'
         . ($m['evaluation_average'] !== null ? '; evaluation average ' . mentora_hours($m['evaluation_average']) . ' / 5' : '') . '. '
-        . 'AI ranking: ' . $tier . ' (' . $score . '/100), ' . ($ready ? 'ready for an employment recommendation.' : 'keep developing before an employment recommendation.');
+        . 'Ranking: ' . $tier . ' (' . $score . '/100), ' . ($ready ? 'ready for an employment recommendation.' : 'keep developing before an employment recommendation.');
     $engine = MENTORA_AI_RULES_ENGINE;
 
     // The AI model writes the narrative; the score and ranking stay rule-based so every intern is ranked the same way.
@@ -164,7 +164,7 @@ function mentora_ai_assess_intern(PDO $pdo, int $userId, bool $notify = true): ?
         ->execute([$userId, $score, $tier, $ready ? 1 : 0, $summary, mentora_ai_encode($m + ['strengths' => $strengths, 'focus' => $focus]), mb_substr($engine, 0, 120)]);
 
     if ($notify && $previousTier !== $tier) {
-        $title = 'AI assessment: ' . $name . ' · ' . $tier . ' (' . $score . '/100)';
+        $title = 'Assessment: ' . $name . ' · ' . $tier . ' (' . $score . '/100)';
         $body = ($ready ? 'Ready for employment. Add them to your employability report.' : 'Not ready for employment yet. ') . ' ' . mb_strimwidth($summary, 0, 160, '…');
         $link = 'agent/intern_assessments.php#i' . $userId;
         if (!empty($intern['agent_id'])) {

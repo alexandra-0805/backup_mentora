@@ -117,7 +117,7 @@ function mentora_apply_referral(PDO $pdo, int $userId): void
         $pdo,
         $agentId,
         trim($person['first_name'] . ' ' . $person['last_name']) . ' chose ' . ($isIntern ? 'the Internship' : 'Employee VA'),
-        $isIntern ? 'You are their supervising agent. They fill the internship form, then start training.' : 'They’re filling the Employee VA form or uploading a resume for the AI review.',
+        $isIntern ? 'You are their supervising agent. They fill the internship form, then start training.' : 'They’re filling the Employee VA form or uploading a resume for review.',
         'agent/recruitment.php#joined'
     );
 }
@@ -168,7 +168,7 @@ function mentora_referral_stage(array $person): array
         $intern => ['In training · ' . (int) $person['modules_done'] . '/' . count(mentora_training_modules('internship')) . ' modules', 'info'],
         $person['application_status'] === 'approved' => ['Accepted by HR', ''],
         $person['application_status'] === 'rejected' => ['Not selected', 'warn'],
-        $person['ai_category'] !== null => ['AI: ' . (['suitable' => 'Suitable', 'for_review' => 'For review', 'unsuitable' => 'Flagged unsuitable'][$person['ai_category']] ?? '') . ' · ' . (int) $person['ai_score'], $person['ai_category'] === 'suitable' ? '' : 'info'],
-        default => ['Waiting for AI review', 'info'],
+        $person['ai_category'] !== null => ['Screening: ' . (['suitable' => 'Suitable', 'for_review' => 'For review', 'unsuitable' => 'Flagged unsuitable'][$person['ai_category']] ?? '') . ' · ' . (int) $person['ai_score'], $person['ai_category'] === 'suitable' ? '' : 'info'],
+        default => ['Waiting for review', 'info'],
     };
 }

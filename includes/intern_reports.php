@@ -24,11 +24,11 @@ function mentora_render_agent_report(array $report, bool $hr): void
             </div>
             <span class="badge <?= $reviewed ? '' : 'warn' ?>"><?= $reviewed ? 'Reviewed by HR' : 'Waiting for HR' ?></span>
         </header>
-        <h3>AI summary</h3>
+        <h3>Summary</h3>
         <p class="screening-summary"><?= $report['ai_summary'] ? mentora_h($report['ai_summary']) : '<em>Summary not available yet.</em>' ?></p>
         <?php if ($findings): ?>
             <table class="admin-table">
-                <thead><tr><th>Intern</th><th>Agent</th><th>AI assessment</th><th>Verdict</th></tr></thead>
+                <thead><tr><th>Intern</th><th>Agent</th><th>Assessment</th><th>Verdict</th></tr></thead>
                 <tbody>
                 <?php foreach ($findings as $finding): [$label, $class] = MENTORA_REPORT_VERDICTS[$finding['verdict']] ?? ['—', 'info']; ?>
                     <tr>
@@ -53,9 +53,9 @@ function mentora_render_agent_report(array $report, bool $hr): void
                     <button class="admin-btn primary" type="submit">Mark reviewed</button>
                 </form>
             <?php endif; ?>
-            <form method="post"><?= mentora_csrf_field() ?><input type="hidden" name="action" value="resummarize"><input type="hidden" name="id" value="<?= (int) $report['id'] ?>"><button class="admin-btn" type="submit" title="Summarize again with the interns’ latest AI assessments">Refresh AI summary</button></form>
+            <form method="post"><?= mentora_csrf_field() ?><input type="hidden" name="action" value="resummarize"><input type="hidden" name="id" value="<?= (int) $report['id'] ?>"><button class="admin-btn" type="submit" title="Summarize again with the interns’ latest assessments">Refresh summary</button></form>
         </footer>
-        <small class="screening-engine">AI summary by <?= mentora_h($report['engine'] ?: MENTORA_AI_RULES_ENGINE) ?></small>
+        <small class="screening-engine">Summary by <?= mentora_h($report['engine'] ?: MENTORA_AI_RULES_ENGINE) ?></small>
     </article>
     <?php
 }

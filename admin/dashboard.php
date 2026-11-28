@@ -51,7 +51,7 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
         <p><?= $greeting ?>. A clear view of your people, recruitment, onboarding, and today's priorities.</p>
     </div>
     <div class="admin-actions"><a class="admin-btn"
-        href="export.php?type=summary&amp;from=<?= date('Y-m-01') ?>&amp;to=<?= $today ?>"><?= mentora_icon('download') ?>Export dashboard</a><a class="admin-btn" href="consolidated_report.php">View consolidated reports</a><a class="admin-btn" href="screening.php">AI screening</a>
+        href="export.php?type=summary&amp;from=<?= date('Y-m-01') ?>&amp;to=<?= $today ?>"><?= mentora_icon('download') ?>Export dashboard</a><a class="admin-btn" href="consolidated_report.php">View consolidated reports</a><a class="admin-btn" href="screening.php">Screening</a>
     </div>
 </div>
 <?= mentora_flash_html() ?>
@@ -93,7 +93,7 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
             <span><a href="applications.php?view=pending">Applications to confirm</a></span><b class="badge <?= $pendingApplications ? 'warn' : '' ?>"><?= $pendingApplications ?></b>
         </div>
         <div class="notice-row">
-            <span><a href="screening.php?view=suitable">Suitable candidates to assess</a><br><small>AI found skills a department is lacking</small></span><b class="badge <?= $screening['suitable'] ? 'warn' : '' ?>"><?= $screening['suitable'] ?></b>
+            <span><a href="screening.php?view=suitable">Suitable candidates to assess</a><br><small>Screening found skills a department is lacking</small></span><b class="badge <?= $screening['suitable'] ? 'warn' : '' ?>"><?= $screening['suitable'] ?></b>
         </div>
         <div class="notice-row">
             <span><a href="screening.php?view=review">Applications for HR review</a><br><small><?= $screening['flagged'] ?> flagged unsuitable</small></span><b class="badge <?= $screening['review'] ? 'info' : '' ?>"><?= $screening['review'] ?></b>
@@ -114,7 +114,7 @@ $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good
 </div>
 <section class="admin-panel" style="margin-top:16px">
     <h2>Departments lacking skills</h2>
-    <p class="panel-subtitle">The AI screening notifies you and the department when an applicant has these skills.</p>
+    <p class="panel-subtitle">Screening notifies you and the department when an applicant has these skills.</p>
     <?php if (!$gaps): ?><p class="panel-subtitle">No skill gaps right now, or no required skills set yet in <a href="department.php">Departments</a>.</p><?php endif; ?>
     <?php foreach ($gaps as $gap): ?>
         <div class="notice-row"><span><?= mentora_h($gap['name']) ?><br><small><?= (int) $gap['people'] ?> people</small></span><?= mentora_skill_chips($gap['lacking'], $gap['lacking']) ?></div>

@@ -22,7 +22,7 @@ $attention = count(array_filter(
         <p>Monitor module completion, training hours, and upcoming learning milestones.</p>
     </div>
     <div class="admin-actions">
-        <a class="admin-btn" href="export.php?type=training"><?= mentora_icon('download') ?>Export tracker</a><a class="admin-btn primary" href="documents.php#upload">+ Share training resource</a>
+        <a class="admin-btn" href="tasks.php">Tasks &amp; deliverables</a><a class="admin-btn" href="export.php?type=training"><?= mentora_icon('download') ?>Export tracker</a><a class="admin-btn primary" href="documents.php#upload">+ Share training resource</a>
     </div>
 </div>
 <div class="metric-grid">

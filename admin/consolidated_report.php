@@ -51,7 +51,7 @@ $presets = [
             </div>
         </div>
         <div class="field"><label>Sources</label>
-            <?php foreach (['Recruitment and applications' => $summary['applications'], 'AI screening and assessments' => (int) $summary['screening']['screened'] + (int) $summary['assessments']['assessed'] + $summary['agent_reports'], 'Training and evaluations' => $summary['modules'] + $summary['evaluations'], 'Daily reports' => $summary['reports'], 'Attendance' => $summary['present']] as $source => $records): ?>
+            <?php foreach (['Recruitment and applications' => $summary['applications'], 'Screening and assessments' => (int) $summary['screening']['screened'] + (int) $summary['assessments']['assessed'] + $summary['agent_reports'], 'Training and evaluations' => $summary['modules'] + $summary['evaluations'], 'Daily reports' => $summary['reports'], 'Attendance' => $summary['present']] as $source => $records): ?>
                 <div class="notice-row">
                     <span><?= $source ?></span><span class="badge <?= $records ? '' : 'warn' ?>"><?= $records ? $records . ' records' : 'No records' ?></span>
                 </div>
@@ -93,7 +93,7 @@ $presets = [
                 <span class="report-stat-note"><?= mentora_hours($summary['worked_hours']) ?> hrs worked · open shift</span>
             </div>
         </div>
-        <h2 class="report-section-title">AI-supported onboarding</h2>
+        <h2 class="report-section-title">Screening and assessments</h2>
         <div class="report-stats is-quad">
             <div class="report-stat">
                 <span class="report-stat-label">Employee VAs screened</span>
@@ -101,7 +101,7 @@ $presets = [
                 <span class="report-stat-note"><?= (int) $summary['screening']['suitable'] ?> suitable · <?= (int) $summary['screening']['for_review'] ?> for review · <?= (int) $summary['screening']['unsuitable'] ?> flagged</span>
             </div>
             <div class="report-stat">
-                <span class="report-stat-label">Average AI review score</span>
+                <span class="report-stat-label">Average review score</span>
                 <?php if ($summary['screening']['average'] !== null): ?>
                     <strong class="report-stat-value"><?= round((float) $summary['screening']['average']) ?><small>/100</small></strong>
                 <?php else: ?>
@@ -117,7 +117,7 @@ $presets = [
             <div class="report-stat">
                 <span class="report-stat-label">Agent reports</span>
                 <strong class="report-stat-value"><?= $summary['agent_reports'] ?></strong>
-                <span class="report-stat-note">Employability reports with AI summaries</span>
+                <span class="report-stat-note">Employability reports with summaries</span>
             </div>
         </div>
         <h2 class="report-section-title">Department skill gaps (today)</h2>
